@@ -1,0 +1,812 @@
+import { Button, ScrollView, ProgressIndicator, LineEdit, ListView } from "std-widgets.slint";
+
+// ── Data model ────────────────────────────────────────────────────────────────
+
+export struct TorrentItem {
+    id: int,
+    name: string,
+    status-label: string,
+    progress: float,
+    down-speed: string,
+    up-speed: string,
+    is-paused: bool,
+    is-error: bool,
+    is-checking: bool,
+    download-dir: string,
+    error-string: string,
+}
+
+export struct SessionStats {
+    down-speed: string,
+    up-speed: string,
+    downloaded: string,
+    uploaded: string,
+    ratio: string,
+    active: int,
+}
+
+export struct DiskItem {
+    label: string,
+    kind: string,       // "disk", "raid", "lvm", "btrfs"
+    mountpoints: string, // через ", "
+    torrent-count: int,
+}
+
+// ── IconBtn с тултипом ────────────────────────────────────────────────────────
+
+component IconBtn inherits Rectangle {
+    in property <string> icon;
+    in property <string> tip;
+    in property <color>  icon-color: #a0b0cc;
+    in property <color>  hover-color: #ffffff;
+    in property <color>  bg-hover: #2a3a55;
+    callback clicked();
+
+    width: 26px; height: 26px;
+    border-radius: 5px;
+    background: ta.has-hover ? bg-hover : transparent;
+    animate background { duration: 60ms; }
+
+    ta := TouchArea { clicked => { root.clicked(); } }
+
+    Text {
+        text: icon;
+        color: ta.has-hover ? hover-color : icon-color;
+        font-size: 14px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    if ta.has-hover : Rectangle {
+        y: -24px;
+        x: (parent.width - self.width) / 2;
+        width: tip-t.preferred-width + 12px;
+        height: 18px;
+        background: #0d1520;
+        border-radius: 4px;
+        border-width: 1px; border-color: #3a4a60;
+        z: 99;
+        tip-t := Text {
+            x: 6px; text: tip; color: #c0d0e8;
+            font-size: 10px; vertical-alignment: center;
+        }
+    }
+}
+
+// ── Confirm dialog ────────────────────────────────────────────────────────────
+
+component ConfirmDialog inherits Rectangle {
+    in property <string> message;
+    in property <bool>   visible-dialog;
+    callback confirmed();
+    callback cancelled();
+
+    visible: visible-dialog;
+    z: 100;
+    background: #00000099;
+
+    Rectangle {
+        width: 440px; height: 170px;
+        background: #1e2430;
+        border-radius: 10px;
+        border-width: 1px; border-color: #3a4560;
+
+        VerticalLayout {
+            padding: 28px; spacing: 20px;
+            Text {
+                text: message; color: #dce4f5; font-size: 14px;
+                wrap: word-wrap; horizontal-alignment: center;
+            }
+            HorizontalLayout {
+                spacing: 14px; alignment: center;
+                Button { text: "Cancel";  clicked => { cancelled(); } }
+                Button { text: "Confirm"; clicked => { confirmed(); } }
+            }
+        }
+    }
+}
+
+// ── Close dialog: свернуть в трей или закрыть ─────────────────────────────────
+
+component CloseDialog inherits Rectangle {
+    in property <bool> visible-dialog;
+    callback minimize-to-tray();
+    callback quit-app();
+    callback cancelled();
+
+    visible: visible-dialog;
+    z: 100;
+    background: #00000099;
+
+    Rectangle {
+        width: 380px; height: 190px;
+        background: #1e2430;
+        border-radius: 10px;
+        border-width: 1px; border-color: #3a4560;
+
+        VerticalLayout {
+            padding: 28px; spacing: 18px;
+
+            Text {
+                text: "What would you like to do?";
+                color: #dce4f5; font-size: 14px;
+                horizontal-alignment: center;
+            }
+
+            HorizontalLayout {
+                spacing: 10px; alignment: center;
+                Button {
+                    text: "⬇ Minimize to tray";
+                    clicked => { minimize-to-tray(); }
+                }
+                Button {
+                    text: "✕ Quit";
+                    clicked => { quit-app(); }
+                }
+            }
+
+            HorizontalLayout {
+                alignment: center;
+                Button {
+                    text: "Cancel";
+                    clicked => { cancelled(); }
+                }
+            }
+        }
+    }
+}
+
+// ── Add torrent dialog ────────────────────────────────────────────────────────
+
+component AddTorrentDialog inherits Rectangle {
+    in property <bool> visible-dialog;
+    callback submitted-url(string);
+    callback pick-file();
+    callback cancelled();
+
+    visible: visible-dialog;
+    z: 100;
+    background: #00000099;
+
+    property <string> input-text: "";
+
+    Rectangle {
+        width: 540px; height: 200px;
+        background: #1e2430;
+        border-radius: 10px;
+        border-width: 1px; border-color: #3a4560;
+
+        VerticalLayout {
+            padding: 24px; spacing: 14px;
+            Text {
+                text: "Add torrent";
+                color: #dce4f5; font-size: 15px; font-weight: 600;
+                horizontal-alignment: center;
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                LineEdit {
+                    horizontal-stretch: 1;
+                    placeholder-text: "magnet:?xt=urn:btih:…  or  https://…";
+                    text <=> input-text;
+                    accepted(t) => {
+                        if (t != "") { submitted-url(t); input-text = ""; }
+                    }
+                }
+                Button {
+                    text: "Add URL";
+                    clicked => {
+                        if (input-text != "") { submitted-url(input-text); input-text = ""; }
+                    }
+                }
+            }
+            HorizontalLayout {
+                spacing: 12px; alignment: center;
+                Button { text: "📂 Browse .torrent…"; clicked => { pick-file(); } }
+                Button { text: "Cancel"; clicked => { input-text = ""; cancelled(); } }
+            }
+        }
+    }
+}
+
+// ── Create torrent dialog ─────────────────────────────────────────────────────
+
+component CreateTorrentDialog inherits Rectangle {
+    in property <bool> visible-dialog;
+    in-out property <string> path-text: "";
+    callback submitted(string, string);
+    callback pick-path();
+    callback cancelled();
+
+    visible: visible-dialog;
+    z: 100;
+    background: #00000099;
+
+    property <string> trackers-text: "";
+
+    Rectangle {
+        width: 580px; height: 260px;
+        background: #1e2430;
+        border-radius: 10px;
+        border-width: 1px; border-color: #3a4560;
+
+        VerticalLayout {
+            padding: 24px; spacing: 14px;
+
+            Text {
+                text: "Create torrent";
+                color: #dce4f5; font-size: 15px; font-weight: 600;
+                horizontal-alignment: center;
+            }
+
+            HorizontalLayout {
+                spacing: 8px;
+                LineEdit {
+                    horizontal-stretch: 1;
+                    placeholder-text: "/path/to/folder or file";
+                    text <=> path-text;
+                }
+                Button { text: "📂 Browse…"; clicked => { pick-path(); } }
+            }
+
+            LineEdit {
+                placeholder-text: "Trackers (one URL per line, optional)";
+                text <=> trackers-text;
+            }
+
+            HorizontalLayout {
+                spacing: 12px; alignment: center;
+                Button {
+                    text: "✚ Create";
+                    clicked => {
+                        if (path-text != "") {
+                            submitted(path-text, trackers-text);
+                            path-text = ""; trackers-text = "";
+                        }
+                    }
+                }
+                Button {
+                    text: "Cancel";
+                    clicked => { path-text = ""; trackers-text = ""; cancelled(); }
+                }
+            }
+        }
+    }
+}
+
+// ── Torrent row ───────────────────────────────────────────────────────────────
+component TorrentRow inherits Rectangle {
+    in property <TorrentItem> item;
+    in property <bool>        is-even;
+    callback toggle-pause(int);
+    callback delete-torrent(int, bool);
+    callback recheck(int);
+    callback open-folder(string);
+
+    height: 50px;
+    background: is-even ? #161c27 : #1a2233;
+    states [ hovered when ta.has-hover : { background: #1e2840; } ]
+    animate background { duration: 60ms; }
+
+    ta := TouchArea {}
+
+    HorizontalLayout {
+        padding-left: 12px; padding-right: 6px;
+        spacing: 0px; alignment: stretch;
+
+        // Имя + прогресс + ошибка
+        VerticalLayout {
+            width: 290px; alignment: center; spacing: 3px;
+            Text {
+                text: item.name; color: #d0d8ec;
+                font-size: 13px; overflow: elide;
+            }
+            if item.is-error && item.error-string != "" : Text {
+                text: item.error-string;
+                color: #c06050; font-size: 10px; overflow: elide;
+            }
+            if !item.is-error : ProgressIndicator { progress: item.progress; height: 5px; }
+        }
+
+        Rectangle { width: 10px; }
+
+        Text {
+            width: 100px;
+            text: item.is-checking
+                ? (item.status-label + " " + Math.round(item.progress * 100) + "%")
+                : item.status-label;
+            color: item.is-error   ? #c04040
+                 : item.is-paused  ? #556070
+                 : item.is-checking? #a07830
+                 : #38b865;
+            font-size: 12px; vertical-alignment: center;
+        }
+        Text {
+            width: 44px;
+            text: item.is-checking ? "" : Math.round(item.progress * 100) + "%";
+            color: #687888; font-size: 12px;
+            horizontal-alignment: right; vertical-alignment: center;
+        }
+        Rectangle { width: 10px; }
+        Text {
+            width: 80px; text: "↓ " + item.down-speed;
+            color: #4a9ed8; font-size: 12px; vertical-alignment: center;
+        }
+        Text {
+            width: 80px; text: "↑ " + item.up-speed;
+            color: #c87e28; font-size: 12px; vertical-alignment: center;
+        }
+
+        Rectangle { horizontal-stretch: 1; }
+
+        HorizontalLayout {
+            spacing: 2px; alignment: center;
+            IconBtn {
+                icon: item.is-paused ? "▶" : "⏸";
+                tip: item.is-paused ? "Start" : "Pause";
+                icon-color: item.is-paused ? #40c060 : #c0a020;
+                hover-color: item.is-paused ? #80ff80 : #ffe060;
+                clicked => { toggle-pause(item.id); }
+            }
+            Rectangle { width: 1px; height: 18px; background: #283448; }
+            IconBtn {
+                icon: "🔄";
+                tip: "Recheck";
+                icon-color: #5080a0;
+                hover-color: #80c0ff;
+                clicked => { recheck(item.id); }
+            }
+            Rectangle { width: 1px; height: 18px; background: #283448; }
+            IconBtn {
+                icon: "📁";
+                tip: "Open folder";
+                icon-color: #7080a0;
+                hover-color: #b0c8ff;
+                clicked => { open-folder(item.download-dir); }
+            }
+            Rectangle { width: 1px; height: 18px; background: #283448; }
+            IconBtn {
+                icon: "✕";
+                tip: "Remove (keep files)";
+                icon-color: #607080;
+                hover-color: #ff8888;
+                bg-hover: #3a2020;
+                clicked => { delete-torrent(item.id, false); }
+            }
+            IconBtn {
+                icon: "🗑";
+                tip: "Delete + files";
+                icon-color: #705060;
+                hover-color: #ff4444;
+                bg-hover: #4a1818;
+                clicked => { delete-torrent(item.id, true); }
+            }
+        }
+
+        Rectangle { width: 4px; }
+    }
+}
+
+// ── Статистика сессии (правая часть статусбара) ───────────────────────────────
+
+component StatsBar inherits HorizontalLayout {
+    in property <SessionStats> stats;
+    spacing: 16px;
+    alignment: end;
+
+    // Активные раздачи
+    Text {
+        text: stats.active + " active";
+        color: #406858; font-size: 11px; vertical-alignment: center;
+    }
+    Rectangle { width: 1px; height: 12px; background: #1e2a40; }
+    // Скорости
+    Text {
+        text: "↓ " + stats.down-speed;
+        color: #2a6898; font-size: 11px; vertical-alignment: center;
+    }
+    Text {
+        text: "↑ " + stats.up-speed;
+        color: #885818; font-size: 11px; vertical-alignment: center;
+    }
+    Rectangle { width: 1px; height: 12px; background: #1e2a40; }
+    // Объёмы
+    Text {
+        text: "⬇ " + stats.downloaded;
+        color: #385868; font-size: 11px; vertical-alignment: center;
+    }
+    Text {
+        text: "⬆ " + stats.uploaded;
+        color: #785030; font-size: 11px; vertical-alignment: center;
+    }
+    Rectangle { width: 1px; height: 12px; background: #1e2a40; }
+    // Соотношение
+    Text {
+        text: "R " + stats.ratio;
+        color: #506838; font-size: 11px; vertical-alignment: center;
+    }
+    Rectangle { width: 8px; }
+}
+
+// ── Main window ───────────────────────────────────────────────────────────────
+
+export component MainWindow inherits Window {
+    title: "Transmission Remote";
+    background: #111722;
+    min-width: 740px; min-height: 460px;
+    preferred-width: 1060px; preferred-height: 700px;
+
+    in property <[TorrentItem]> torrents;
+    in property <SessionStats>  stats;
+    in property <string>  status-bar-text: "Starting…";
+    in property <bool>    connected: false;
+    in property <[DiskItem]> disk-groups;
+    in-out property <int> selected-disk: -1; // -1 = All
+
+    // Confirm dialog
+    in-out property <bool>   dialog-visible: false;
+    in-out property <string> dialog-message: "";
+    in-out property <int>    pending-id: -1;
+    in-out property <bool>   pending-delete-files: false;
+    in-out property <bool>   pending-is-delete: false;
+
+    // Close dialog
+    in-out property <bool>   close-dialog-visible: false;
+
+    // Add dialog
+    in-out property <bool>   add-dialog-visible: false;
+
+    // Create torrent dialog
+    in-out property <bool>   create-dialog-visible: false;
+    in-out property <string> pending-create-path: "";
+
+    // Поиск
+    in-out property <string> search-text: "";
+
+    callback search-changed(string);
+
+    // Callbacks
+    callback start-torrent(int);
+    callback stop-torrent(int);
+    callback start-all();
+    callback stop-all();
+    callback remove-torrent(int, bool);
+    callback recheck-torrent(int);
+    callback open-folder(string);
+    callback add-torrent-url(string);
+    callback pick-torrent-file();
+    callback create-torrent(string, string);  // path, trackers
+    callback pick-create-path();
+    callback do-minimize-tray();
+    callback do-quit();
+    callback stop-disk-torrents(int);   // пауза всех торрентов на диске idx
+    callback start-disk-torrents(int);  // возобновить все торренты на диске idx
+
+    VerticalLayout {
+        spacing: 0px;
+
+        // ── Toolbar ───────────────────────────────────────────────────────────
+        Rectangle {
+            height: 46px; background: #0d1420;
+
+            HorizontalLayout {
+                padding-left: 12px; padding-right: 12px;
+                spacing: 8px; alignment: start;
+
+                Rectangle {
+                    width: 8px; height: 8px; border-radius: 4px;
+                    background: connected ? #38c058 : #7a3838;
+                    y: (parent.height - self.height) / 2;
+                }
+                Text {
+                    text: "Transmission";
+                    color: #b8c8dc; font-size: 15px; font-weight: 700;
+                    vertical-alignment: center;
+                }
+
+                Rectangle { horizontal-stretch: 1; }
+
+                // Поиск — фиксированная ширина, запас справа на кнопки
+                Rectangle {
+                    width: 380px;
+                    height: 28px;
+                    background: #0a1018;
+                    border-radius: 5px;
+                    border-width: 1px;
+                    border-color: search-input.has-focus ? #2a5a8c : #1e2e42;
+
+                    HorizontalLayout {
+                        padding-left: 8px; padding-right: 6px; spacing: 4px;
+
+                        Text {
+                            text: "🔍";
+                            font-size: 11px;
+                            color: #506070;
+                            vertical-alignment: center;
+                            width: 16px;
+                        }
+
+                        search-input := TextInput {
+                            horizontal-stretch: 1;
+                            font-size: 12px;
+                            color: #c8d8ec;
+                            selection-background-color: #1a3a5c;
+                            selection-foreground-color: #dce8ff;
+                            vertical-alignment: center;
+                            text <=> search-text;
+                            edited => { search-changed(self.text); }
+                        }
+
+                        // Кнопка очистки — только когда есть текст
+                        if search-text != "" : Rectangle {
+                            width: 16px; height: 16px;
+                            border-radius: 8px;
+                            background: clear-ta.has-hover ? #2a3a50 : transparent;
+                            y: (parent.height - self.height) / 2;
+                            clear-ta := TouchArea {
+                                clicked => { search-text = ""; search-changed(""); }
+                            }
+                            Text {
+                                text: "✕";
+                                font-size: 9px;
+                                color: clear-ta.has-hover ? #c0d0e0 : #506070;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                Rectangle { width: 8px; }
+
+                Button { text: "+ Add"; clicked => { add-dialog-visible = true; } }
+                Rectangle { width: 4px; }
+                Button { text: "✚ Create"; clicked => { create-dialog-visible = true; } }
+                Rectangle { width: 4px; }
+                Button {
+                    text: "▶ All"; enabled: connected;
+                    clicked => {
+                        dialog-message = "Start all torrents?";
+                        pending-is-delete = false; pending-id = -1;
+                        dialog-visible = true;
+                    }
+                }
+                Button {
+                    text: "⏸ All"; enabled: connected;
+                    clicked => {
+                        dialog-message = "Stop all torrents?";
+                        pending-is-delete = false; pending-id = -2;
+                        dialog-visible = true;
+                    }
+                }
+            }
+
+            Rectangle {
+                y: parent.height - 1px; x: 0;
+                width: 100%; height: 1px; background: #202e48;
+            }
+        }
+
+        // ── Content: sidebar + torrent list ──────────────────────────────────
+        HorizontalLayout {
+            spacing: 0px;
+            vertical-stretch: 1;
+
+            // ── Main list area ────────────────────────────────────────────────
+            VerticalLayout {
+                spacing: 0px;
+                horizontal-stretch: 1;
+
+        // ── Disk filter bar ───────────────────────────────────────────────────
+        if disk-groups.length > 0 : Rectangle {
+            height: 36px; background: #0c1520;
+            Rectangle { y: parent.height - 1px; width: 100%; height: 1px; background: #182030; }
+            HorizontalLayout {
+                padding-left: 10px; padding-right: 10px;
+                spacing: 6px; alignment: start;
+
+                // Кнопка "All"
+                Rectangle {
+                    width: 46px; height: 24px;
+                    y: (parent.height - self.height) / 2;
+                    border-radius: 5px;
+                    background: selected-disk == -1 ? #1a3a5c : #111e2e;
+                    border-width: 1px;
+                    border-color: selected-disk == -1 ? #2a5a8c : #1e2e42;
+                    // Эффект углубления при активном
+                    drop-shadow-blur: selected-disk == -1 ? 0px : 2px;
+                    drop-shadow-color: selected-disk == -1 ? transparent : #050a10;
+                    drop-shadow-offset-y: selected-disk == -1 ? 0px : 1px;
+                    TouchArea { clicked => { selected-disk = -1; } }
+                    Text {
+                        text: "All";
+                        color: selected-disk == -1 ? #90c8f0 : #506070;
+                        font-size: 11px; font-weight: selected-disk == -1 ? 700 : 400;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+
+                // Кнопки дисков — скрываем если нет торрентов
+                for disk[idx] in disk-groups : Rectangle {
+                    property <bool> active: selected-disk == idx;
+                    visible: disk.torrent-count > 0;
+                    width: disk.torrent-count > 0 ? max(80px, disk.label.character-count * 8px + 16px) : 0px;
+                    height: 24px;
+                    y: (parent.height - self.height) / 2;
+                    border-radius: 5px;
+                    background: active ? #1a3a5c : #111e2e;
+                    border-width: 1px;
+                    border-color: active ? #2a5a8c : #1e2e42;
+                    drop-shadow-blur: active ? 0px : 2px;
+                    drop-shadow-color: active ? transparent : #050a10;
+                    drop-shadow-offset-y: active ? 0px : 1px;
+                    TouchArea { clicked => { selected-disk = active ? -1 : idx; } }
+                    HorizontalLayout {
+                        padding-left: 8px; padding-right: 8px;
+                        spacing: 4px;
+                        Text {
+                            text: "💾";
+                            font-size: 10px; vertical-alignment: center;
+                            color: active ? #90c8f0 : #405060;
+                        }
+                        Text {
+                            text: disk.label;
+                            color: active ? #90c8f0 : #506070;
+                            font-size: 11px; font-weight: active ? 700 : 400;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                    }
+                }
+
+                Rectangle { horizontal-stretch: 1; }
+
+                // Pause/Resume кнопки — только когда диск выбран
+                if selected-disk >= 0 : Rectangle {
+                    width: 70px; height: 24px;
+                    y: (parent.height - self.height) / 2;
+                    border-radius: 5px;
+                    background: #1e1010;
+                    border-width: 1px; border-color: #3a1a1a;
+                    TouchArea { clicked => { stop-disk-torrents(selected-disk); } }
+                    Text {
+                        text: "⏸ Pause";
+                        color: #c06060; font-size: 11px;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+                if selected-disk >= 0 : Rectangle {
+                    width: 70px; height: 24px;
+                    y: (parent.height - self.height) / 2;
+                    border-radius: 5px;
+                    background: #101e10;
+                    border-width: 1px; border-color: #1a3a1a;
+                    TouchArea { clicked => { start-disk-torrents(selected-disk); } }
+                    Text {
+                        text: "▶ Resume";
+                        color: #60c060; font-size: 11px;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+        }
+
+        // ── Column headers ────────────────────────────────────────────────────
+        Rectangle {
+            height: 22px; background: #0b1420;
+            HorizontalLayout {
+                padding-left: 12px; padding-right: 6px; spacing: 0px;
+                Text { width: 290px; text: "Name";   color: #344458; font-size: 10px; vertical-alignment: center; }
+                Rectangle { width: 10px; }
+                Text { width: 90px;  text: "Status"; color: #344458; font-size: 10px; vertical-alignment: center; }
+                Text { width: 44px;  text: "Done";   color: #344458; font-size: 10px; horizontal-alignment: right; vertical-alignment: center; }
+                Rectangle { width: 10px; }
+                Text { width: 80px;  text: "↓ Down"; color: #344458; font-size: 10px; vertical-alignment: center; }
+                Text { width: 80px;  text: "↑ Up";   color: #344458; font-size: 10px; vertical-alignment: center; }
+                Rectangle { horizontal-stretch: 1; }
+                Text { width: 82px;  text: "Actions";color: #344458; font-size: 10px; horizontal-alignment: center; vertical-alignment: center; }
+                Rectangle { width: 4px; }
+            }
+        }
+
+        // ── Torrent list ──────────────────────────────────────────────────────
+        ListView {
+            vertical-stretch: 1;
+
+            for item[idx] in torrents : TorrentRow {
+                item: item;
+                is-even: mod(idx, 2) == 0;
+                toggle-pause(id) => {
+                    if (item.is-paused) { start-torrent(id); }
+                    else               { stop-torrent(id);  }
+                }
+                recheck(id) => { recheck-torrent(id); }
+                open-folder(dir) => { open-folder(dir); }
+                delete-torrent(id, del-files) => {
+                    pending-id = id;
+                    pending-delete-files = del-files;
+                    pending-is-delete = true;
+                    dialog-message = del-files
+                        ? "Delete torrent AND all files on disk?"
+                        : "Remove from list? (files kept)";
+                    dialog-visible = true;
+                }
+            }
+        }
+
+        if torrents.length == 0 : Rectangle {
+            vertical-stretch: 1;
+            Text {
+                text: connected ? "No torrents" : "Waiting for Transmission…";
+                color: #263446; font-size: 15px;
+                horizontal-alignment: center; vertical-alignment: center;
+            }
+        }
+            } // end VerticalLayout main list
+        } // end HorizontalLayout content
+
+        // ── Status bar ────────────────────────────────────────────────────────
+        Rectangle {
+            height: 26px; background: #09101a;
+            Rectangle { y: 0; x: 0; width: 100%; height: 1px; background: #182030; }
+
+            HorizontalLayout {
+                padding-left: 10px; padding-right: 0px;
+                spacing: 0px;
+
+                // Левая часть — текстовый статус
+                Text {
+                    horizontal-stretch: 1;
+                    text: status-bar-text;
+                    color: connected ? #28603a : #3a4d60;
+                    font-size: 11px; vertical-alignment: center;
+                    overflow: elide;
+                }
+
+                // Правая часть — статистика
+                if connected : StatsBar {
+                    stats: stats;
+                }
+            }
+        }
+    }
+
+    // ── Overlays ──────────────────────────────────────────────────────────────
+    ConfirmDialog {
+        width: 100%; height: 100%;
+        message: dialog-message;
+        visible-dialog: dialog-visible;
+        confirmed => {
+            dialog-visible = false;
+            if (pending-is-delete)     { remove-torrent(pending-id, pending-delete-files); }
+            else if (pending-id == -1) { start-all(); }
+            else                       { stop-all(); }
+        }
+        cancelled => { dialog-visible = false; }
+    }
+
+    CloseDialog {
+        width: 100%; height: 100%;
+        visible-dialog: close-dialog-visible;
+        minimize-to-tray => { close-dialog-visible = false; do-minimize-tray(); }
+        quit-app         => { close-dialog-visible = false; do-quit(); }
+        cancelled        => { close-dialog-visible = false; }
+    }
+
+    AddTorrentDialog {
+        width: 100%; height: 100%;
+        visible-dialog: add-dialog-visible;
+        submitted-url(url) => { add-dialog-visible = false; add-torrent-url(url); }
+        pick-file => { add-dialog-visible = false; pick-torrent-file(); }
+        cancelled => { add-dialog-visible = false; }
+    }
+
+    CreateTorrentDialog {
+        width: 100%; height: 100%;
+        visible-dialog: create-dialog-visible;
+        path-text <=> pending-create-path;
+        submitted(path, trackers) => { create-dialog-visible = false; create-torrent(path, trackers); }
+        pick-path => { pick-create-path(); }
+        cancelled => { create-dialog-visible = false; pending-create-path = ""; }
+    }
+}

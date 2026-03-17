@@ -1,0 +1,26 @@
+[package]
+name = "transmission-gui"
+version = "0.3.0"
+edition = "2021"
+
+[[bin]]
+name = "transmission-remote-slint"
+path = "src/main.rs"
+
+[dependencies]
+slint        = "1.7"
+tokio        = { version = "1", features = ["full"] }
+serde        = { version = "1", features = ["derive"] }
+serde_json   = "1"
+reqwest      = { version = "0.12", features = ["json"] }
+toml         = "0.8"
+libc         = "0.2"
+anyhow       = "1"
+base64       = "0.22"
+# Трей через D-Bus StatusNotifierItem — без GTK, работает в KDE/GNOME/XFCE
+# blocking feature = Handle + spawn без async runtime конфликтов со Slint
+ksni         = { version = "0.3", features = ["blocking"] }
+notify-rust  = { version = "4", default-features = false, features = ["d"] }
+
+[build-dependencies]
+slint-build  = "1.7"
