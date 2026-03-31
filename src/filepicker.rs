@@ -55,7 +55,7 @@ pub fn pick_torrent_file() -> Result<String> {
     Err(anyhow!("No file dialog found (install zenity or kdialog)"))
 }
 
-/// Открывает диалог выбора папки или файла для создания торрента.
+/// Открывает диалог выбора папки для создания торрента.
 pub fn pick_directory() -> Result<String> {
     if cmd_exists("zenity") {
         let out = std::process::Command::new("zenity")
@@ -63,16 +63,6 @@ pub fn pick_directory() -> Result<String> {
                 "--file-selection",
                 "--directory",
                 "--title=Select folder to create torrent from",
-            ])
-            .output()?;
-        if out.status.success() {
-            return parse_output(&out.stdout);
-        }
-        // Если отменили directory mode — пробуем выбор файла
-        let out = std::process::Command::new("zenity")
-            .args([
-                "--file-selection",
-                "--title=Select file to create torrent from",
             ])
             .output()?;
         if out.status.success() {

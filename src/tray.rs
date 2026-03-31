@@ -8,6 +8,8 @@ use zbus::interface;
 pub enum TrayCmd {
     ToggleWindow,
     Quit,
+    StartAll,
+    StopAll,
 }
 
 struct StatusNotifierItem {
@@ -100,9 +102,12 @@ impl DbusMenu {
         let mut root = std::collections::HashMap::<String, zbus::zvariant::Value<'_>>::new();
         root.insert("children-display".into(), zbus::zvariant::Value::from("submenu"));
         (1u32, (0i32, root, vec![
-            zbus::zvariant::Value::from(mk(1, "Показать / Скрыть", "window-restore")),
+            zbus::zvariant::Value::from(mk(1, crate::i18n::tray_show_hide(), "window-restore")),
             zbus::zvariant::Value::from(sep()),
-            zbus::zvariant::Value::from(mk(3, "Выход", "application-exit")),
+            zbus::zvariant::Value::from(mk(4, crate::i18n::tray_resume_all(), "media-playback-start")),
+            zbus::zvariant::Value::from(mk(5, crate::i18n::tray_pause_all(), "media-playback-pause")),
+            zbus::zvariant::Value::from(sep()),
+            zbus::zvariant::Value::from(mk(3, crate::i18n::tray_quit(), "application-exit")),
         ]))
     }
 
@@ -119,6 +124,8 @@ impl DbusMenu {
             match id {
                 1 => { eprintln!("[tray] menu: Show/Hide"); let _ = self.tx.send(TrayCmd::ToggleWindow); }
                 3 => { eprintln!("[tray] menu: Quit");      let _ = self.tx.send(TrayCmd::Quit); }
+                4 => { eprintln!("[tray] menu: Resume All"); let _ = self.tx.send(TrayCmd::StartAll); }
+                5 => { eprintln!("[tray] menu: Pause All");  let _ = self.tx.send(TrayCmd::StopAll); }
                 _ => {}
             }
         }
@@ -170,16 +177,18 @@ impl AppTray {
         Ok(Self { rx })
     }
 
-    pub fn poll_events(&self) -> (bool, bool) {
-        let (mut toggle, mut quit) = (false, false);
+    pub fn poll_events(&self) -> (bool, bool, bool, bool) {
+        let (mut toggle, mut quit, mut start_all, mut stop_all) = (false, false, false, false);
         while let Ok(cmd) = self.rx.try_recv() {
             eprintln!("[tray] poll_events got: {:?}", cmd);
             match cmd {
                 TrayCmd::ToggleWindow => toggle = true,
                 TrayCmd::Quit        => quit   = true,
+                TrayCmd::StartAll    => start_all = true,
+                TrayCmd::StopAll     => stop_all  = true,
             }
         }
-        (toggle, quit)
+        (toggle, quit, start_all, stop_all)
     }
 }
 

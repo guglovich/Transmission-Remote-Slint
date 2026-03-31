@@ -274,6 +274,197 @@ component CreateTorrentDialog inherits Rectangle {
     }
 }
 
+// ── Magnet dialog ─────────────────────────────────────────────────────────────
+
+component MagnetDialog inherits Rectangle {
+    in property <bool> visible-dialog;
+    in-out property <string> magnet-uri: "";
+    callback submitted(string);
+    callback cancelled();
+
+    visible: visible-dialog;
+    z: 100;
+    background: #00000099;
+
+    Rectangle {
+        width: 500px; height: 180px;
+        background: #1e2430;
+        border-radius: 10px;
+        border-width: 1px; border-color: #3a4560;
+
+        VerticalLayout {
+            padding: 24px; spacing: 14px;
+
+            Text {
+                text: "Add Magnet Link";
+                color: #dce4f5; font-size: 15px; font-weight: 600;
+                horizontal-alignment: center;
+            }
+
+            LineEdit {
+                horizontal-stretch: 1;
+                placeholder-text: "magnet:?xt=urn:btih:...";
+                text <=> magnet-uri;
+            }
+
+            HorizontalLayout {
+                spacing: 12px; alignment: center;
+                Button {
+                    text: "OK";
+                    clicked => {
+                        if (magnet-uri != "") {
+                            submitted(magnet-uri);
+                            magnet-uri = "";
+                        }
+                    }
+                }
+                Button {
+                    text: "Cancel";
+                    clicked => { magnet-uri = ""; cancelled(); }
+                }
+            }
+        }
+    }
+}
+
+// ── Settings dialog ───────────────────────────────────────────────────────────
+
+component SettingsDialog inherits Rectangle {
+    in property <bool> visible-dialog;
+    in-out property <string> selected-language: "en";
+    callback language-changed(string);
+    callback cancelled();
+
+    visible: visible-dialog;
+    z: 100;
+    background: #00000099;
+
+    Rectangle {
+        width: 420px; height: 340px;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        background: #1e2430;
+        border-radius: 10px;
+        border-width: 1px; border-color: #3a4560;
+
+        VerticalLayout {
+            padding: 20px; spacing: 12px;
+
+            Text {
+                text: "Language / Sprache / 语言 / Idioma";
+                color: #dce4f5; font-size: 15px; font-weight: 600;
+                horizontal-alignment: center;
+            }
+
+            // Уведомление о перезапуске
+            Rectangle {
+                width: 380px; height: 40px;
+                background: #2a3040;
+                border-radius: 5px;
+                Text {
+                    text: "⚠ Restart required / Neustart erforderlich / 需要重启 / Se requiere reinicio";
+                    color: #f0a040;
+                    font-size: 11px;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                    width: 360px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+
+            // English
+            Rectangle {
+                width: 350px; height: 32px;
+                background: selected-language == "en" ? #2a4a6a : #1a2030;
+                border-radius: 5px;
+                border-width: 1px; border-color: selected-language == "en" ? #4a8aba : #2a3a50;
+                TouchArea { clicked => { selected-language = "en"; language-changed("en"); } }
+                Text {
+                    text: "🇬🇧 English";
+                    color: selected-language == "en" ? #90c8f0 : #8f97b8;
+                    font-size: 14px;
+                    x: 16px;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+
+            // Deutsch
+            Rectangle {
+                width: 350px; height: 32px;
+                background: selected-language == "de" ? #2a4a6a : #1a2030;
+                border-radius: 5px;
+                border-width: 1px; border-color: selected-language == "de" ? #4a8aba : #2a3a50;
+                TouchArea { clicked => { selected-language = "de"; language-changed("de"); } }
+                Text {
+                    text: "🇩🇪 Deutsch";
+                    color: selected-language == "de" ? #90c8f0 : #8f97b8;
+                    font-size: 14px;
+                    x: 16px;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+
+            // Русский
+            Rectangle {
+                width: 350px; height: 32px;
+                background: selected-language == "ru" ? #2a4a6a : #1a2030;
+                border-radius: 5px;
+                border-width: 1px; border-color: selected-language == "ru" ? #4a8aba : #2a3a50;
+                TouchArea { clicked => { selected-language = "ru"; language-changed("ru"); } }
+                Text {
+                    text: "🇷🇺 Русский";
+                    color: selected-language == "ru" ? #90c8f0 : #8f97b8;
+                    font-size: 14px;
+                    x: 16px;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+
+            // 中文
+            Rectangle {
+                width: 350px; height: 32px;
+                background: selected-language == "zh" ? #2a4a6a : #1a2030;
+                border-radius: 5px;
+                border-width: 1px; border-color: selected-language == "zh" ? #4a8aba : #2a3a50;
+                TouchArea { clicked => { selected-language = "zh"; language-changed("zh"); } }
+                Text {
+                    text: "🇨🇳 中文";
+                    color: selected-language == "zh" ? #90c8f0 : #8f97b8;
+                    font-size: 14px;
+                    x: 16px;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+
+            // Español
+            Rectangle {
+                width: 350px; height: 32px;
+                background: selected-language == "es" ? #2a4a6a : #1a2030;
+                border-radius: 5px;
+                border-width: 1px; border-color: selected-language == "es" ? #4a8aba : #2a3a50;
+                TouchArea { clicked => { selected-language = "es"; language-changed("es"); } }
+                Text {
+                    text: "🇪🇸 Español";
+                    color: selected-language == "es" ? #90c8f0 : #8f97b8;
+                    font-size: 14px;
+                    x: 16px;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+
+            HorizontalLayout {
+                spacing: 12px; alignment: center;
+                Rectangle { horizontal-stretch: 1; }
+                Button {
+                    text: "Cancel";
+                    clicked => { cancelled(); }
+                }
+            }
+        }
+    }
+}
+
 // ── Torrent row ───────────────────────────────────────────────────────────────
 component TorrentRow inherits Rectangle {
     in property <TorrentItem> item;
@@ -444,6 +635,16 @@ export component MainWindow inherits Window {
     in property <[DiskItem]> disk-groups;
     in-out property <int> selected-disk: -1; // -1 = All
 
+    // Счётчики для левой панели
+    in-out property <int> count-all: 0;
+    in-out property <int> count-downloading: 0;
+    in-out property <int> count-seeding: 0;
+    in-out property <int> count-completed: 0;
+    in-out property <int> count-stopped: 0;
+    in-out property <int> count-active: 0;
+    in-out property <int> count-error: 0;
+    in-out property <string> active-filter: "all";
+
     // Confirm dialog
     in-out property <bool>   dialog-visible: false;
     in-out property <string> dialog-message: "";
@@ -461,10 +662,45 @@ export component MainWindow inherits Window {
     in-out property <bool>   create-dialog-visible: false;
     in-out property <string> pending-create-path: "";
 
+    // Magnet dialog
+    in-out property <bool>   magnet-dialog-visible: false;
+    in-out property <string> magnet-uri: "";
+
+    // Settings dialog
+    in-out property <bool>   settings-dialog-visible: false;
+    in-out property <string> selected-language: "en";
+
     // Поиск
     in-out property <string> search-text: "";
 
+    // Переводы UI
+    in property <string> tr-toolbar-open: "Open";
+    in property <string> tr-toolbar-magnet: "Magnet";
+    in property <string> tr-toolbar-create: "Create";
+    in property <string> tr-toolbar-rehash: "Rehash";
+    in property <string> tr-sidebar-status: "Status";
+    in property <string> tr-sidebar-all: "All";
+    in property <string> tr-sidebar-downloading: "Downloading";
+    in property <string> tr-sidebar-seeding: "Seeding";
+    in property <string> tr-sidebar-completed: "Completed";
+    in property <string> tr-sidebar-stopped: "Stopped";
+    in property <string> tr-sidebar-active: "Active";
+    in property <string> tr-sidebar-inactive: "Inactive";
+    in property <string> tr-sidebar-checking: "Checking";
+    in property <string> tr-sidebar-error: "Error";
+    in property <string> tr-sidebar-disks: "Disks";
+    in property <string> tr-column-name: "Name";
+    in property <string> tr-column-status: "Status";
+    in property <string> tr-column-done: "Done";
+    in property <string> tr-column-down: "Down";
+    in property <string> tr-column-up: "Up";
+    in property <string> tr-column-actions: "Actions";
+
     callback search-changed(string);
+    callback rehash-errors();
+    callback filter-clicked(string);
+    callback magnet-submitted(string);
+    callback language-changed(string);
 
     // Callbacks
     callback start-torrent(int);
@@ -488,48 +724,115 @@ export component MainWindow inherits Window {
 
         // ── Toolbar ───────────────────────────────────────────────────────────
         Rectangle {
-            height: 46px; background: #0d1420;
+            height: 42px; background: #0d1420;
 
             HorizontalLayout {
-                padding-left: 12px; padding-right: 12px;
-                spacing: 8px; alignment: start;
+                padding-left: 8px; padding-right: 8px;
+                spacing: 2px; alignment: start;
 
+                // Кнопки влево - стиль как в мокапе
                 Rectangle {
-                    width: 8px; height: 8px; border-radius: 4px;
-                    background: connected ? #38c058 : #7a3838;
-                    y: (parent.height - self.height) / 2;
+                    width: 90px;
+                    height: 28px;
+                    y: 7px;
+                    background: btn-open.has-hover ? #21253a : transparent;
+                    border-radius: 5px;
+                    border-width: 1px;
+                    border-color: btn-open.has-hover ? #343858 : transparent;
+                    animate background { duration: 80ms; }
+                    animate border-color { duration: 80ms; }
+                    btn-open := TouchArea { clicked => { pick-torrent-file(); } }
+                    Text {
+                        text: "➕ " + tr-toolbar-open;
+                        color: #8f97b8;
+                        font-size: 12px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
                 }
-                Text {
-                    text: "Transmission";
-                    color: #b8c8dc; font-size: 15px; font-weight: 700;
-                    vertical-alignment: center;
+                Rectangle {
+                    width: 80px;
+                    height: 28px;
+                    y: 7px;
+                    background: btn-magnet.has-hover ? #21253a : transparent;
+                    border-radius: 5px;
+                    border-width: 1px;
+                    border-color: btn-magnet.has-hover ? #343858 : transparent;
+                    animate background { duration: 80ms; }
+                    animate border-color { duration: 80ms; }
+                    btn-magnet := TouchArea { clicked => { magnet-dialog-visible = true; } }
+                    Text {
+                        text: "🧲 " + tr-toolbar-magnet;
+                        color: #8f97b8;
+                        font-size: 12px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                Rectangle {
+                    width: 80px;
+                    height: 28px;
+                    y: 7px;
+                    background: btn-create.has-hover ? #21253a : transparent;
+                    border-radius: 5px;
+                    border-width: 1px;
+                    border-color: btn-create.has-hover ? #343858 : transparent;
+                    animate background { duration: 80ms; }
+                    animate border-color { duration: 80ms; }
+                    btn-create := TouchArea { clicked => { create-dialog-visible = true; } }
+                    Text {
+                        text: "📀 " + tr-toolbar-create;
+                        color: #8f97b8;
+                        font-size: 12px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                Rectangle {
+                    width: 80px;
+                    height: 28px;
+                    y: 7px;
+                    background: btn-rehash.has-hover ? #21253a : transparent;
+                    border-radius: 5px;
+                    border-width: 1px;
+                    border-color: btn-rehash.has-hover ? #343858 : transparent;
+                    animate background { duration: 80ms; }
+                    animate border-color { duration: 80ms; }
+                    btn-rehash := TouchArea { clicked => { rehash-errors(); } }
+                    Text {
+                        text: "🔄 " + tr-toolbar-rehash;
+                        color: #8f97b8;
+                        font-size: 12px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
                 }
 
                 Rectangle { horizontal-stretch: 1; }
 
-                // Поиск — фиксированная ширина, запас справа на кнопки
+                // Поиск — по центру
                 Rectangle {
-                    width: 380px;
+                    width: 400px;
                     height: 28px;
+                    y: 7px;
                     background: #0a1018;
-                    border-radius: 5px;
+                    border-radius: 6px;
                     border-width: 1px;
-                    border-color: search-input.has-focus ? #2a5a8c : #1e2e42;
+                    border-color: #1e2e42;
 
                     HorizontalLayout {
-                        padding-left: 8px; padding-right: 6px; spacing: 4px;
+                        padding-left: 10px; padding-right: 8px; spacing: 6px;
 
                         Text {
                             text: "🔍";
-                            font-size: 11px;
+                            font-size: 13px;
                             color: #506070;
                             vertical-alignment: center;
-                            width: 16px;
                         }
 
                         search-input := TextInput {
                             horizontal-stretch: 1;
-                            font-size: 12px;
+                            font-size: 13px;
                             color: #c8d8ec;
                             selection-background-color: #1a3a5c;
                             selection-foreground-color: #dce8ff;
@@ -538,10 +841,9 @@ export component MainWindow inherits Window {
                             edited => { search-changed(self.text); }
                         }
 
-                        // Кнопка очистки — только когда есть текст
                         if search-text != "" : Rectangle {
-                            width: 16px; height: 16px;
-                            border-radius: 8px;
+                            width: 20px; height: 20px;
+                            border-radius: 10px;
                             background: clear-ta.has-hover ? #2a3a50 : transparent;
                             y: (parent.height - self.height) / 2;
                             clear-ta := TouchArea {
@@ -549,8 +851,8 @@ export component MainWindow inherits Window {
                             }
                             Text {
                                 text: "✕";
-                                font-size: 9px;
-                                color: clear-ta.has-hover ? #c0d0e0 : #506070;
+                                font-size: 11px;
+                                color: #8f97b8;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
                             }
@@ -558,26 +860,27 @@ export component MainWindow inherits Window {
                     }
                 }
 
-                Rectangle { width: 8px; }
+                Rectangle { horizontal-stretch: 1; }
 
-                Button { text: "+ Add"; clicked => { add-dialog-visible = true; } }
-                Rectangle { width: 4px; }
-                Button { text: "✚ Create"; clicked => { create-dialog-visible = true; } }
-                Rectangle { width: 4px; }
-                Button {
-                    text: "▶ All"; enabled: connected;
-                    clicked => {
-                        dialog-message = "Start all torrents?";
-                        pending-is-delete = false; pending-id = -1;
-                        dialog-visible = true;
-                    }
-                }
-                Button {
-                    text: "⏸ All"; enabled: connected;
-                    clicked => {
-                        dialog-message = "Stop all torrents?";
-                        pending-is-delete = false; pending-id = -2;
-                        dialog-visible = true;
+                // Кнопка настроек — правый угол с текущим языком
+                Rectangle {
+                    width: 50px;
+                    height: 28px;
+                    y: 7px;
+                    background: btn-settings.has-hover ? #21253a : transparent;
+                    border-radius: 5px;
+                    border-width: 1px;
+                    border-color: btn-settings.has-hover ? #343858 : transparent;
+                    animate background { duration: 80ms; }
+                    animate border-color { duration: 80ms; }
+                    btn-settings := TouchArea { clicked => { settings-dialog-visible = true; } }
+                    Text {
+                        text: selected-language == "en" ? "EN" : selected-language == "de" ? "DE" : selected-language == "ru" ? "RU" : selected-language == "zh" ? "ZH" : selected-language == "es" ? "ES" : "EN";
+                        color: #90c8f0;
+                        font-size: 12px;
+                        font-weight: 600;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
                     }
                 }
             }
@@ -593,119 +896,308 @@ export component MainWindow inherits Window {
             spacing: 0px;
             vertical-stretch: 1;
 
+            // ── LEFT PANEL ────────────────────────────────────────────────────
+            Rectangle {
+                width: 200px;
+                background: #0d1420;
+                border-width: 1px;
+                border-color: #202e48;
+
+                ScrollView {
+                    VerticalLayout {
+                        padding: 4px;
+                        spacing: 2px;
+
+                        // Заголовок СОСТОЯНИЕ
+                        Rectangle {
+                            height: 24px;
+                            width: 100%;
+                            Text {
+                                text: tr-sidebar-status;
+                                color: #506070;
+                                font-size: 10px;
+                                font-weight: 600;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                        }
+
+                        // Все
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "all" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "all"; filter-clicked("all"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #38c058;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-all;
+                                color: active-filter == "all" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "all" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-all + "";
+                                    color: active-filter == "all" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        // Загружаются
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "downloading" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "downloading"; filter-clicked("downloading"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #4a7cf7;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-downloading;
+                                color: active-filter == "downloading" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "downloading" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-downloading + "";
+                                    color: active-filter == "downloading" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        // Раздаются
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "seeding" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "seeding"; filter-clicked("seeding"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #3db87a;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-seeding;
+                                color: active-filter == "seeding" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "seeding" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-seeding + "";
+                                    color: active-filter == "seeding" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        // Завершены
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "completed" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "completed"; filter-clicked("completed"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #3db87a;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-completed;
+                                color: active-filter == "completed" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "completed" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-completed + "";
+                                    color: active-filter == "completed" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        // Остановлены
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "stopped" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "stopped"; filter-clicked("stopped"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #8f97b8;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-stopped;
+                                color: active-filter == "stopped" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "stopped" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-stopped + "";
+                                    color: active-filter == "stopped" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        // Активные
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "active" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "active"; filter-clicked("active"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #4a7cf7;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-active;
+                                color: active-filter == "active" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "active" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-active + "";
+                                    color: active-filter == "active" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        // Ошибка
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "error" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "error"; filter-clicked("error"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #e05555;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-error;
+                                color: active-filter == "error" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "error" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-error + "";
+                                    color: active-filter == "error" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // Разделитель
+                        Rectangle {
+                            height: 1px;
+                            background: #252840;
+                            width: 192px;
+                            x: 4px;
+                        }
+                    }
+                }
+            }
+
             // ── Main list area ────────────────────────────────────────────────
             VerticalLayout {
                 spacing: 0px;
                 horizontal-stretch: 1;
 
-        // ── Disk filter bar ───────────────────────────────────────────────────
-        if disk-groups.length > 0 : Rectangle {
-            height: 36px; background: #0c1520;
-            Rectangle { y: parent.height - 1px; width: 100%; height: 1px; background: #182030; }
-            HorizontalLayout {
-                padding-left: 10px; padding-right: 10px;
-                spacing: 6px; alignment: start;
-
-                // Кнопка "All"
-                Rectangle {
-                    width: 46px; height: 24px;
-                    y: (parent.height - self.height) / 2;
-                    border-radius: 5px;
-                    background: selected-disk == -1 ? #1a3a5c : #111e2e;
-                    border-width: 1px;
-                    border-color: selected-disk == -1 ? #2a5a8c : #1e2e42;
-                    // Эффект углубления при активном
-                    drop-shadow-blur: selected-disk == -1 ? 0px : 2px;
-                    drop-shadow-color: selected-disk == -1 ? transparent : #050a10;
-                    drop-shadow-offset-y: selected-disk == -1 ? 0px : 1px;
-                    TouchArea { clicked => { selected-disk = -1; } }
-                    Text {
-                        text: "All";
-                        color: selected-disk == -1 ? #90c8f0 : #506070;
-                        font-size: 11px; font-weight: selected-disk == -1 ? 700 : 400;
-                        horizontal-alignment: center; vertical-alignment: center;
-                    }
-                }
-
-                // Кнопки дисков — скрываем если нет торрентов
-                for disk[idx] in disk-groups : Rectangle {
-                    property <bool> active: selected-disk == idx;
-                    visible: disk.torrent-count > 0;
-                    width: disk.torrent-count > 0 ? max(80px, disk.label.character-count * 8px + 16px) : 0px;
-                    height: 24px;
-                    y: (parent.height - self.height) / 2;
-                    border-radius: 5px;
-                    background: active ? #1a3a5c : #111e2e;
-                    border-width: 1px;
-                    border-color: active ? #2a5a8c : #1e2e42;
-                    drop-shadow-blur: active ? 0px : 2px;
-                    drop-shadow-color: active ? transparent : #050a10;
-                    drop-shadow-offset-y: active ? 0px : 1px;
-                    TouchArea { clicked => { selected-disk = active ? -1 : idx; } }
-                    HorizontalLayout {
-                        padding-left: 8px; padding-right: 8px;
-                        spacing: 4px;
-                        Text {
-                            text: "💾";
-                            font-size: 10px; vertical-alignment: center;
-                            color: active ? #90c8f0 : #405060;
-                        }
-                        Text {
-                            text: disk.label;
-                            color: active ? #90c8f0 : #506070;
-                            font-size: 11px; font-weight: active ? 700 : 400;
-                            vertical-alignment: center;
-                            overflow: elide;
-                        }
-                    }
-                }
-
-                Rectangle { horizontal-stretch: 1; }
-
-                // Pause/Resume кнопки — только когда диск выбран
-                if selected-disk >= 0 : Rectangle {
-                    width: 70px; height: 24px;
-                    y: (parent.height - self.height) / 2;
-                    border-radius: 5px;
-                    background: #1e1010;
-                    border-width: 1px; border-color: #3a1a1a;
-                    TouchArea { clicked => { stop-disk-torrents(selected-disk); } }
-                    Text {
-                        text: "⏸ Pause";
-                        color: #c06060; font-size: 11px;
-                        horizontal-alignment: center; vertical-alignment: center;
-                    }
-                }
-                if selected-disk >= 0 : Rectangle {
-                    width: 70px; height: 24px;
-                    y: (parent.height - self.height) / 2;
-                    border-radius: 5px;
-                    background: #101e10;
-                    border-width: 1px; border-color: #1a3a1a;
-                    TouchArea { clicked => { start-disk-torrents(selected-disk); } }
-                    Text {
-                        text: "▶ Resume";
-                        color: #60c060; font-size: 11px;
-                        horizontal-alignment: center; vertical-alignment: center;
-                    }
-                }
-            }
-        }
-
-        // ── Column headers ────────────────────────────────────────────────────
+                // ── Column headers ────────────────────────────────────────────────────
         Rectangle {
             height: 22px; background: #0b1420;
             HorizontalLayout {
                 padding-left: 12px; padding-right: 6px; spacing: 0px;
-                Text { width: 290px; text: "Name";   color: #344458; font-size: 10px; vertical-alignment: center; }
+                Text { width: 290px; text: tr-column-name;   color: #344458; font-size: 10px; vertical-alignment: center; }
                 Rectangle { width: 10px; }
-                Text { width: 90px;  text: "Status"; color: #344458; font-size: 10px; vertical-alignment: center; }
-                Text { width: 44px;  text: "Done";   color: #344458; font-size: 10px; horizontal-alignment: right; vertical-alignment: center; }
+                Text { width: 90px;  text: tr-column-status; color: #344458; font-size: 10px; vertical-alignment: center; }
+                Text { width: 44px;  text: tr-column-done;   color: #344458; font-size: 10px; horizontal-alignment: right; vertical-alignment: center; }
                 Rectangle { width: 10px; }
-                Text { width: 80px;  text: "↓ Down"; color: #344458; font-size: 10px; vertical-alignment: center; }
-                Text { width: 80px;  text: "↑ Up";   color: #344458; font-size: 10px; vertical-alignment: center; }
+                Text { width: 80px;  text: "↓ " + tr-column-down; color: #344458; font-size: 10px; vertical-alignment: center; }
+                Text { width: 80px;  text: "↑ " + tr-column-up;   color: #344458; font-size: 10px; vertical-alignment: center; }
                 Rectangle { horizontal-stretch: 1; }
-                Text { width: 82px;  text: "Actions";color: #344458; font-size: 10px; horizontal-alignment: center; vertical-alignment: center; }
+                Text { width: 82px;  text: tr-column-actions;color: #344458; font-size: 10px; horizontal-alignment: center; vertical-alignment: center; }
                 Rectangle { width: 4px; }
             }
         }
@@ -752,17 +1244,10 @@ export component MainWindow inherits Window {
             Rectangle { y: 0; x: 0; width: 100%; height: 1px; background: #182030; }
 
             HorizontalLayout {
-                padding-left: 10px; padding-right: 0px;
-                spacing: 0px;
+                padding-left: 10px; padding-right: 10px;
+                spacing: 8px;
 
-                // Левая часть — текстовый статус
-                Text {
-                    horizontal-stretch: 1;
-                    text: status-bar-text;
-                    color: connected ? #28603a : #3a4d60;
-                    font-size: 11px; vertical-alignment: center;
-                    overflow: elide;
-                }
+                Rectangle { horizontal-stretch: 1; }
 
                 // Правая часть — статистика
                 if connected : StatsBar {
@@ -809,5 +1294,24 @@ export component MainWindow inherits Window {
         submitted(path, trackers) => { create-dialog-visible = false; create-torrent(path, trackers); }
         pick-path => { pick-create-path(); }
         cancelled => { create-dialog-visible = false; pending-create-path = ""; }
+    }
+
+    MagnetDialog {
+        width: 100%; height: 100%;
+        visible-dialog: magnet-dialog-visible;
+        magnet-uri <=> magnet-uri;
+        submitted(uri) => { magnet-dialog-visible = false; magnet-submitted(uri); }
+        cancelled => { magnet-dialog-visible = false; magnet-uri = ""; }
+    }
+
+    SettingsDialog {
+        width: 100%; height: 100%;
+        visible-dialog: settings-dialog-visible;
+        selected-language <=> selected-language;
+        language-changed(lang) => {
+            settings-dialog-visible = false;
+            language-changed(lang);
+        }
+        cancelled => { settings-dialog-visible = false; }
     }
 }
