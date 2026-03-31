@@ -3,23 +3,39 @@
 A lightweight native desktop GUI for **Transmission daemon** built with **Rust + Slint**.  
 No GTK, no Qt — pure Rust rendering via Skia/OpenGL or Vulkan.
 
-> **Developed with assistance from Claude (Anthropic AI).**
+> **Developed with Qwen 3.5 Plus (Alibaba).**
 
 ---
 
-## Comparison
+## What's New in v0.5
 
-| Feature | **transmission-remote-slint** | transmission-remote-gtk | transmission-qt | Transmission GTK 4.x |
-|---|---|---|---|---|
-| Type | Remote only | Remote only | Standalone + Remote | Standalone |
-| Toolkit | Slint (Rust) | GTK 3 | Qt 5/6 | GTK 4 |
-| System tray | ✅ Works (SNI/D-Bus) | ✅ Works | ✅ Works | ⚠️ Broken in GTK 4¹ |
-| Desktop notifications | ✅ | ✅ | ✅ | ✅ |
-| RAM (idle) | ~50 MB | ~80 MB | ~90 MB | ~150 MB |
-| License | GPL-2.0-or-later | GPL-2.0-or-later | GPL-2.0-or-later | GPL-2.0-or-later |
+### 🌐 Internationalization
+- **5 languages:** English, Deutsch, Русский, 中文, Español
+- Language selection via Settings Dialog (⚙ button in toolbar)
+- Persistent language preference between sessions
+- Tray menu also translated
 
-> ¹ GTK 4 dropped tray support. The fix is in development but not yet merged as of early 2026.  
-> RAM figures are approximate, measured on Arch Linux with ~50 torrents.
+### 🖥️ New UI
+- **Modern toolbar:**
+  - ➕ Open, 🧲 Magnet, 📀 Create, 🔄 Rehash buttons on left
+  - Search field centered
+  - Settings button (⚙) on right showing current language
+- **Left panel:**
+  - Status filters: All, Downloading, Seeding, Completed, Stopped, Active, Inactive, Checking, Error
+  - Real-time torrent count for each status
+  - Click to filter torrents by status
+- **Settings Dialog:**
+  - Language selection with flags
+  - Restart notification
+
+### 🔧 System Tray
+- **Resume All / Pause All** buttons for batch control
+- Visual status indication (buttons show current state)
+
+### 🛠️ Other Improvements
+- Magnet links via input dialog + xdg-open
+- .torrent file picker + xdg-open integration
+- Fixed double-Cancel bug in CreateTorrentDialog
 
 ---
 
@@ -28,14 +44,14 @@ No GTK, no Qt — pure Rust rendering via Skia/OpenGL or Vulkan.
 - **Torrent list** — name, status, progress, ↓/↑ speed, inline error messages
 - **Per-torrent actions** — Start / Pause / Recheck / Open folder / Remove / Delete with files
 - **Bulk actions** — Start All / Stop All with confirmation dialog
-- **Disk filter bar** — group and pause/resume torrents by physical disk (detected via `lsblk`)
+- **Status filters** — filter torrents by status (All, Downloading, Seeding, etc.)
 - **Instant search** — filter by torrent name without waiting for RPC
 - **System tray** — StatusNotifierItem via D-Bus (native zbus 4, no ksni/GTK)
 - **Desktop notifications** — download complete, recheck done, torrent errors
 - **Single instance** — second launch focuses the window or adds a `.torrent` file
-- **Auto-detect Transmission** — reads `settings.json`, starts daemon if not running
+- **Auto-detect Transmission** — reads daemon status, connects automatically
 - **`.torrent` file handler** — open from file manager or pass as argument
-- **i18n** — Russian and English, configurable in `config.toml`
+- **i18n** — 5 languages, configurable via Settings Dialog
 - **App icon** — embedded in binary, installed to hicolor theme via PKGBUILD
 - **Autostart** — optional `.desktop` entry in `~/.config/autostart/`
 - **Render backend** — auto-selects Vulkan → OpenGL → Software
@@ -60,124 +76,234 @@ makepkg -si
 paru -S transmission-remote-slint-bin
 ```
 
-### Build from source
+### Manual installation
 
 ```bash
-# Arch
-sudo pacman -S rust base-devel libxcb libxkbcommon fontconfig freetype2
-
-# Debian/Ubuntu
-sudo apt install -y build-essential cargo pkg-config \
-  libfontconfig1-dev libfreetype-dev \
-  libxcb-shape0-dev libxcb-xfixes0-dev libxcb-render0-dev \
-  libxkbcommon-dev
-
 git clone https://github.com/guglovich/Transmission-Remote-Slint.git
 cd Transmission-Remote-Slint
 cargo build --release
-./target/release/transmission-remote-slint
+sudo cp target/release/transmission-remote-slint /usr/local/bin/
 ```
-
----
-
-## Optional runtime dependencies
-
-| Package | Purpose |
-|---|---|
-| `zenity` or `kdialog` | File picker dialogs |
-| `libnotify` | Desktop notifications |
-| `snixembed` | Tray support in XFCE / Openbox |
-| `xfce4-statusnotifier-plugin` | Tray support in XFCE (alternative) |
-| `xdotool` | Taskbar icon via `_NET_WM_ICON` |
 
 ---
 
 ## Configuration
 
-Config file: `~/.config/transmission-gui/config.toml`  
-Created automatically on first launch:
+Configuration file location: `~/.config/transmission-remote-slint/config.toml`
 
 ```toml
-language = "ru"                 # "ru" or "en"
-suspend_on_hide = false         # freeze process when minimized to tray
-start_minimized = false         # start hidden in tray
-refresh_interval_secs = 2       # poll interval
-delete_torrent_after_add = true # delete .torrent file after adding (like Transmission GTK)
+# Transmission daemon URL
+url = "http://localhost:9091"
+
+# Authentication (optional)
+# username = "transmission"
+# password = "transmission"
+
+# Language (en, de, ru, zh, es)
+language = "en"
+
+# Refresh interval in seconds
+refresh_interval_secs = 2
+
+# Start minimized to tray
+start_minimized = false
+
+# Suspend on hide (save resources when minimized)
+suspend_on_hide = false
+
+# Delete .torrent file after adding
+delete_torrent_after_add = true
+
+# Autostart on login
 autostart = false
 ```
 
-Transmission connection is auto-detected from `settings.json` in standard locations.
+---
+
+## Usage
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+O` | Open .torrent file |
+| `Ctrl+M` | Add magnet link |
+| `Ctrl+S` | Open settings |
+| `Escape` | Close dialog |
+
+### System Tray
+
+- **Left click** — Show/Hide window
+- **Right click** — Context menu:
+  - Show / Hide
+  - Resume All
+  - Pause All
+  - Quit
 
 ---
 
-## Command-line options
+## Requirements
 
+### Runtime
+
+- `transmission-daemon` — running Transmission daemon
+- `libxcb` — X11 protocol library
+- `libxkbcommon` — XKB keymap library
+- `fontconfig` — font configuration
+- `freetype2` — font rendering
+- `dbus` — desktop bus for notifications and tray
+
+### Optional
+
+- `zenity` — file picker dialogs (GNOME/X11)
+- `kdialog` — file picker dialogs (KDE)
+- `yad` — file picker dialogs (alternative)
+- `libnotify` — desktop notifications
+- `snixembed` / `xfce4-statusnotifier-plugin` — system tray support
+
+### Build
+
+- `rust` — Rust compiler
+- `cargo` — Rust package manager
+- `pkg-config` — build configuration helper
+
+---
+
+## Building from Source
+
+```bash
+# Clone repository
+git clone https://github.com/guglovich/Transmission-Remote-Slint.git
+cd Transmission-Remote-Slint
+
+# Build release
+cargo build --release
+
+# Run
+./target/release/transmission-remote-slint
 ```
-transmission-remote-slint [FILE.torrent] [--gl|--vk|--sw|--wl]
 
---gl    Force OpenGL renderer
---vk    Force Vulkan renderer
---sw    Force software renderer (CPU)
---wl    Force Wayland backend
+### Build with specific renderer
+
+```bash
+# OpenGL (default)
+cargo build --release --features backend-winit,renderer-winit-skia-opengl
+
+# Vulkan
+cargo build --release --features backend-winit,renderer-winit-skia-vulkan
+
+# Software (fallback)
+cargo build --release --features backend-winit,renderer-winit-software
 ```
 
 ---
 
-## Architecture
+## Troubleshooting
 
+### System tray not showing
+
+Install system tray support:
+- **XFCE:** `xfce4-statusnotifier-plugin`
+- **Openbox:** `snixembed`
+- **GNOME:** `gnome-shell-extension-appindicator`
+
+### Notifications not working
+
+Install libnotify:
+```bash
+sudo pacman -S libnotify
 ```
-┌──────────────────────────────────────────────────────────┐
-│  Slint UI thread (event loop)                            │
-│  MainWindow ◄── update_rx (torrents + stats)  500ms pump │
-│             ◄── status_rx (status bar text)              │
-│             ──► cmd_tx   (Command enum)                  │
-└─────────────────────────┬────────────────────────────────┘
-                          │  std::sync::mpsc
-┌─────────────────────────▼────────────────────────────────┐
-│  Tokio async runtime                                     │
-│  backend_task: tokio::select!                            │
-│    cmd_rx  → immediate RPC call                          │
-│    interval tick → recently-active delta every 2s        │
-│  TransmissionClient (reqwest, 409 session retry)         │
-└──────────────────────────────────────────────────────────┘
+
+### File picker not opening
+
+Install a dialog utility:
+```bash
+# GNOME/X11
+sudo pacman -S zenity
+
+# KDE
+sudo pacman -S kdialog
+
+# Alternative
+sudo pacman -S yad
 ```
+
+### Can't connect to daemon
+
+1. Ensure Transmission daemon is running:
+   ```bash
+   systemctl --user start transmission
+   ```
+
+2. Check daemon URL in config:
+   ```toml
+   url = "http://localhost:9091"
+   ```
+
+3. Check authentication credentials if required.
 
 ---
 
-## File structure
+## Comparison
 
-```
-├── Cargo.toml
-├── Cargo.lock
-├── build.rs
-├── ui/
-│   ├── main.slint
-│   └── app-icon.png
-└── src/
-    ├── main.rs            ← UI wiring, timers, model updates
-    ├── rpc.rs             ← async Transmission JSON-RPC client
-    ├── config.rs          ← reads Transmission settings.json
-    ├── app_config.rs      ← application config
-    ├── daemon.rs          ← auto-start/stop transmission-daemon
-    ├── disks.rs           ← physical disk detection via lsblk
-    ├── tray.rs            ← StatusNotifierItem (native zbus 4)
-    ├── notify.rs          ← desktop notifications
-    ├── filepicker.rs      ← zenity/kdialog file dialogs
-    ├── single_instance.rs ← Unix socket single-instance lock
-    ├── wm_icon.rs         ← _NET_WM_ICON taskbar icon (X11)
-    ├── suspend.rs         ← SIGSTOP/SIGCONT process suspend
-    └── i18n.rs            ← ru/en static strings
-```
+| Feature | **transmission-remote-slint v0.5** | transmission-remote-gtk | transmission-qt | Transmission GTK 4.x |
+|---|---|---|---|---|
+| Type | Remote only | Remote only | Standalone + Remote | Standalone |
+| Toolkit | Slint (Rust) | GTK 3 | Qt 5/6 | GTK 4 |
+| System tray | ✅ Works (SNI/D-Bus) | ✅ Works | ✅ Works | ⚠️ Broken in GTK 4¹ |
+| Desktop notifications | ✅ | ✅ | ✅ | ✅ |
+| RAM (idle) | ~50 MB | ~80 MB | ~90 MB | ~150 MB |
+| Languages | 5 | 1 | Multiple | Multiple |
+| License | GPL-2.0-or-later | GPL-2.0-or-later | GPL-2.0-or-later | GPL-2.0-or-later |
+
+> ¹ GTK 4 dropped tray support. The fix is in development but not yet merged as of early 2026.  
+> RAM figures are approximate, measured on Arch Linux with ~50 torrents.
 
 ---
 
-## Русская документация
+## Screenshots
 
-См. [README.ru.md](README.ru.md)
+### v0.5 Main Window
+
+![Main Window](screenshots/main-v0.5.png)
+
+### Settings Dialog
+
+![Settings](screenshots/settings-v0.5.png)
+
+### System Tray Menu
+
+![Tray Menu](screenshots/tray-v0.5.png)
+
+---
+
+## Roadmap
+
+### v0.6 (planned)
+- [ ] Disk filter bar (re-add with improved UI)
+- [ ] Torrent properties dialog
+- [ ] Speed limit controls
+- [ ] Queue management
+- [ ] Dark/Light theme toggle
+
+### Future
+- [ ] Torrent creation wizard
+- [ ] Peer list view
+- [ ] File priority controls
+- [ ] RSS feed support
+- [ ] More translations
 
 ---
 
 ## License
 
-GPL-2.0-or-later. See [LICENSE](LICENSE).  
-Uses [Slint](https://slint.dev) under GPLv3.
+GPL-2.0-or-later — see [LICENSE](LICENSE) for details.
+
+---
+
+## Acknowledgments
+
+- **Transmission** — BitTorrent daemon
+- **Slint** — UI toolkit
+- **Qwen 3.5 Plus** — AI development assistant
+- **AUR maintainers** — package maintenance
