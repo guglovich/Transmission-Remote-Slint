@@ -467,6 +467,30 @@ fn main() -> anyhow::Result<()> {
     let ui = MainWindow::new()?;
     ui.set_status_bar_text(probe_result.status_msg.as_str().into());
     ui.set_connected(probe_result.ok);
+    ui.set_selected_language(app_cfg.language.as_str().into());
+    
+    // Обновляем UI переводы
+    ui.set_tr_toolbar_open(i18n::toolbar_open().into());
+    ui.set_tr_toolbar_magnet(i18n::toolbar_magnet().into());
+    ui.set_tr_toolbar_create(i18n::toolbar_create().into());
+    ui.set_tr_toolbar_rehash(i18n::toolbar_rehash().into());
+    ui.set_tr_sidebar_status(i18n::sidebar_status().into());
+    ui.set_tr_sidebar_all(i18n::sidebar_all().into());
+    ui.set_tr_sidebar_downloading(i18n::sidebar_downloading().into());
+    ui.set_tr_sidebar_seeding(i18n::sidebar_seeding().into());
+    ui.set_tr_sidebar_completed(i18n::sidebar_completed().into());
+    ui.set_tr_sidebar_stopped(i18n::sidebar_stopped().into());
+    ui.set_tr_sidebar_active(i18n::sidebar_active().into());
+    ui.set_tr_sidebar_inactive(i18n::sidebar_inactive().into());
+    ui.set_tr_sidebar_checking(i18n::sidebar_checking().into());
+    ui.set_tr_sidebar_error(i18n::sidebar_error().into());
+    ui.set_tr_sidebar_disks(i18n::sidebar_disks().into());
+    ui.set_tr_column_name(i18n::column_name().into());
+    ui.set_tr_column_status(i18n::column_status().into());
+    ui.set_tr_column_done(i18n::column_done().into());
+    ui.set_tr_column_down(i18n::column_down().into());
+    ui.set_tr_column_up(i18n::column_up().into());
+    ui.set_tr_column_actions(i18n::column_actions().into());
 
     // Определяем диски
     eprintln!("[disks] Detecting physical disks...");
@@ -531,7 +555,15 @@ fn main() -> anyhow::Result<()> {
                             }
                         });
                     }
-                    Err(e) => eprintln!("[create] pick dir: {e}"),
+                    Err(e) => {
+                        eprintln!("[create] pick dir: {e}");
+                        // При отмене — закрываем диалог
+                        let _ = slint::invoke_from_event_loop(move || {
+                            if let Some(ui) = ui2.upgrade() {
+                                ui.set_create_dialog_visible(false);
+                            }
+                        });
+                    }
                 }
             });
         });
@@ -543,14 +575,78 @@ fn main() -> anyhow::Result<()> {
             if !s.is_empty() { let _ = tx.send(Command::AddTorrentUrl(s, None)); }
         });
     }
+    // Magnet кнопка
+    {
+        ui.on_magnet_submitted(move |uri: slint::SharedString| {
+            let uri = uri.to_string();
+            let _ = std::process::Command::new("xdg-open")
+                .arg(&uri)
+                .spawn();
+            eprintln!("[magnet] Opening: {}", uri);
+        });
+    }
+    // Смена языка
+    {
+        let mut app_cfg_mut = app_cfg.clone();
+        let ui_weak = ui.as_weak();
+        ui.on_language_changed(move |lang: slint::SharedString| {
+            let lang = lang.to_string();
+            eprintln!("[i18n] Language changed to: {}", lang);
+            i18n::set_language(&lang);
+            // Сохраняем в конфиг (применится после перезапуска)
+            app_cfg_mut.language = lang.clone();
+            let _ = app_config::save(&app_cfg_mut);
+            eprintln!("[i18n] Config saved. Locale set to: {}", i18n::get_language());
+            
+            // Обновляем UI переводы
+            if let Some(ui) = ui_weak.upgrade() {
+                ui.set_tr_toolbar_open(i18n::toolbar_open().into());
+                ui.set_tr_toolbar_magnet(i18n::toolbar_magnet().into());
+                ui.set_tr_toolbar_create(i18n::toolbar_create().into());
+                ui.set_tr_toolbar_rehash(i18n::toolbar_rehash().into());
+                ui.set_tr_sidebar_status(i18n::sidebar_status().into());
+                ui.set_tr_sidebar_all(i18n::sidebar_all().into());
+                ui.set_tr_sidebar_downloading(i18n::sidebar_downloading().into());
+                ui.set_tr_sidebar_seeding(i18n::sidebar_seeding().into());
+                ui.set_tr_sidebar_completed(i18n::sidebar_completed().into());
+                ui.set_tr_sidebar_stopped(i18n::sidebar_stopped().into());
+                ui.set_tr_sidebar_active(i18n::sidebar_active().into());
+                ui.set_tr_sidebar_inactive(i18n::sidebar_inactive().into());
+                ui.set_tr_sidebar_checking(i18n::sidebar_checking().into());
+                ui.set_tr_sidebar_error(i18n::sidebar_error().into());
+                ui.set_tr_sidebar_disks(i18n::sidebar_disks().into());
+                ui.set_tr_column_name(i18n::column_name().into());
+                ui.set_tr_column_status(i18n::column_status().into());
+                ui.set_tr_column_done(i18n::column_done().into());
+                ui.set_tr_column_down(i18n::column_down().into());
+                ui.set_tr_column_up(i18n::column_up().into());
+                ui.set_tr_column_actions(i18n::column_actions().into());
+                eprintln!("[i18n] UI translations updated.");
+            }
+        });
+    }
+    // Rehash кнопка — проверка торрентов с hash error (error == 1)
     {
         let tx = cmd_tx.clone();
+        let snap = torrent_snapshot.clone();
+        ui.on_rehash_errors(move || {
+            let snapshot = snap.lock().unwrap();
+            // Только торренты с hash error (error == 1)
+            for t in snapshot.iter() {
+                if t.error == 1 {
+                    eprintln!("[rehash] Rechecking torrent {}: {}", t.id, t.name);
+                    let _ = tx.send(Command::RecheckTorrent(t.id));
+                }
+            }
+        });
+    }
+    // Кнопка Открыть — xdg-open для .torrent файла
+    {
         let ui_weak = ui.as_weak();
-        let delete_after = app_cfg.delete_torrent_after_add;
         ui.on_pick_torrent_file(move || {
-            let tx2 = tx.clone(); let ui2 = ui_weak.clone();
+            let ui2 = ui_weak.clone();
             std::thread::spawn(move || {
-                // Шаг 1: выбрать .torrent файл
+                // Выбрать .torrent файл и открыть через xdg-open
                 let path = match filepicker::pick_torrent_file() {
                     Ok(p) => p,
                     Err(e) => {
@@ -561,11 +657,9 @@ fn main() -> anyhow::Result<()> {
                         return;
                     }
                 };
-                // Шаг 2: выбрать папку назначения (обязательно)
-                match filepicker::pick_directory() {
-                    Ok(dir) => { let _ = tx2.send(Command::AddTorrentFile(path, Some(dir), delete_after)); }
-                    Err(_)  => { /* отмена — не добавляем */ }
-                }
+                // Открыть через xdg-open
+                let _ = std::process::Command::new("xdg-open").arg(&path).spawn();
+                eprintln!("[open] xdg-open {}", path);
             });
         });
     }
@@ -659,6 +753,7 @@ fn main() -> anyhow::Result<()> {
     _tmr_fast.start(slint::TimerMode::Repeated, Duration::from_millis(50), {
         let ui_h = ui_h.clone();
         let do_quit_tmr = do_quit_tmr.clone();
+        let cmd_tx_fast = cmd_tx.clone();
         move || {
             while let Ok(msg) = status_rx.try_recv() {
                 if let Some(ui) = ui_h.upgrade() {
@@ -673,7 +768,7 @@ fn main() -> anyhow::Result<()> {
                 return;
             }
             if let Some(ref tray) = tray {
-                let (toggle, quit) = tray.poll_events();
+                let (toggle, quit, start_all, stop_all) = tray.poll_events();
                 if toggle {
                     if let Some(ui) = ui_h.upgrade() {
                         let win = ui.window();
@@ -689,6 +784,14 @@ fn main() -> anyhow::Result<()> {
                 if quit {
                     if let Some(ui) = ui_h.upgrade() { ui.window().hide().ok(); }
                     do_quit_tmr();
+                }
+                if start_all {
+                    eprintln!("[tray] Resume All");
+                    let _ = cmd_tx_fast.send(Command::StartAll);
+                }
+                if stop_all {
+                    eprintln!("[tray] Pause All");
+                    let _ = cmd_tx_fast.send(Command::StopAll);
                 }
             }
         }
@@ -749,6 +852,9 @@ fn main() -> anyhow::Result<()> {
     // Кэш отфильтрованного по диску списка — поиск применяется поверх мгновенно
     let disk_filtered: std::sync::Arc<std::sync::Mutex<Vec<rpc::RawTorrent>>> =
         std::sync::Arc::new(std::sync::Mutex::new(vec![]));
+    // Активный фильтр статуса — сохраняется для применения в таймере
+    let active_filter: std::sync::Arc<std::sync::Mutex<String>> =
+        std::sync::Arc::new(std::sync::Mutex::new("all".to_string()));
     {
         let df  = disk_filtered.clone();
         let mdl = torrent_model.clone();
@@ -763,11 +869,37 @@ fn main() -> anyhow::Result<()> {
             apply_torrent_update(&mdl, &filtered);
         });
     }
+    // Фильтр по статусу
+    {
+        let df = disk_filtered.clone();
+        let mdl = torrent_model.clone();
+        let ui_h_f = ui_h.clone();
+        let filter_clone = active_filter.clone();
+        ui.on_filter_clicked(move |status: slint::SharedString| {
+            let status = status.to_string();
+            *filter_clone.lock().unwrap() = status.clone();
+            // Обновляем active-filter в UI
+            if let Some(ui) = ui_h_f.upgrade() {
+                ui.set_active_filter(status.clone().into());
+            }
+            let src = df.lock().unwrap();
+            let filtered: Vec<&rpc::RawTorrent> = match status.as_str() {
+                "downloading" => src.iter().filter(|t: &&rpc::RawTorrent| t.status == 1 && !t.is_paused()).collect(),
+                "seeding" => src.iter().filter(|t: &&rpc::RawTorrent| t.status == 4 && !t.is_paused()).collect(),
+                "completed" => src.iter().filter(|t: &&rpc::RawTorrent| t.percent_done >= 1.0).collect(),
+                "stopped" => src.iter().filter(|t: &&rpc::RawTorrent| t.is_paused() && t.status != 1 && t.status != 4).collect(),
+                "active" => src.iter().filter(|t: &&rpc::RawTorrent| !t.is_paused() && (t.status == 1 || t.status == 4)).collect(),
+                "error" => src.iter().filter(|t: &&rpc::RawTorrent| t.status == 3 || t.error != 0).collect(),
+                _ => src.iter().collect(),
+            };
+            apply_torrent_update(&mdl, &filtered);
+        });
+    }
 
     // Кэш: download_dir → /dev/sdX — заполняется в фоне, читается в event loop
     let path_disk_cache: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Option<String>>>>
         = std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new()));
-    _tmr_data.start(slint::TimerMode::Repeated, Duration::from_millis(500), move || {
+    _tmr_data.start(slint::TimerMode::Repeated, Duration::from_millis(1000), move || {
         let mut last_update: Option<Update> = None;
         while let Ok(upd) = update_rx.try_recv() { last_update = Some(upd); }
         if let Some(upd) = last_update {
@@ -839,20 +971,42 @@ fn main() -> anyhow::Result<()> {
                 upd.torrents.clone()
             };
 
-            // Применяем поиск поверх disk_filtered
+            // Применяем фильтр статуса
+            let filter_status = active_filter.lock().unwrap().clone();
+            let after_status: Vec<rpc::RawTorrent> = match filter_status.as_str() {
+                "downloading" => after_disk.iter().filter(|t| t.status == 1 && !t.is_paused()).cloned().collect(),
+                "seeding" => after_disk.iter().filter(|t| t.status == 4 && !t.is_paused()).cloned().collect(),
+                "completed" => after_disk.iter().filter(|t| t.percent_done >= 1.0).cloned().collect(),
+                "stopped" => after_disk.iter().filter(|t| t.is_paused() && t.status != 1 && t.status != 4).cloned().collect(),
+                "active" => after_disk.iter().filter(|t| !t.is_paused() && (t.status == 1 || t.status == 4)).cloned().collect(),
+                "error" => after_disk.iter().filter(|t| t.status == 3 || t.error != 0).cloned().collect(),
+                _ => after_disk,
+            };
+
+            // Применяем поиск поверх status filter
             let query = ui_h.upgrade()
                 .map(|u| u.get_search_text().to_string().to_lowercase())
                 .unwrap_or_default();
             let filtered_refs: Vec<&rpc::RawTorrent> = if query.is_empty() {
-                after_disk.iter().collect()
+                after_status.iter().collect()
             } else {
-                after_disk.iter().filter(|t| t.name.to_lowercase().contains(&query)).collect()
+                after_status.iter().filter(|t| t.name.to_lowercase().contains(&query)).collect()
             };
 
             apply_torrent_update(&mdl, &filtered_refs);
 
-            // Сохраняем disk_filtered для мгновенного поиска (после apply чтобы не конфликтовать с borrow)
-            *disk_filtered.lock().unwrap() = after_disk;
+            // Сохраняем status-filtered список для мгновенного поиска
+            *disk_filtered.lock().unwrap() = after_status.clone();
+
+            // Подсчитываем counts из ВСЕХ торрентов (не filtered)
+            let all = upd.torrents.len() as i32;
+            let downloading = upd.torrents.iter().filter(|t| t.status == 1 && !t.is_paused()).count() as i32;
+            let seeding = upd.torrents.iter().filter(|t| t.status == 4 && !t.is_paused()).count() as i32;
+            let completed = upd.torrents.iter().filter(|t| t.percent_done >= 1.0).count() as i32;
+            let stopped = upd.torrents.iter().filter(|t| t.is_paused() && t.status != 1 && t.status != 4).count() as i32;
+            let active = upd.torrents.iter().filter(|t| !t.is_paused() && (t.status == 1 || t.status == 4)).count() as i32;
+            let error = upd.torrents.iter().filter(|t| t.status == 3 || t.error != 0).count() as i32;
+            
             if let Some(ui) = ui_h.upgrade() {
                 let s = &upd.stats;
                 ui.set_stats(SessionStats {
@@ -863,6 +1017,13 @@ fn main() -> anyhow::Result<()> {
                     ratio:       fmt_ratio(s.ratio),
                     active:      s.active_count as i32,
                 });
+                ui.set_count_all(all);
+                ui.set_count_downloading(downloading);
+                ui.set_count_seeding(seeding);
+                ui.set_count_completed(completed);
+                ui.set_count_stopped(stopped);
+                ui.set_count_active(active);
+                ui.set_count_error(error);
             }
         }
     });

@@ -42,7 +42,7 @@ fn default_true() -> bool { true }
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            language:                  "ru".to_string(),
+            language:                  "en".to_string(),
             suspend_on_hide:           false,
             start_minimized:           false,
             refresh_interval_secs:     2,
