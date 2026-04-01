@@ -1,5 +1,5 @@
 // src/app_config.rs
-// Конфиг приложения: ~/.config/transmission-gui/config.toml
+// Конфиг приложения: ~/.config/transmission-remote-slint/config.toml
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -29,7 +29,7 @@ pub struct AppConfig {
     #[serde(default = "default_true")]
     pub delete_torrent_after_add: bool,
 
-    /// Автозапуск: создаёт/удаляет ~/.config/autostart/transmission-gui.desktop
+    /// Автозапуск: создаёт/удаляет ~/.config/autostart/transmission-remote-slint.desktop
     #[serde(default = "default_false")]
     pub autostart: bool,
 }
@@ -60,7 +60,7 @@ pub fn config_path() -> PathBuf {
             h.push(".config");
             h
         });
-    base.join("transmission-gui").join("config.toml")
+    base.join("transmission-remote-slint").join("config.toml")
 }
 
 fn dirs_home() -> PathBuf {
@@ -103,11 +103,11 @@ pub fn save(cfg: &AppConfig) {
 /// Обновляет autostart .desktop файл
 pub fn sync_autostart(enabled: bool) {
     let autostart_dir = dirs_home().join(".config").join("autostart");
-    let desktop = autostart_dir.join("transmission-gui.desktop");
+    let desktop = autostart_dir.join("transmission-remote-slint.desktop");
     if enabled {
         let _ = std::fs::create_dir_all(&autostart_dir);
         let exe = std::env::current_exe()
-            .unwrap_or_else(|_| PathBuf::from("transmission-gui"));
+            .unwrap_or_else(|_| PathBuf::from("transmission-remote-slint"));
         let content = format!(
             "[Desktop Entry]\nType=Application\nName=Transmission Remote\nExec={}\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true\n",
             exe.display()

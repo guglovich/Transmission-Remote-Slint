@@ -1027,6 +1027,41 @@ export component MainWindow inherits Window {
                                 }
                             }
                         }
+                        // Раздаются
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "seeding" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "seeding"; filter-clicked("seeding"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #3db87a;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-seeding;
+                                color: active-filter == "seeding" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "seeding" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-seeding + "";
+                                    color: active-filter == "seeding" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
                         // Остановлены
                         Rectangle {
                             height: 26px;
@@ -1126,41 +1161,6 @@ export component MainWindow inherits Window {
                                 Text {
                                     text: count-completed + "";
                                     color: active-filter == "completed" ? #90c8f0 : #4e556e;
-                                    font-size: 11px;
-                                    horizontal-alignment: center;
-                                    vertical-alignment: center;
-                                }
-                            }
-                        }
-                        // Раздаются
-                        Rectangle {
-                            height: 26px;
-                            background: active-filter == "seeding" ? #21253a : transparent;
-                            border-radius: 4px;
-                            TouchArea { clicked => { active-filter = "seeding"; filter-clicked("seeding"); } }
-                            Rectangle {
-                                width: 8px; height: 8px;
-                                border-radius: 4px;
-                                background: #3db87a;
-                                x: 8px;
-                                y: (parent.height - self.height) / 2;
-                            }
-                            Text {
-                                text: tr-sidebar-seeding;
-                                color: active-filter == "seeding" ? #e4e7f2 : #8f97b8;
-                                font-size: 12px;
-                                x: 24px;
-                                y: (parent.height - self.height) / 2;
-                            }
-                            Rectangle {
-                                width: 50px; height: 20px;
-                                background: active-filter == "seeding" ? #282d42 : #1a1d27;
-                                border-radius: 3px;
-                                x: parent.width - 58px;
-                                y: (parent.height - self.height) / 2;
-                                Text {
-                                    text: count-seeding + "";
-                                    color: active-filter == "seeding" ? #90c8f0 : #4e556e;
                                     font-size: 11px;
                                     horizontal-alignment: center;
                                     vertical-alignment: center;

@@ -10,7 +10,7 @@ use std::path::PathBuf;
 fn socket_path() -> PathBuf {
     let runtime_dir = std::env::var("XDG_RUNTIME_DIR")
         .unwrap_or_else(|_| format!("/tmp"));
-    PathBuf::from(runtime_dir).join("transmission-gui.sock")
+    PathBuf::from(runtime_dir).join("transmission-remote-slint.sock")
 }
 
 pub enum InstanceRole {
@@ -45,7 +45,7 @@ pub fn acquire(torrent_path: Option<&str>) -> InstanceRole {
             eprintln!("[single_instance] Could not bind socket: {e}, proceeding as primary anyway");
             // Fallback: создаём фиктивный listener через /dev/null пути
             // Просто продолжаем без single-instance защиты
-            let tmp = PathBuf::from("/tmp/transmission-gui-fallback.sock");
+            let tmp = PathBuf::from("/tmp/transmission-remote-slint-fallback.sock");
             let _ = std::fs::remove_file(&tmp);
             UnixListener::bind(&tmp)
                 .map(InstanceRole::Primary)
