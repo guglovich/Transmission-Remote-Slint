@@ -217,12 +217,6 @@ transmission-remote-slint [FILE.torrent] [--gl|--vk|--sw|--wl]
 
 ---
 
-## Русская документация
-
-См. [README.ru.md](README.ru.md)
-
----
-
 ## License
 
 GPL-2.0-or-later. See [LICENSE](LICENSE).
