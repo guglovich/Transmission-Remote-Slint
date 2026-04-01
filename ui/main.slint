@@ -957,6 +957,41 @@ export component MainWindow inherits Window {
                                 }
                             }
                         }
+                        // Активные
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "active" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "active"; filter-clicked("active"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #4a7cf7;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-active;
+                                color: active-filter == "active" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "active" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-active + "";
+                                    color: active-filter == "active" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
                         // Загружаются
                         Rectangle {
                             height: 26px;
@@ -986,76 +1021,6 @@ export component MainWindow inherits Window {
                                 Text {
                                     text: count-downloading + "";
                                     color: active-filter == "downloading" ? #90c8f0 : #4e556e;
-                                    font-size: 11px;
-                                    horizontal-alignment: center;
-                                    vertical-alignment: center;
-                                }
-                            }
-                        }
-                        // Раздаются
-                        Rectangle {
-                            height: 26px;
-                            background: active-filter == "seeding" ? #21253a : transparent;
-                            border-radius: 4px;
-                            TouchArea { clicked => { active-filter = "seeding"; filter-clicked("seeding"); } }
-                            Rectangle {
-                                width: 8px; height: 8px;
-                                border-radius: 4px;
-                                background: #3db87a;
-                                x: 8px;
-                                y: (parent.height - self.height) / 2;
-                            }
-                            Text {
-                                text: tr-sidebar-seeding;
-                                color: active-filter == "seeding" ? #e4e7f2 : #8f97b8;
-                                font-size: 12px;
-                                x: 24px;
-                                y: (parent.height - self.height) / 2;
-                            }
-                            Rectangle {
-                                width: 50px; height: 20px;
-                                background: active-filter == "seeding" ? #282d42 : #1a1d27;
-                                border-radius: 3px;
-                                x: parent.width - 58px;
-                                y: (parent.height - self.height) / 2;
-                                Text {
-                                    text: count-seeding + "";
-                                    color: active-filter == "seeding" ? #90c8f0 : #4e556e;
-                                    font-size: 11px;
-                                    horizontal-alignment: center;
-                                    vertical-alignment: center;
-                                }
-                            }
-                        }
-                        // Завершены
-                        Rectangle {
-                            height: 26px;
-                            background: active-filter == "completed" ? #21253a : transparent;
-                            border-radius: 4px;
-                            TouchArea { clicked => { active-filter = "completed"; filter-clicked("completed"); } }
-                            Rectangle {
-                                width: 8px; height: 8px;
-                                border-radius: 4px;
-                                background: #3db87a;
-                                x: 8px;
-                                y: (parent.height - self.height) / 2;
-                            }
-                            Text {
-                                text: tr-sidebar-completed;
-                                color: active-filter == "completed" ? #e4e7f2 : #8f97b8;
-                                font-size: 12px;
-                                x: 24px;
-                                y: (parent.height - self.height) / 2;
-                            }
-                            Rectangle {
-                                width: 50px; height: 20px;
-                                background: active-filter == "completed" ? #282d42 : #1a1d27;
-                                border-radius: 3px;
-                                x: parent.width - 58px;
-                                y: (parent.height - self.height) / 2;
-                                Text {
-                                    text: count-completed + "";
-                                    color: active-filter == "completed" ? #90c8f0 : #4e556e;
                                     font-size: 11px;
                                     horizontal-alignment: center;
                                     vertical-alignment: center;
@@ -1097,41 +1062,6 @@ export component MainWindow inherits Window {
                                 }
                             }
                         }
-                        // Активные
-                        Rectangle {
-                            height: 26px;
-                            background: active-filter == "active" ? #21253a : transparent;
-                            border-radius: 4px;
-                            TouchArea { clicked => { active-filter = "active"; filter-clicked("active"); } }
-                            Rectangle {
-                                width: 8px; height: 8px;
-                                border-radius: 4px;
-                                background: #4a7cf7;
-                                x: 8px;
-                                y: (parent.height - self.height) / 2;
-                            }
-                            Text {
-                                text: tr-sidebar-active;
-                                color: active-filter == "active" ? #e4e7f2 : #8f97b8;
-                                font-size: 12px;
-                                x: 24px;
-                                y: (parent.height - self.height) / 2;
-                            }
-                            Rectangle {
-                                width: 50px; height: 20px;
-                                background: active-filter == "active" ? #282d42 : #1a1d27;
-                                border-radius: 3px;
-                                x: parent.width - 58px;
-                                y: (parent.height - self.height) / 2;
-                                Text {
-                                    text: count-active + "";
-                                    color: active-filter == "active" ? #90c8f0 : #4e556e;
-                                    font-size: 11px;
-                                    horizontal-alignment: center;
-                                    vertical-alignment: center;
-                                }
-                            }
-                        }
                         // Ошибка
                         Rectangle {
                             height: 26px;
@@ -1161,6 +1091,76 @@ export component MainWindow inherits Window {
                                 Text {
                                     text: count-error + "";
                                     color: active-filter == "error" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        // Завершены
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "completed" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "completed"; filter-clicked("completed"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #3db87a;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-completed;
+                                color: active-filter == "completed" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "completed" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-completed + "";
+                                    color: active-filter == "completed" ? #90c8f0 : #4e556e;
+                                    font-size: 11px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        // Раздаются
+                        Rectangle {
+                            height: 26px;
+                            background: active-filter == "seeding" ? #21253a : transparent;
+                            border-radius: 4px;
+                            TouchArea { clicked => { active-filter = "seeding"; filter-clicked("seeding"); } }
+                            Rectangle {
+                                width: 8px; height: 8px;
+                                border-radius: 4px;
+                                background: #3db87a;
+                                x: 8px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: tr-sidebar-seeding;
+                                color: active-filter == "seeding" ? #e4e7f2 : #8f97b8;
+                                font-size: 12px;
+                                x: 24px;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Rectangle {
+                                width: 50px; height: 20px;
+                                background: active-filter == "seeding" ? #282d42 : #1a1d27;
+                                border-radius: 3px;
+                                x: parent.width - 58px;
+                                y: (parent.height - self.height) / 2;
+                                Text {
+                                    text: count-seeding + "";
+                                    color: active-filter == "seeding" ? #90c8f0 : #4e556e;
                                     font-size: 11px;
                                     horizontal-alignment: center;
                                     vertical-alignment: center;
