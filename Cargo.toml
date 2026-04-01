@@ -1,5 +1,5 @@
 [package]
-name = "transmission-gui"
+name = "transmission-remote-slint"
 version = "0.5.0"
 edition = "2021"
 

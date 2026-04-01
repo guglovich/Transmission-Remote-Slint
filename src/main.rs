@@ -31,7 +31,7 @@ fn apply_render_backend(args: &[String]) {
             "--sw"|"--cpu"=> { set_renderer("software");    return; }
             "--wl"        => { std::env::remove_var("WINIT_UNIX_BACKEND"); return; }
             "--help"|"-h" => {
-                eprintln!("transmission-gui [--gl|--vk|--sw|--wl]");
+                eprintln!("transmission-remote-slint [--gl|--vk|--sw|--wl]");
                 std::process::exit(0);
             }
             _ => {}
@@ -363,7 +363,7 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    // Торрент-файл переданный из проводника: transmission-gui /path/to/file.torrent
+    // Торрент-файл переданный из проводника: transmission-remote-slint /path/to/file.torrent
     let pending_torrent: Option<String> = args[1..].iter()
         .find(|a| !a.starts_with("--") && a.ends_with(".torrent"))
         .cloned();
@@ -377,10 +377,10 @@ fn main() -> anyhow::Result<()> {
         single_instance::InstanceRole::Secondary => return Ok(()),
         single_instance::InstanceRole::Primary(l) => l,
     };
-    // Пишем в ~/transmission-gui.log чтобы видеть крэши при запуске без терминала
+    // Пишем в ~/transmission-remote-slint.log чтобы видеть крэши при запуске без терминала
     {
         let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-        let log_path = format!("{home}/transmission-gui.log");
+        let log_path = format!("{home}/transmission-remote-slint.log");
         if let Ok(file) = std::fs::OpenOptions::new()
             .create(true).append(true).open(&log_path)
         {
@@ -884,11 +884,11 @@ fn main() -> anyhow::Result<()> {
             }
             let src = df.lock().unwrap();
             let filtered: Vec<&rpc::RawTorrent> = match status.as_str() {
-                "downloading" => src.iter().filter(|t: &&rpc::RawTorrent| t.status == 1 && !t.is_paused()).collect(),
-                "seeding" => src.iter().filter(|t: &&rpc::RawTorrent| t.status == 4 && !t.is_paused()).collect(),
+                "downloading" => src.iter().filter(|t: &&rpc::RawTorrent| t.status == 4 && !t.is_paused()).collect(),
+                "seeding" => src.iter().filter(|t: &&rpc::RawTorrent| t.status == 6 && !t.is_paused()).collect(),
                 "completed" => src.iter().filter(|t: &&rpc::RawTorrent| t.percent_done >= 1.0).collect(),
-                "stopped" => src.iter().filter(|t: &&rpc::RawTorrent| t.is_paused() && t.status != 1 && t.status != 4).collect(),
-                "active" => src.iter().filter(|t: &&rpc::RawTorrent| !t.is_paused() && (t.status == 1 || t.status == 4)).collect(),
+                "stopped" => src.iter().filter(|t: &&rpc::RawTorrent| t.is_paused()).collect(),
+                "active" => src.iter().filter(|t: &&rpc::RawTorrent| t.rate_upload > 0 || t.rate_download > 0).collect(),
                 "error" => src.iter().filter(|t: &&rpc::RawTorrent| t.status == 3 || t.error != 0).collect(),
                 _ => src.iter().collect(),
             };
@@ -974,11 +974,11 @@ fn main() -> anyhow::Result<()> {
             // Применяем фильтр статуса
             let filter_status = active_filter.lock().unwrap().clone();
             let after_status: Vec<rpc::RawTorrent> = match filter_status.as_str() {
-                "downloading" => after_disk.iter().filter(|t| t.status == 1 && !t.is_paused()).cloned().collect(),
-                "seeding" => after_disk.iter().filter(|t| t.status == 4 && !t.is_paused()).cloned().collect(),
+                "downloading" => after_disk.iter().filter(|t| t.status == 4 && !t.is_paused()).cloned().collect(),
+                "seeding" => after_disk.iter().filter(|t| t.status == 6 && !t.is_paused()).cloned().collect(),
                 "completed" => after_disk.iter().filter(|t| t.percent_done >= 1.0).cloned().collect(),
-                "stopped" => after_disk.iter().filter(|t| t.is_paused() && t.status != 1 && t.status != 4).cloned().collect(),
-                "active" => after_disk.iter().filter(|t| !t.is_paused() && (t.status == 1 || t.status == 4)).cloned().collect(),
+                "stopped" => after_disk.iter().filter(|t| t.is_paused()).cloned().collect(),
+                "active" => after_disk.iter().filter(|t| t.rate_upload > 0 || t.rate_download > 0).cloned().collect(),
                 "error" => after_disk.iter().filter(|t| t.status == 3 || t.error != 0).cloned().collect(),
                 _ => after_disk,
             };
@@ -1000,11 +1000,11 @@ fn main() -> anyhow::Result<()> {
 
             // Подсчитываем counts из ВСЕХ торрентов (не filtered)
             let all = upd.torrents.len() as i32;
-            let downloading = upd.torrents.iter().filter(|t| t.status == 1 && !t.is_paused()).count() as i32;
-            let seeding = upd.torrents.iter().filter(|t| t.status == 4 && !t.is_paused()).count() as i32;
+            let downloading = upd.torrents.iter().filter(|t| t.status == 4 && !t.is_paused()).count() as i32;
+            let seeding = upd.torrents.iter().filter(|t| t.status == 6 && !t.is_paused()).count() as i32;
             let completed = upd.torrents.iter().filter(|t| t.percent_done >= 1.0).count() as i32;
-            let stopped = upd.torrents.iter().filter(|t| t.is_paused() && t.status != 1 && t.status != 4).count() as i32;
-            let active = upd.torrents.iter().filter(|t| !t.is_paused() && (t.status == 1 || t.status == 4)).count() as i32;
+            let stopped = upd.torrents.iter().filter(|t| t.is_paused()).count() as i32;
+            let active = upd.torrents.iter().filter(|t| t.rate_upload > 0 || t.rate_download > 0).count() as i32;
             let error = upd.torrents.iter().filter(|t| t.status == 3 || t.error != 0).count() as i32;
             
             if let Some(ui) = ui_h.upgrade() {
@@ -1034,6 +1034,9 @@ fn main() -> anyhow::Result<()> {
     } else {
         ui.show()?;
     }
+
+    // Инициализируем фильтр "all" при старте
+    ui.invoke_filter_clicked("all".into());
 
     // Устанавливаем иконку в докбар через _NET_WM_ICON (только X11)
     if std::env::var("DISPLAY").is_ok() {

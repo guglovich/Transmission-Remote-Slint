@@ -21,9 +21,6 @@
 
 ## 📋 Правила разработки (v0.6+)
 
-### 0. Запланировано для v0.6
-- [ ] **Переместить фильтр "Seeding" после "Downloading"** — текущий порядок в v0.5.1: All, Active, Downloading, Stopped, Error, Completed, Seeding. Для v0.6: All, Active, Downloading, Seeding, Stopped, Error, Completed.
-
 ### 1. Обязательные extensions
 
 При любой разработке **всегда использовать**:
