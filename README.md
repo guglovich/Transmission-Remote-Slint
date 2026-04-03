@@ -3,7 +3,7 @@
 A lightweight native desktop GUI for **Transmission daemon** built with **Rust + Slint**.  
 No GTK, no Qt — pure Rust rendering via Skia/OpenGL or Vulkan.
 
-> **Developed with Qwen 3.5 Plus (Alibaba).**
+> **Developed with Qwen 3.6 Plus (Alibaba).**
 
 **Languages:** English | [Русский](README.ru.md)
 

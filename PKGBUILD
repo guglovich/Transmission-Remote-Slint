@@ -1,5 +1,5 @@
 # Maintainer: guglovich <https://github.com/guglovich>
-# Created with assistance from Qwen 3.5 Plus (Alibaba).
+# Created with assistance from Qwen 3.6 Plus (Alibaba).
 
 pkgname=transmission-remote-slint
 pkgver=0.5.0

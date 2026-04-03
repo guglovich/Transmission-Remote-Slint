@@ -3,7 +3,7 @@
 Лёгкий нативный графический клиент для **Transmission daemon**, написанный на **Rust + Slint**.  
 Без GTK, без Qt — рендеринг через Skia/OpenGL или Vulkan.
 
-> **Разработан с помощью Qwen 3.5 Plus (Alibaba).**
+> **Разработан с помощью Qwen 3.6 Plus (Alibaba).**
 
 **Языки:** Русский | [English](README.md)
 
