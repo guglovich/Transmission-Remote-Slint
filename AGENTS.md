@@ -157,7 +157,7 @@ transmission-remote-slint-bin  # prebuilt binary from GitHub Releases
 ```
 
 #### 5.3 PKGBUILD правила
-- Всегда указывать `# Created with assistance from Qwen 3.5 Plus (Alibaba).`
+- Всегда указывать `# Created with assistance from Qwen 3.6 Plus (Alibaba).`
 - sha256sums обновлять при каждом релизе
 - .SRCINFO регенерировать через `makepkg --printsrcinfo`
 
@@ -188,7 +188,7 @@ AUR:
 - paru -S transmission-remote-slint-bin
 
 ---
-**Built with Qwen 3.5 Plus**
+**Built with Qwen 3.6 Plus**
 ```
 
 #### 6.2 Binary upload
@@ -243,7 +243,7 @@ Languages: EN | RU
 
 ## 🤖 AI Assistant Notes
 
-**Developed with Qwen 3.5 Plus (Alibaba).**
+**Developed with Qwen 3.6 Plus (Alibaba).**
 
 При продолжении разработки:
 1. Всегда читать этот файл перед началом работы
