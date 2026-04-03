@@ -2,6 +2,7 @@
 // Запускается в отдельном потоке со своим tokio runtime — не конфликтует со Slint
 
 use std::sync::mpsc;
+use std::sync::OnceLock;
 use zbus::interface;
 
 #[derive(Debug, Clone)]
@@ -10,6 +11,26 @@ pub enum TrayCmd {
     Quit,
     StartAll,
     StopAll,
+}
+
+// Кэшированная иконка — грузится один раз при первом запросе
+static ICON_CACHE: OnceLock<Vec<(i32, i32, Vec<u8>)>> = OnceLock::new();
+
+fn get_cached_icon() -> &'static Vec<(i32, i32, Vec<u8>)> {
+    ICON_CACHE.get_or_init(|| {
+        let icon_png = include_bytes!("../ui/app-icon.png");
+        if let Ok(img) = image::load_from_memory(icon_png) {
+            let small = image::imageops::resize(&img.to_rgba8(), 22, 22, image::imageops::FilterType::Lanczos3);
+            let data: Vec<u8> = small.pixels().flat_map(|p| {
+                let [r, g, b, a] = p.0;
+                let px: u32 = ((a as u32) << 24) | ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
+                px.to_be_bytes()
+            }).collect();
+            vec![(22, 22, data)]
+        } else {
+            vec![]
+        }
+    })
 }
 
 struct StatusNotifierItem {
@@ -30,18 +51,7 @@ impl StatusNotifierItem {
     fn icon_name(&self) -> &str { "transmission" }
     #[zbus(property)]
     fn icon_pixmap(&self) -> Vec<(i32, i32, Vec<u8>)> {
-        // Встроенный PNG → ARGB для SNI протокола
-        static ICON_PNG: &[u8] = include_bytes!("../ui/app-icon.png");
-        let Ok(img) = image::load_from_memory(ICON_PNG) else { return vec![]; };
-        // 22×22 для трея
-        let small = image::imageops::resize(&img.to_rgba8(), 22, 22, image::imageops::FilterType::Lanczos3);
-        let data: Vec<u8> = small.pixels().flat_map(|p| {
-            let [r, g, b, a] = p.0;
-            // SNI ожидает ARGB в network byte order (big-endian)
-            let px: u32 = ((a as u32) << 24) | ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
-            px.to_be_bytes()
-        }).collect();
-        vec![(22, 22, data)]
+        get_cached_icon().clone()
     }
     #[zbus(property)]
     fn overlay_icon_name(&self) -> &str { "" }
@@ -169,8 +179,14 @@ impl AppTray {
                 Err(e) => { eprintln!("[tray] runtime error: {e}"); return; }
             };
             rt.block_on(async move {
-                if let Err(e) = run_tray(tx2).await {
-                    eprintln!("[tray] Error: {e}");
+                // Reconnection loop — не падаем при потере D-Bus
+                loop {
+                    if let Err(e) = run_tray(tx2.clone()).await {
+                        eprintln!("[tray] Error: {e}. Reconnecting in 5s...");
+                        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                    } else {
+                        break;
+                    }
                 }
             });
         });
@@ -193,14 +209,19 @@ impl AppTray {
 }
 
 async fn run_tray(tx: mpsc::SyncSender<TrayCmd>) -> anyhow::Result<()> {
-    let conn = zbus::Connection::session().await?;
+    eprintln!("[tray] Connecting to D-Bus session...");
+    let conn = zbus::ConnectionBuilder::session()?
+        .build()
+        .await?;
     let pid  = std::process::id();
     let name = format!("org.kde.StatusNotifierItem-{pid}-1");
 
+    eprintln!("[tray] Registering StatusNotifierItem ({})...", name);
     conn.object_server().at("/StatusNotifierItem", StatusNotifierItem { tx: tx.clone() }).await?;
     conn.object_server().at("/Menu", DbusMenu { tx }).await?;
     conn.request_name(name.as_str()).await?;
 
+    // Регистрируемся через StatusNotifierWatcher
     match conn.call_method(
         Some("org.kde.StatusNotifierWatcher"),
         "/StatusNotifierWatcher",
@@ -208,9 +229,32 @@ async fn run_tray(tx: mpsc::SyncSender<TrayCmd>) -> anyhow::Result<()> {
         "RegisterStatusNotifierItem",
         &name,
     ).await {
-        Ok(_)  => eprintln!("[tray] StatusNotifierItem registered"),
-        Err(e) => eprintln!("[tray] Register failed: {e}"),
+        Ok(_)  => eprintln!("[tray] Tray registered via StatusNotifierWatcher"),
+        Err(e) => eprintln!("[tray] Register via watcher failed: {e}"),
     }
 
-    loop { tokio::time::sleep(std::time::Duration::from_secs(60)).await; }
+    eprintln!("[tray] Tray is running. Periodically re-registering with StatusNotifierWatcher...");
+
+    // Периодически перерегистрируемся — это нужно когда StatusNotifierWatcher перезапускается
+    let mut watcher_alive = true;
+    loop {
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        
+        // Пробуем перерегистрироваться — это безвредно если уже зарегистрирован
+        let result = conn.call_method(
+            Some("org.kde.StatusNotifierWatcher"),
+            "/StatusNotifierWatcher",
+            Some("org.kde.StatusNotifierWatcher"),
+            "RegisterStatusNotifierItem",
+            &name,
+        ).await;
+        
+        if result.is_ok() && !watcher_alive {
+            eprintln!("[tray] Re-registered via StatusNotifierWatcher (watcher came back!)");
+            watcher_alive = true;
+        } else if result.is_err() && watcher_alive {
+            eprintln!("[tray] StatusNotifierWatcher unavailable");
+            watcher_alive = false;
+        }
+    }
 }
