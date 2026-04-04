@@ -492,6 +492,15 @@ fn main() -> anyhow::Result<()> {
     ui.set_tr_column_up(i18n::column_up().into());
     ui.set_tr_column_actions(i18n::column_actions().into());
 
+    // Переводы диалога удаления
+    ui.set_tr_dlg_remove_title(i18n::dlg_remove_confirm().into());
+    ui.set_tr_dlg_remove_subtitle(i18n::dlg_remove_subtitle().into());
+    ui.set_tr_dlg_delete_title(i18n::dlg_delete_confirm().into());
+    ui.set_tr_dlg_delete_warning(i18n::dlg_delete_warning().into());
+    ui.set_tr_dlg_irreversible(i18n::dlg_irreversible().into());
+    ui.set_tr_dlg_confirm(i18n::dlg_ok().into());
+    ui.set_tr_dlg_cancel(i18n::dlg_cancel().into());
+
     // Определяем диски
     eprintln!("[disks] Detecting physical disks...");
     let physical_disks = disks::detect_physical_disks();

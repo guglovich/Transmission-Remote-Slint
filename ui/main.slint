@@ -77,7 +77,13 @@ component IconBtn inherits Rectangle {
 
 component ConfirmDialog inherits Rectangle {
     in property <string> message;
+    in property <string> torrent-name;
+    in property <bool>   show-warning;
     in property <bool>   visible-dialog;
+    in property <string> tr-cancel;
+    in property <string> tr-confirm;
+    in property <string> tr-delete-warning;
+    in property <string> tr-irreversible;
     callback confirmed();
     callback cancelled();
 
@@ -86,21 +92,47 @@ component ConfirmDialog inherits Rectangle {
     background: #00000099;
 
     Rectangle {
-        width: 440px; height: 170px;
+        width: 480px; height: show-warning ? 240px : 180px;
         background: #1e2430;
         border-radius: 10px;
         border-width: 1px; border-color: #3a4560;
 
         VerticalLayout {
-            padding: 28px; spacing: 20px;
+            padding: 24px; spacing: 16px;
+            
+            // Torrent name
+            if torrent-name != "": Text {
+                text: "🗂 " + torrent-name;
+                color: #70a8d8; font-size: 13px;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+            
+            // Main message
             Text {
                 text: message; color: #dce4f5; font-size: 14px;
                 wrap: word-wrap; horizontal-alignment: center;
             }
+            
+            // Warning for file deletion
+            if show-warning: VerticalLayout {
+                spacing: 6px;
+                Text {
+                    text: tr-delete-warning;
+                    color: #e08080; font-size: 12px;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: tr-irreversible;
+                    color: #a06060; font-size: 11px;
+                    horizontal-alignment: center;
+                }
+            }
+            
             HorizontalLayout {
                 spacing: 14px; alignment: center;
-                Button { text: "Cancel";  clicked => { cancelled(); } }
-                Button { text: "Confirm"; clicked => { confirmed(); } }
+                Button { text: tr-cancel;  clicked => { cancelled(); } }
+                Button { text: tr-confirm; clicked => { confirmed(); } }
             }
         }
     }
@@ -470,7 +502,7 @@ component TorrentRow inherits Rectangle {
     in property <TorrentItem> item;
     in property <bool>        is-even;
     callback toggle-pause(int);
-    callback delete-torrent(int, bool);
+    callback delete-torrent(int, bool, string);
     callback recheck(int);
     callback open-folder(string);
 
@@ -562,7 +594,7 @@ component TorrentRow inherits Rectangle {
                 icon-color: #607080;
                 hover-color: #ff8888;
                 bg-hover: #3a2020;
-                clicked => { delete-torrent(item.id, false); }
+                clicked => { delete-torrent(item.id, false, item.name); }
             }
             IconBtn {
                 icon: "🗑";
@@ -570,7 +602,7 @@ component TorrentRow inherits Rectangle {
                 icon-color: #705060;
                 hover-color: #ff4444;
                 bg-hover: #4a1818;
-                clicked => { delete-torrent(item.id, true); }
+                clicked => { delete-torrent(item.id, true, item.name); }
             }
         }
 
@@ -651,9 +683,19 @@ export component MainWindow inherits Window {
     in-out property <int>    pending-id: -1;
     in-out property <bool>   pending-delete-files: false;
     in-out property <bool>   pending-is-delete: false;
+    in-out property <string> pending-torrent-name: "";
 
     // Close dialog
     in-out property <bool>   close-dialog-visible: false;
+
+    // Переводы диалога удаления
+    in-out property <string> tr-dlg-remove-title: "Remove torrent?";
+    in-out property <string> tr-dlg-remove-subtitle: "(files will be kept)";
+    in-out property <string> tr-dlg-delete-title: "Delete torrent AND files?";
+    in-out property <string> tr-dlg-delete-warning: "All files will be permanently deleted from disk.";
+    in-out property <string> tr-dlg-irreversible: "This action cannot be undone.";
+    in-out property <string> tr-dlg-confirm: "Confirm";
+    in-out property <string> tr-dlg-cancel: "Cancel";
 
     // Add dialog
     in-out property <bool>   add-dialog-visible: false;
@@ -1215,13 +1257,16 @@ export component MainWindow inherits Window {
                 }
                 recheck(id) => { recheck-torrent(id); }
                 open-folder(dir) => { open-folder(dir); }
-                delete-torrent(id, del-files) => {
+                delete-torrent(id, del-files, tname) => {
                     pending-id = id;
                     pending-delete-files = del-files;
                     pending-is-delete = true;
-                    dialog-message = del-files
-                        ? "Delete torrent AND all files on disk?"
-                        : "Remove from list? (files kept)";
+                    pending-torrent-name = tname;
+                    if (del-files) {
+                        dialog-message = tr-dlg-delete-title;
+                    } else {
+                        dialog-message = tr-dlg-remove-title + "\n" + tr-dlg-remove-subtitle;
+                    }
                     dialog-visible = true;
                 }
             }
@@ -1261,7 +1306,13 @@ export component MainWindow inherits Window {
     ConfirmDialog {
         width: 100%; height: 100%;
         message: dialog-message;
+        torrent-name: pending-torrent-name;
+        show-warning: pending-is-delete && pending-delete-files;
         visible-dialog: dialog-visible;
+        tr-cancel: tr-dlg-cancel;
+        tr-confirm: tr-dlg-confirm;
+        tr-delete-warning: tr-dlg-delete-warning;
+        tr-irreversible: tr-dlg-irreversible;
         confirmed => {
             dialog-visible = false;
             if (pending-is-delete)     { remove-torrent(pending-id, pending-delete-files); }
