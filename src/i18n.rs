@@ -112,3 +112,11 @@ pub fn err_tracker_err()    -> &'static str { tr!("Tracker error", "Tracker Fehl
 pub fn err_missing()        -> &'static str { tr!("No data", "Keine Daten", "Нет данных", "无数据", "Sin datos") }
 pub fn err_generic()        -> &'static str { tr!("Error", "Fehler", "Ошибка", "错误", "Error") }
 pub fn err_hash_fail()      -> &'static str { tr!("Hash error", "Hash Fehler", "Hash не совпадает", "Hash 错误", "Error hash") }
+
+// ── Диалог удаления ──────────────────────────────────────────────────────────
+
+pub fn dlg_remove_confirm() -> &'static str { tr!("Remove torrent?", "Torrent entfernen?", "Удалить торрент?", "移除种子?", "¿Eliminar torrent?") }
+pub fn dlg_remove_subtitle()-> &'static str { tr!("(files will be kept on disk)", "(Dateien bleiben erhalten)", "(файлы останутся на диске)", "(文件将保留在磁盘上)", "(los archivos se mantendrán en el disco)") }
+pub fn dlg_delete_confirm() -> &'static str { tr!("Delete torrent AND files?", "Torrent UND Dateien löschen?", "Удалить торрент и файлы?", "删除种子和文件?", "¿Eliminar torrent y archivos?") }
+pub fn dlg_delete_warning() -> &'static str { tr!("All files will be permanently deleted from disk.", "Alle Dateien werden endgültig gelöscht.", "Все файлы будут безвозвратно удалены с диска.", "所有文件将从磁盘中永久删除。", "Todos los archivos serán eliminados permanentemente del disco.") }
+pub fn dlg_irreversible()   -> &'static str { tr!("This action cannot be undone.", "Diese Aktion kann nicht rückgängig gemacht werden.", "Это действие нельзя отменить.", "此操作无法撤销。", "Esta acción no se puede deshacer.") }
