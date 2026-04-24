@@ -66,8 +66,8 @@ impl RawTorrent {
 pub struct TransmissionClient {
     http:           Client,
     url:            String,
-    user:           Option<String>,
-    password:       Option<String>,
+    pub user:       Option<String>,
+    pub password:   Option<String>,
     session_id:     Arc<Mutex<String>>,
     use_snake_case: Arc<std::sync::atomic::AtomicBool>,
 }
@@ -126,6 +126,7 @@ impl TransmissionClient {
 
     async fn call(&self, method: &str, args: Value) -> Result<Value> {
         let body = serde_json::to_string(&RpcRequest { method, arguments: args })?;
+        #[cfg(debug_assertions)]
         eprintln!("[rpc_call] method={method:?} body={body}");
 
         for attempt in 0..3u8 {
@@ -269,6 +270,11 @@ impl TransmissionClient {
     pub async fn recheck_torrent(&self, id: i64) -> Result<()> {
         self.call(&self.method_name("torrent-verify"), json!({ "ids": [id] })).await.map(|_| ())
     }
+    pub async fn set_location(&self, id: i64, location: &str, do_move: bool) -> Result<()> {
+        self.call(&self.method_name("torrent-set-location"),
+            json!({ "ids": [id], "location": location, "move": do_move }),
+        ).await.map(|_| ())
+    }
 }
 
 // ── Session stats ─────────────────────────────────────────────────────────────
@@ -281,6 +287,8 @@ pub struct SessionStats {
     pub uploaded:     i64,
     pub ratio:        f64,
     pub active_count: i64,
+    pub dht_nodes:    i64,
+    pub peer_count:   i64,
 }
 
 impl TransmissionClient {
@@ -296,6 +304,8 @@ impl TransmissionClient {
             uploaded:     ul,
             ratio:        if dl > 0 { ul as f64 / dl as f64 } else { 0.0 },
             active_count: val["activeTorrentCount"].as_i64().unwrap_or(0),
+            dht_nodes:    val["dhtNodeCount"].as_i64().unwrap_or(0),
+            peer_count:   val["peerCount"].as_i64().unwrap_or(0),
         })
     }
 }

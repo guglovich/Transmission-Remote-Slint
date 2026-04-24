@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 fn socket_path() -> PathBuf {
     let runtime_dir = std::env::var("XDG_RUNTIME_DIR")
-        .unwrap_or_else(|_| format!("/tmp"));
+        .unwrap_or_else(|_| "/tmp".to_string());
     PathBuf::from(runtime_dir).join("transmission-remote-slint.sock")
 }
 

@@ -94,10 +94,12 @@ enum Command {
     StopDisk(Vec<i64>),
     StartDisk(Vec<i64>),
     RecheckTorrent(i64),
+    SetLocation(i64, String, bool), // id, new_location, do_move
     CreateTorrent(String, Vec<String>),  // path, trackers
     RemoveTorrent(i64, bool),
     AddTorrentUrl(String, Option<String>),
     AddTorrentFile(String, Option<String>, bool), // path, download_dir, delete_after
+    SwitchRpc(String), // новый полный URL
 }
 
 struct Update {
@@ -108,7 +110,7 @@ struct Update {
 // ── Async backend ─────────────────────────────────────────────────────────────
 
 async fn backend_task(
-    client: TransmissionClient,
+    mut client: TransmissionClient,
     mut cmd_rx: mpsc::UnboundedReceiver<Command>,
     update_tx: std::sync::mpsc::SyncSender<Update>,
     status_tx: std::sync::mpsc::SyncSender<String>,
@@ -121,7 +123,7 @@ async fn backend_task(
     client.detect_rpc_version().await;
 
     // Кэш всех торрентов — обновляем только изменившиеся
-    let mut cache: std::collections::HashMap<i64, rpc::RawTorrent> = std::collections::HashMap::new();
+    let mut cache: std::collections::HashMap<i64, rpc::RawTorrent> = std::collections::HashMap::with_capacity(256);
     let mut initialized = false;
 
     loop {
@@ -185,6 +187,7 @@ async fn backend_task(
                             )),
                         }
                     },
+                    Command::SetLocation(id, loc, mv) => client.set_location(id, &loc, mv).await,
                     Command::RemoveTorrent(id, d) => client.remove_torrent(id, d).await,
                     Command::AddTorrentUrl(u, dir)          => client.add_torrent_url(&u, dir.as_deref()).await,
                     Command::AddTorrentFile(p, dir, del) => {
@@ -197,6 +200,17 @@ async fn backend_task(
                             }
                         }
                         res
+                    },
+                    Command::SwitchRpc(url) => {
+                        eprintln!("[rpc] Switching to {url}");
+                        client = TransmissionClient::with_auth(url, client.user.clone(), client.password.clone());
+                        cache.clear();
+                        initialized = false;
+                        fail_count = 0;
+                        let _ = status_tx.try_send("Connecting…".into());
+                        client.detect_rpc_version().await;
+                        interval.reset();
+                        continue;
                     },
                 };
                 if let Err(e) = res {
@@ -311,7 +325,7 @@ fn torrent_sort_key(t: &rpc::RawTorrent) -> (u8, i64, String) {
 
 fn apply_torrent_update(model: &Rc<VecModel<TorrentItem>>, torrents: &[&rpc::RawTorrent]) {
     let mut sorted: Vec<&rpc::RawTorrent> = torrents.to_vec();
-    sorted.sort_by(|a, b| torrent_sort_key(a).cmp(&torrent_sort_key(b)));
+    sorted.sort_by_key(|t| torrent_sort_key(t));
 
     let old_len = model.row_count();
     let new_len = sorted.len();
@@ -468,6 +482,26 @@ fn main() -> anyhow::Result<()> {
     ui.set_status_bar_text(probe_result.status_msg.as_str().into());
     ui.set_connected(probe_result.ok);
     ui.set_selected_language(app_cfg.language.as_str().into());
+
+    // RPC URL для отображения: "127.0.0.1:9091" → "localhost" если локальный
+    fn rpc_display(url: &str) -> String {
+        let host_port = url.trim_start_matches("http://").trim_start_matches("https://")
+            .split('/').next().unwrap_or(url);
+        if host_port.starts_with("127.") || host_port.starts_with("localhost") {
+            "localhost".to_string()
+        } else {
+            host_port.to_string()
+        }
+    }
+    ui.set_rpc_url(rpc_display(&active_cfg.url).into());
+
+    // Список кандидатов для переключения
+    let candidates = config::detect_rpc_candidates();
+    let candidate_urls: Vec<slint::SharedString> = candidates.iter()
+        .map(|c| rpc_display(&c.url).into())
+        .collect::<std::collections::HashSet<_>>()  // дедупликация
+        .into_iter().collect();
+    ui.set_rpc_candidates(std::rc::Rc::new(slint::VecModel::from(candidate_urls)).into());
     
     // Обновляем UI переводы
     ui.set_tr_toolbar_open(i18n::toolbar_open().into());
@@ -490,7 +524,15 @@ fn main() -> anyhow::Result<()> {
     ui.set_tr_column_done(i18n::column_done().into());
     ui.set_tr_column_down(i18n::column_down().into());
     ui.set_tr_column_up(i18n::column_up().into());
-    ui.set_tr_column_actions(i18n::column_actions().into());
+    ui.set_tr_menu_start(i18n::menu_start().into());
+    ui.set_tr_menu_pause(i18n::menu_pause().into());
+    ui.set_tr_menu_recheck(i18n::menu_recheck().into());
+    ui.set_tr_menu_open_folder(i18n::menu_open_folder().into());
+    ui.set_tr_menu_set_location(i18n::menu_set_location().into());
+    ui.set_tr_menu_remove(i18n::menu_remove().into());
+    ui.set_tr_menu_delete(i18n::menu_delete().into());
+    ui.set_tr_statusbar_dht(i18n::statusbar_dht().into());
+    ui.set_tr_statusbar_conn(i18n::statusbar_conn().into());
 
     // Переводы диалога удаления
     ui.set_tr_dlg_remove_title(i18n::dlg_remove_confirm().into());
@@ -536,6 +578,104 @@ fn main() -> anyhow::Result<()> {
     { let tx = cmd_tx.clone(); ui.on_stop_torrent(move |id| { let _ = tx.send(Command::StopTorrent(id as i64)); }); }
     { let tx = cmd_tx.clone(); ui.on_remove_torrent(move |id, del| { let _ = tx.send(Command::RemoveTorrent(id as i64, del)); }); }
     { let tx = cmd_tx.clone(); ui.on_recheck_torrent(move |id| { let _ = tx.send(Command::RecheckTorrent(id as i64)); }); }
+
+    // Кэш последней папки для "Указать расположение"
+    let last_location: std::sync::Arc<std::sync::Mutex<String>> =
+        std::sync::Arc::new(std::sync::Mutex::new(String::new()));
+
+    // request-set-location: XDG диалог выбора папки
+    {
+        let tx = cmd_tx.clone();
+        let loc = last_location.clone();
+        ui.on_request_set_location(move |id: i32, _name: slint::SharedString, current_dir: slint::SharedString| {
+            let id = id as i64;
+            let default_dir = current_dir.to_string();
+            // Пробуем XDG диалог
+            if let Ok(new_dir) = filepicker::pick_directory(&default_dir) {
+                // Сохраняем для следующего раза
+                *loc.lock().unwrap() = new_dir.clone();
+                // Сразу перемещаем (do_move = true)
+                eprintln!("[set-location] id={} → {} (move)", id, new_dir);
+                let _ = tx.send(Command::SetLocation(id, new_dir, true));
+            }
+        });
+    }
+
+    // pick-context-menu-set-location: из контекстного меню → открыть диалог
+    {
+        let ui_weak = ui.as_weak();
+        let loc = last_location.clone();
+        ui.on_pick_context_menu_set_location(move |id: i32, name: slint::SharedString, current_dir: slint::SharedString| {
+            if let Some(ui) = ui_weak.upgrade() {
+                let loc_guard = loc.lock().unwrap();
+                let path = if loc_guard.is_empty() {
+                    current_dir.to_string()
+                } else {
+                    loc_guard.clone()
+                };
+                drop(loc_guard);
+
+                ui.set_set_location_torrent_id(id);
+                ui.set_set_location_torrent_name(name);
+                ui.set_set_location_path(path.into());
+                ui.set_set_location_do_move(true);
+                ui.set_set_location_dialog_visible(true);
+                ui.set_context_menu_visible(false);
+            }
+        });
+    }
+
+    // get-last-location: вернуть последнюю использованную папку
+    {
+        let loc = last_location.clone();
+        ui.on_get_last_location(move || -> slint::SharedString {
+            let loc_guard = loc.lock().unwrap();
+            if loc_guard.is_empty() {
+                "".into()
+            } else {
+                loc_guard.clone().into()
+            }
+        });
+    }
+
+    // Закрытие контекстного меню по клику вне
+    {
+        let ui_weak = ui.as_weak();
+        ui.on_click_outside(move || {
+            if let Some(ui) = ui_weak.upgrade() {
+                ui.set_context_menu_visible(false);
+            }
+        });
+    }
+
+    // set-location-xdg-dialog: XDG диалог → сразу действие (переместить или обновить путь)
+    {
+        let tx = cmd_tx.clone();
+        let loc = last_location.clone();
+        ui.on_set_location_xdg_dialog(move |_id: i32, _name: slint::SharedString, current_dir: slint::SharedString, do_move: bool| {
+            let default_dir = current_dir.to_string();
+            if let Ok(new_dir) = filepicker::pick_directory(&default_dir) {
+                *loc.lock().unwrap() = new_dir.clone();
+                eprintln!("[set-location-xdg] picked: {} (move={})", new_dir, do_move);
+                let _ = tx.send(Command::SetLocation(_id as i64, new_dir, do_move));
+            }
+        });
+    }
+
+    // set-location-cmd: прямой вызов без диалога
+    {
+        let tx = cmd_tx.clone();
+        let loc = last_location.clone();
+        ui.on_set_location_cmd(move |id: i32, path: slint::SharedString, do_move: bool| {
+            let id = id as i64;
+            let path = path.to_string();
+            if !do_move {
+                *loc.lock().unwrap() = path.clone();
+            }
+            eprintln!("[set-location] id={} → {} (move={})", id, path, do_move);
+            let _ = tx.send(Command::SetLocation(id, path, do_move));
+        });
+    }
     {
         let tx = cmd_tx.clone();
         ui.on_create_torrent(move |path, trackers| {
@@ -555,7 +695,7 @@ fn main() -> anyhow::Result<()> {
         ui.on_pick_create_path(move || {
             let ui2 = ui_weak.clone();
             std::thread::spawn(move || {
-                match filepicker::pick_directory() {
+                match filepicker::pick_directory("") {
                     Ok(path) => {
                         let _ = slint::invoke_from_event_loop(move || {
                             if let Some(ui) = ui2.upgrade() {
@@ -604,7 +744,7 @@ fn main() -> anyhow::Result<()> {
             i18n::set_language(&lang);
             // Сохраняем в конфиг (применится после перезапуска)
             app_cfg_mut.language = lang.clone();
-            let _ = app_config::save(&app_cfg_mut);
+            app_config::save(&app_cfg_mut);
             eprintln!("[i18n] Config saved. Locale set to: {}", i18n::get_language());
             
             // Обновляем UI переводы
@@ -629,7 +769,15 @@ fn main() -> anyhow::Result<()> {
                 ui.set_tr_column_done(i18n::column_done().into());
                 ui.set_tr_column_down(i18n::column_down().into());
                 ui.set_tr_column_up(i18n::column_up().into());
-                ui.set_tr_column_actions(i18n::column_actions().into());
+                ui.set_tr_menu_start(i18n::menu_start().into());
+                ui.set_tr_menu_pause(i18n::menu_pause().into());
+                ui.set_tr_menu_recheck(i18n::menu_recheck().into());
+                ui.set_tr_menu_open_folder(i18n::menu_open_folder().into());
+                ui.set_tr_menu_set_location(i18n::menu_set_location().into());
+                ui.set_tr_menu_remove(i18n::menu_remove().into());
+                ui.set_tr_menu_delete(i18n::menu_delete().into());
+                ui.set_tr_statusbar_dht(i18n::statusbar_dht().into());
+                ui.set_tr_statusbar_conn(i18n::statusbar_conn().into());
                 eprintln!("[i18n] UI translations updated.");
             }
         });
@@ -864,6 +1012,8 @@ fn main() -> anyhow::Result<()> {
     // Активный фильтр статуса — сохраняется для применения в таймере
     let active_filter: std::sync::Arc<std::sync::Mutex<String>> =
         std::sync::Arc::new(std::sync::Mutex::new("all".to_string()));
+    let sort_col: std::sync::Arc<std::sync::Mutex<(String, bool)>> =
+        std::sync::Arc::new(std::sync::Mutex::new((String::new(), false)));
     {
         let df  = disk_filtered.clone();
         let mdl = torrent_model.clone();
@@ -905,9 +1055,43 @@ fn main() -> anyhow::Result<()> {
         });
     }
 
+    // Сортировка по колонке
+    {
+        let sc = sort_col.clone();
+        ui.on_sort_changed(move |col: slint::SharedString, asc: bool| {
+            *sc.lock().unwrap() = (col.to_string(), asc);
+        });
+    }
+
+    // Переключение RPC
+    {
+        let ui_weak = ui.as_weak();
+        let candidates_full = config::detect_rpc_candidates();
+        let tx = cmd_tx.clone();
+        ui.on_switch_rpc(move |display: slint::SharedString| {
+            let display_str = display.to_string();
+            // Находим полный URL по display-имени
+            let full_url = candidates_full.iter().find(|c| {
+                let d = if c.url.contains("127.") || c.url.contains("localhost") {
+                    "localhost".to_string()
+                } else {
+                    c.url.trim_start_matches("http://").split('/').next().unwrap_or("").to_string()
+                };
+                d == display_str
+            }).map(|c| c.url.clone()).unwrap_or(display_str.clone());
+
+            eprintln!("[switch-rpc] {} → {}", display_str, full_url);
+            let _ = tx.send(Command::SwitchRpc(full_url));
+            if let Some(ui) = ui_weak.upgrade() {
+                ui.set_rpc_url(display);
+            }
+        });
+    }
+
     // Кэш: download_dir → /dev/sdX — заполняется в фоне, читается в event loop
     let path_disk_cache: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Option<String>>>>
         = std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new()));
+    let sort_col_tmr = sort_col.clone();
     _tmr_data.start(slint::TimerMode::Repeated, Duration::from_millis(1000), move || {
         let mut last_update: Option<Update> = None;
         while let Ok(upd) = update_rx.try_recv() { last_update = Some(upd); }
@@ -996,11 +1180,36 @@ fn main() -> anyhow::Result<()> {
             let query = ui_h.upgrade()
                 .map(|u| u.get_search_text().to_string().to_lowercase())
                 .unwrap_or_default();
-            let filtered_refs: Vec<&rpc::RawTorrent> = if query.is_empty() {
+            let mut filtered_refs: Vec<&rpc::RawTorrent> = if query.is_empty() {
                 after_status.iter().collect()
             } else {
                 after_status.iter().filter(|t| t.name.to_lowercase().contains(&query)).collect()
             };
+
+            // Применяем сортировку по колонке
+            let (sc, sa) = sort_col_tmr.lock().unwrap().clone();
+            match sc.as_str() {
+                "down" => {
+                    // нулевые в конец, активные сортируются по скорости
+                    if sa {
+                        filtered_refs.sort_by_key(|t| if t.rate_download > 0 { t.rate_download } else { i64::MAX });
+                    } else {
+                        filtered_refs.sort_by_key(|t| if t.rate_download > 0 { -t.rate_download } else { i64::MAX });
+                    }
+                }
+                "up" => {
+                    if sa {
+                        filtered_refs.sort_by_key(|t| if t.rate_upload > 0 { t.rate_upload } else { i64::MAX });
+                    } else {
+                        filtered_refs.sort_by_key(|t| if t.rate_upload > 0 { -t.rate_upload } else { i64::MAX });
+                    }
+                }
+                "done" => {
+                    let factor = if sa { 1i64 } else { -1i64 };
+                    filtered_refs.sort_by_key(|t| factor * (t.percent_done * 1_000_000.0) as i64);
+                }
+                _ => {}
+            }
 
             apply_torrent_update(&mdl, &filtered_refs);
 
@@ -1025,6 +1234,8 @@ fn main() -> anyhow::Result<()> {
                     uploaded:    fmt_bytes(s.uploaded),
                     ratio:       fmt_ratio(s.ratio),
                     active:      s.active_count as i32,
+                    dht:         s.dht_nodes as i32,
+                    peers:       s.peer_count as i32,
                 });
                 ui.set_count_all(all);
                 ui.set_count_downloading(downloading);
@@ -1058,7 +1269,7 @@ fn main() -> anyhow::Result<()> {
         let delete_after = app_cfg.delete_torrent_after_add;
         std::thread::spawn(move || {
             std::thread::sleep(Duration::from_millis(500));
-            match filepicker::pick_directory() {
+            match filepicker::pick_directory("") {
                 Ok(dir) => {
                     eprintln!("[open] Adding {torrent_path} → {dir}");
                     let _ = tx.send(Command::AddTorrentFile(torrent_path, Some(dir), delete_after));
@@ -1085,7 +1296,7 @@ fn main() -> anyhow::Result<()> {
             // Выбор папки и добавление
             std::thread::spawn(move || {
                 std::thread::sleep(Duration::from_millis(300));
-                match filepicker::pick_directory() {
+                match filepicker::pick_directory("") {
                     Ok(dir) => {
                         eprintln!("[open] Adding {torrent_path} → {dir}");
                         let _ = tx2.send(Command::AddTorrentFile(torrent_path, Some(dir), delete_after2));
