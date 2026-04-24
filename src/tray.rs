@@ -180,13 +180,9 @@ impl AppTray {
             };
             rt.block_on(async move {
                 // Reconnection loop — не падаем при потере D-Bus
-                loop {
-                    if let Err(e) = run_tray(tx2.clone()).await {
-                        eprintln!("[tray] Error: {e}. Reconnecting in 5s...");
-                        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-                    } else {
-                        break;
-                    }
+                while let Err(e) = run_tray(tx2.clone()).await {
+                    eprintln!("[tray] Error: {e}. Reconnecting in 5s...");
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                 }
             });
         });

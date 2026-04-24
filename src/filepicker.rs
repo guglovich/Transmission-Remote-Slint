@@ -56,13 +56,16 @@ pub fn pick_torrent_file() -> Result<String> {
 }
 
 /// Открывает диалог выбора папки для создания торрента.
-pub fn pick_directory() -> Result<String> {
+pub fn pick_directory(default_dir: &str) -> Result<String> {
+    let start_dir = if default_dir.is_empty() { "." } else { default_dir };
+
     if cmd_exists("zenity") {
         let out = std::process::Command::new("zenity")
             .args([
                 "--file-selection",
                 "--directory",
-                "--title=Select folder to create torrent from",
+                &format!("--filename={}", start_dir),
+                "--title=Select download location",
             ])
             .output()?;
         if out.status.success() {
@@ -73,7 +76,7 @@ pub fn pick_directory() -> Result<String> {
 
     if cmd_exists("kdialog") {
         let out = std::process::Command::new("kdialog")
-            .args(["--getexistingdirectory", ".", "--title", "Select folder"])
+            .args(["--getexistingdirectory", start_dir, "--title", "Select download location"])
             .output()?;
         if out.status.success() {
             return parse_output(&out.stdout);

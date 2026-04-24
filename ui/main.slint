@@ -23,6 +23,8 @@ export struct SessionStats {
     uploaded: string,
     ratio: string,
     active: int,
+    dht: int,
+    peers: int,
 }
 
 export struct DiskItem {
@@ -30,47 +32,6 @@ export struct DiskItem {
     kind: string,       // "disk", "raid", "lvm", "btrfs"
     mountpoints: string, // через ", "
     torrent-count: int,
-}
-
-// ── IconBtn с тултипом ────────────────────────────────────────────────────────
-
-component IconBtn inherits Rectangle {
-    in property <string> icon;
-    in property <string> tip;
-    in property <color>  icon-color: #a0b0cc;
-    in property <color>  hover-color: #ffffff;
-    in property <color>  bg-hover: #2a3a55;
-    callback clicked();
-
-    width: 26px; height: 26px;
-    border-radius: 5px;
-    background: ta.has-hover ? bg-hover : transparent;
-    animate background { duration: 60ms; }
-
-    ta := TouchArea { clicked => { root.clicked(); } }
-
-    Text {
-        text: icon;
-        color: ta.has-hover ? hover-color : icon-color;
-        font-size: 14px;
-        horizontal-alignment: center;
-        vertical-alignment: center;
-    }
-
-    if ta.has-hover : Rectangle {
-        y: -24px;
-        x: (parent.width - self.width) / 2;
-        width: tip-t.preferred-width + 12px;
-        height: 18px;
-        background: #0d1520;
-        border-radius: 4px;
-        border-width: 1px; border-color: #3a4a60;
-        z: 99;
-        tip-t := Text {
-            x: 6px; text: tip; color: #c0d0e8;
-            font-size: 10px; vertical-alignment: center;
-        }
-    }
 }
 
 // ── Confirm dialog ────────────────────────────────────────────────────────────
@@ -308,6 +269,121 @@ component CreateTorrentDialog inherits Rectangle {
 
 // ── Magnet dialog ─────────────────────────────────────────────────────────────
 
+// ── Set Location Dialog ───────────────────────────────────────────────────────
+
+component SetLocationDialog inherits Rectangle {
+    in property <bool>   visible-dialog;
+    in property <string> torrent-name;
+    in-out property <string> path: "";
+    in-out property <bool>   do-move: true;
+    callback pick-folder();          // открыть XDG выбор папки
+    callback confirmed(string, bool); // path, do-move
+    callback cancelled();
+
+    visible: visible-dialog;
+    z: 200;
+    background: #00000099;
+
+    Rectangle {
+        width: 520px; height: 230px;
+        x: (parent.width  - self.width)  / 2;
+        y: (parent.height - self.height) / 2;
+        background: #1e2430;
+        border-radius: 12px;
+        border-width: 1px; border-color: #3a4560;
+        drop-shadow-blur: 24px;
+        drop-shadow-color: #00000088;
+
+        VerticalLayout {
+            padding: 22px; spacing: 16px;
+
+            // ── Header ──────────────────────────────────────────────────────
+            VerticalLayout {
+                spacing: 4px;
+                Text {
+                    text: "📍 Указать расположение";
+                    color: #dce4f5; font-size: 15px; font-weight: 700;
+                    horizontal-alignment: center;
+                }
+                if torrent-name != "": Text {
+                    text: torrent-name;
+                    color: #6a8ab8; font-size: 12px;
+                    horizontal-alignment: center;
+                    overflow: elide;
+                }
+            }
+
+            // ── Path input row ───────────────────────────────────────────────
+            HorizontalLayout {
+                spacing: 8px;
+                LineEdit {
+                    horizontal-stretch: 1;
+                    placeholder-text: "/home/user/Downloads";
+                    text <=> path;
+                }
+                Rectangle {
+                    width: 36px; height: 36px;
+                    background: folder-btn.has-hover ? #2e4a70 : #253450;
+                    border-radius: 7px;
+                    border-width: 1px; border-color: #3a5070;
+                    Text {
+                        text: "📁";
+                        font-size: 16px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                    folder-btn := TouchArea {
+                        clicked => { pick-folder(); }
+                    }
+                }
+            }
+
+            // ── Toggle: переместить файлы ────────────────────────────────────
+            HorizontalLayout {
+                spacing: 10px; alignment: start;
+                // Toggle track
+                Rectangle {
+                    width: 40px; height: 22px;
+                    border-radius: 11px;
+                    background: do-move ? #4a7cf7 : #2a3448;
+                    animate background { duration: 150ms; }
+                    // Thumb
+                    Rectangle {
+                        width: 16px; height: 16px;
+                        border-radius: 8px;
+                        background: #ffffff;
+                        x: do-move ? 21px : 3px;
+                        y: 3px;
+                        animate x { duration: 150ms; }
+                    }
+                    TouchArea { clicked => { do-move = !do-move; } }
+                }
+                Text {
+                    text: do-move ? "Переместить файлы" : "Только обновить путь";
+                    color: #c0d0e8; font-size: 13px;
+                    vertical-alignment: center;
+                }
+            }
+
+            // ── Buttons ──────────────────────────────────────────────────────
+            HorizontalLayout {
+                spacing: 10px; alignment: center;
+                Button {
+                    text: "Отмена";
+                    clicked => { cancelled(); }
+                }
+                Button {
+                    text: do-move ? "Переместить" : "Применить";
+                    primary: true;
+                    clicked => {
+                        if (path != "") { confirmed(path, do-move); }
+                    }
+                }
+            }
+        }
+    }
+}
+
 component MagnetDialog inherits Rectangle {
     in property <bool> visible-dialog;
     in-out property <string> magnet-uri: "";
@@ -372,126 +448,87 @@ component SettingsDialog inherits Rectangle {
     background: #00000099;
 
     Rectangle {
-        width: 420px; height: 340px;
-        x: (parent.width - self.width) / 2;
+        width: 380px; height: 320px;
+        x: (parent.width  - self.width)  / 2;
         y: (parent.height - self.height) / 2;
         background: #1e2430;
-        border-radius: 10px;
+        border-radius: 12px;
         border-width: 1px; border-color: #3a4560;
+        drop-shadow-blur: 24px;
+        drop-shadow-color: #00000088;
 
         VerticalLayout {
-            padding: 20px; spacing: 12px;
+            padding: 22px; spacing: 14px;
 
-            Text {
-                text: "Language / Sprache / 语言 / Idioma";
-                color: #dce4f5; font-size: 15px; font-weight: 600;
-                horizontal-alignment: center;
+            // ── Header ──────────────────────────────────────────────────────
+            VerticalLayout {
+                spacing: 5px;
+                Text {
+                    text: "🌐 Язык интерфейса";
+                    color: #dce4f5; font-size: 15px; font-weight: 700;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: "⚠ Требуется перезапуск";
+                    color: #c08030; font-size: 11px;
+                    horizontal-alignment: center;
+                }
             }
 
-            // Уведомление о перезапуске
+            // ── Language list ────────────────────────────────────────────────
+            for lang-item in [
+                {code: "en", label: "🇬🇧  English"},
+                {code: "de", label: "🇩🇪  Deutsch"},
+                {code: "ru", label: "🇷🇺  Русский"},
+                {code: "zh", label: "🇨🇳  中文"},
+                {code: "es", label: "🇪🇸  Español"},
+            ]: Rectangle {
+                height: 34px;
+                border-radius: 7px;
+                border-width: 1px;
+                background: selected-language == lang-item.code ? #1e3a5a
+                          : (lang-ta.has-hover ? #232d40 : #181f2e);
+                border-color: selected-language == lang-item.code ? #4a8aba : transparent;
+                animate background { duration: 120ms; }
+
+                HorizontalLayout {
+                    padding-left: 14px; padding-right: 14px;
+                    spacing: 0px;
+                    Text {
+                        text: lang-item.label;
+                        color: selected-language == lang-item.code ? #a8d4f8 : #8090b0;
+                        font-size: 13px;
+                        vertical-alignment: center;
+                        animate color { duration: 120ms; }
+                    }
+                    Rectangle { horizontal-stretch: 1; }
+                    if selected-language == lang-item.code: Text {
+                        text: "✓";
+                        color: #4a8aba; font-size: 13px;
+                        vertical-alignment: center;
+                    }
+                }
+                lang-ta := TouchArea {
+                    clicked => { selected-language = lang-item.code; language-changed(lang-item.code); }
+                }
+            }
+
+            // ── Close button ─────────────────────────────────────────────────
             Rectangle {
-                width: 380px; height: 40px;
-                background: #2a3040;
-                border-radius: 5px;
+                height: 34px;
+                border-radius: 7px;
+                border-width: 1px;
+                background: close-ta.has-hover ? #2a3a50 : #1e2a3a;
+                border-color: #3a4a60;
+                animate background { duration: 120ms; }
                 Text {
-                    text: "⚠ Restart required / Neustart erforderlich / 需要重启 / Se requiere reinicio";
-                    color: #f0a040;
-                    font-size: 11px;
+                    text: "Закрыть";
+                    color: #8090b0;
+                    font-size: 13px;
                     horizontal-alignment: center;
                     vertical-alignment: center;
-                    width: 360px;
-                    x: (parent.width - self.width) / 2;
-                    y: (parent.height - self.height) / 2;
                 }
-            }
-
-            // English
-            Rectangle {
-                width: 350px; height: 32px;
-                background: selected-language == "en" ? #2a4a6a : #1a2030;
-                border-radius: 5px;
-                border-width: 1px; border-color: selected-language == "en" ? #4a8aba : #2a3a50;
-                TouchArea { clicked => { selected-language = "en"; language-changed("en"); } }
-                Text {
-                    text: "🇬🇧 English";
-                    color: selected-language == "en" ? #90c8f0 : #8f97b8;
-                    font-size: 14px;
-                    x: 16px;
-                    y: (parent.height - self.height) / 2;
-                }
-            }
-
-            // Deutsch
-            Rectangle {
-                width: 350px; height: 32px;
-                background: selected-language == "de" ? #2a4a6a : #1a2030;
-                border-radius: 5px;
-                border-width: 1px; border-color: selected-language == "de" ? #4a8aba : #2a3a50;
-                TouchArea { clicked => { selected-language = "de"; language-changed("de"); } }
-                Text {
-                    text: "🇩🇪 Deutsch";
-                    color: selected-language == "de" ? #90c8f0 : #8f97b8;
-                    font-size: 14px;
-                    x: 16px;
-                    y: (parent.height - self.height) / 2;
-                }
-            }
-
-            // Русский
-            Rectangle {
-                width: 350px; height: 32px;
-                background: selected-language == "ru" ? #2a4a6a : #1a2030;
-                border-radius: 5px;
-                border-width: 1px; border-color: selected-language == "ru" ? #4a8aba : #2a3a50;
-                TouchArea { clicked => { selected-language = "ru"; language-changed("ru"); } }
-                Text {
-                    text: "🇷🇺 Русский";
-                    color: selected-language == "ru" ? #90c8f0 : #8f97b8;
-                    font-size: 14px;
-                    x: 16px;
-                    y: (parent.height - self.height) / 2;
-                }
-            }
-
-            // 中文
-            Rectangle {
-                width: 350px; height: 32px;
-                background: selected-language == "zh" ? #2a4a6a : #1a2030;
-                border-radius: 5px;
-                border-width: 1px; border-color: selected-language == "zh" ? #4a8aba : #2a3a50;
-                TouchArea { clicked => { selected-language = "zh"; language-changed("zh"); } }
-                Text {
-                    text: "🇨🇳 中文";
-                    color: selected-language == "zh" ? #90c8f0 : #8f97b8;
-                    font-size: 14px;
-                    x: 16px;
-                    y: (parent.height - self.height) / 2;
-                }
-            }
-
-            // Español
-            Rectangle {
-                width: 350px; height: 32px;
-                background: selected-language == "es" ? #2a4a6a : #1a2030;
-                border-radius: 5px;
-                border-width: 1px; border-color: selected-language == "es" ? #4a8aba : #2a3a50;
-                TouchArea { clicked => { selected-language = "es"; language-changed("es"); } }
-                Text {
-                    text: "🇪🇸 Español";
-                    color: selected-language == "es" ? #90c8f0 : #8f97b8;
-                    font-size: 14px;
-                    x: 16px;
-                    y: (parent.height - self.height) / 2;
-                }
-            }
-
-            HorizontalLayout {
-                spacing: 12px; alignment: center;
-                Rectangle { horizontal-stretch: 1; }
-                Button {
-                    text: "Cancel";
-                    clicked => { cancelled(); }
-                }
+                close-ta := TouchArea { clicked => { cancelled(); } }
             }
         }
     }
@@ -501,17 +538,34 @@ component SettingsDialog inherits Rectangle {
 component TorrentRow inherits Rectangle {
     in property <TorrentItem> item;
     in property <bool>        is-even;
-    callback toggle-pause(int);
-    callback delete-torrent(int, bool, string);
-    callback recheck(int);
-    callback open-folder(string);
+    in property <bool>        is-selected;
+    in property <int>         row-index;
+    in property <length>      col-name-w:   290px;
+    in property <length>      col-status-w: 100px;
+    in property <length>      col-done-w:    54px;
+    in property <length>      col-down-w:    80px;
+    callback request-context-menu(int, string, string, bool, int, int, int); // id, name, dir, paused, x, y, index
 
     height: 50px;
-    background: is-even ? #161c27 : #1a2233;
-    states [ hovered when ta.has-hover : { background: #1e2840; } ]
+    background: is-selected ? #2a3a50 : (is-even ? #161c27 : #1a2233);
+    states [ hovered when ta.has-hover && !is-selected : { background: #1e2840; } ]
     animate background { duration: 60ms; }
 
-    ta := TouchArea {}
+    ta := TouchArea {
+        pointer-event(event) => {
+            if (event.kind == PointerEventKind.up && event.button == PointerEventButton.right) {
+                request-context-menu(
+                    item.id,
+                    item.name,
+                    item.download-dir,
+                    item.is-paused,
+                    (self.absolute-position.x + self.mouse-x) / 1px,
+                    (self.absolute-position.y + self.mouse-y) / 1px,
+                    row-index
+                );
+            }
+        }
+    }
 
     HorizontalLayout {
         padding-left: 12px; padding-right: 6px;
@@ -519,7 +573,7 @@ component TorrentRow inherits Rectangle {
 
         // Имя + прогресс + ошибка
         VerticalLayout {
-            width: 290px; alignment: center; spacing: 3px;
+            width: col-name-w; alignment: center; spacing: 3px;
             Text {
                 text: item.name; color: #d0d8ec;
                 font-size: 13px; overflow: elide;
@@ -531,10 +585,10 @@ component TorrentRow inherits Rectangle {
             if !item.is-error : ProgressIndicator { progress: item.progress; height: 5px; }
         }
 
-        Rectangle { width: 10px; }
+        Rectangle { width: 9px; }
 
         Text {
-            width: 100px;
+            width: col-status-w;
             text: item.is-checking
                 ? (item.status-label + " " + Math.round(item.progress * 100) + "%")
                 : item.status-label;
@@ -544,69 +598,29 @@ component TorrentRow inherits Rectangle {
                  : #38b865;
             font-size: 12px; vertical-alignment: center;
         }
+
+        Rectangle { width: 9px; }
+
         Text {
-            width: 44px;
+            width: col-done-w;
             text: item.is-checking ? "" : Math.round(item.progress * 100) + "%";
             color: #687888; font-size: 12px;
-            horizontal-alignment: right; vertical-alignment: center;
+            horizontal-alignment: center; vertical-alignment: center;
         }
-        Rectangle { width: 10px; }
+
+        Rectangle { width: 9px; }
+
         Text {
-            width: 80px; text: "↓ " + item.down-speed;
+            width: col-down-w; text: "↓ " + item.down-speed;
             color: #4a9ed8; font-size: 12px; vertical-alignment: center;
         }
+
+        Rectangle { width: 9px; }
+
         Text {
-            width: 80px; text: "↑ " + item.up-speed;
+            horizontal-stretch: 1; text: "↑ " + item.up-speed;
             color: #c87e28; font-size: 12px; vertical-alignment: center;
         }
-
-        Rectangle { horizontal-stretch: 1; }
-
-        HorizontalLayout {
-            spacing: 2px; alignment: center;
-            IconBtn {
-                icon: item.is-paused ? "▶" : "⏸";
-                tip: item.is-paused ? "Start" : "Pause";
-                icon-color: item.is-paused ? #40c060 : #c0a020;
-                hover-color: item.is-paused ? #80ff80 : #ffe060;
-                clicked => { toggle-pause(item.id); }
-            }
-            Rectangle { width: 1px; height: 18px; background: #283448; }
-            IconBtn {
-                icon: "🔄";
-                tip: "Recheck";
-                icon-color: #5080a0;
-                hover-color: #80c0ff;
-                clicked => { recheck(item.id); }
-            }
-            Rectangle { width: 1px; height: 18px; background: #283448; }
-            IconBtn {
-                icon: "📁";
-                tip: "Open folder";
-                icon-color: #7080a0;
-                hover-color: #b0c8ff;
-                clicked => { open-folder(item.download-dir); }
-            }
-            Rectangle { width: 1px; height: 18px; background: #283448; }
-            IconBtn {
-                icon: "✕";
-                tip: "Remove (keep files)";
-                icon-color: #607080;
-                hover-color: #ff8888;
-                bg-hover: #3a2020;
-                clicked => { delete-torrent(item.id, false, item.name); }
-            }
-            IconBtn {
-                icon: "🗑";
-                tip: "Delete + files";
-                icon-color: #705060;
-                hover-color: #ff4444;
-                bg-hover: #4a1818;
-                clicked => { delete-torrent(item.id, true, item.name); }
-            }
-        }
-
-        Rectangle { width: 4px; }
     }
 }
 
@@ -677,6 +691,23 @@ export component MainWindow inherits Window {
     in-out property <int> count-error: 0;
     in-out property <string> active-filter: "all";
 
+    // Column widths (resizable via header drag)
+    in-out property <length> col-name-w:   290px;
+    in-out property <length> col-status-w: 100px;
+    in-out property <length> col-done-w:    54px;
+    in-out property <length> col-down-w:    80px;
+
+    // Sort: "" | "done" | "down" | "up",  asc=true means smallest first
+    in-out property <string> sort-col: "";
+    in-out property <bool>   sort-asc: false;
+    callback sort-changed(string, bool); // col, asc
+
+    // RPC connection
+    in-out property <string>   rpc-url: "localhost";
+    in-out property <[string]> rpc-candidates: [];
+    in-out property <bool>     rpc-popup-visible: false;
+    callback switch-rpc(string);
+
     // Confirm dialog
     in-out property <bool>   dialog-visible: false;
     in-out property <string> dialog-message: "";
@@ -712,6 +743,24 @@ export component MainWindow inherits Window {
     in-out property <bool>   settings-dialog-visible: false;
     in-out property <string> selected-language: "en";
 
+    // Context menu
+    in-out property <bool>   context-menu-visible: false;
+    in-out property <int>    context-menu-target-id: -1;
+    in-out property <int>    context-menu-target-index: -1;
+    in-out property <string> context-menu-torrent-name: "";
+    in-out property <string> context-menu-torrent-dir: "";
+    in-out property <bool>   context-menu-target-paused: false;
+    in-out property <int>    context-menu-x: 0;
+    in-out property <int>    context-menu-y: 0;
+    in-out property <int>    selected-index: -1;
+
+    // Set location dialog
+    in-out property <bool>   set-location-dialog-visible: false;
+    in-out property <int>    set-location-torrent-id: -1;
+    in-out property <string> set-location-torrent-name: "";
+    in-out property <string> set-location-path: "";
+    in-out property <bool>   set-location-do-move: true; // радиокнопка: true=переместить, false=только путь
+
     // Поиск
     in-out property <string> search-text: "";
 
@@ -736,7 +785,16 @@ export component MainWindow inherits Window {
     in property <string> tr-column-done: "Done";
     in property <string> tr-column-down: "Down";
     in property <string> tr-column-up: "Up";
-    in property <string> tr-column-actions: "Actions";
+    in property <string> tr-menu-start: "Start";
+    in property <string> tr-menu-pause: "Pause";
+    in property <string> tr-menu-recheck: "Recheck";
+    in property <string> tr-menu-open-folder: "Open Folder";
+    in property <string> tr-menu-set-location: "Set Location";
+    in property <string> tr-menu-remove: "Remove Torrent";
+    in property <string> tr-menu-delete: "Delete Torrent + Files";
+
+    in property <string> tr-statusbar-dht:  "DHT";
+    in property <string> tr-statusbar-conn: "conn";
 
     callback search-changed(string);
     callback rehash-errors();
@@ -752,6 +810,13 @@ export component MainWindow inherits Window {
     callback remove-torrent(int, bool);
     callback recheck-torrent(int);
     callback open-folder(string);
+    callback request-set-location(int, string, string); // legacy callback, kept for main.rs wiring
+    callback set-location(int, string, bool);
+    callback set-location-cmd(int, string, bool); // internal: sends to backend
+    callback set-location-xdg-dialog(int, string, string, bool); // id, name, current_dir, do_move → сразу действие
+    callback pick-context-menu-set-location(int, string, string); // from context menu → open dialog
+    callback get-last-location() -> string; // returns last used download dir
+    callback click-outside(); // close context menu
     callback add-torrent-url(string);
     callback pick-torrent-file();
     callback create-torrent(string, string);  // path, trackers
@@ -1228,19 +1293,129 @@ export component MainWindow inherits Window {
 
                 // ── Column headers ────────────────────────────────────────────────────
         Rectangle {
-            height: 22px; background: #0b1420;
+            height: 24px; background: #0b1420;
+            border-width: 1px; border-color: #1a2535;
+            // Доступная ширина для всех колонок = ширина header минус отступы (18px) и 4 разделителя (36px)
+            property <length> avail: self.width - 54px;
+
             HorizontalLayout {
                 padding-left: 12px; padding-right: 6px; spacing: 0px;
-                Text { width: 290px; text: tr-column-name;   color: #344458; font-size: 10px; vertical-alignment: center; }
-                Rectangle { width: 10px; }
-                Text { width: 90px;  text: tr-column-status; color: #344458; font-size: 10px; vertical-alignment: center; }
-                Text { width: 44px;  text: tr-column-done;   color: #344458; font-size: 10px; horizontal-alignment: right; vertical-alignment: center; }
-                Rectangle { width: 10px; }
-                Text { width: 80px;  text: "↓ " + tr-column-down; color: #344458; font-size: 10px; vertical-alignment: center; }
-                Text { width: 80px;  text: "↑ " + tr-column-up;   color: #344458; font-size: 10px; vertical-alignment: center; }
-                Rectangle { horizontal-stretch: 1; }
-                Text { width: 82px;  text: tr-column-actions;color: #344458; font-size: 10px; horizontal-alignment: center; vertical-alignment: center; }
-                Rectangle { width: 4px; }
+
+                // Name
+                Text {
+                    width: col-name-w;
+                    text: tr-column-name;
+                    color: #4a5870; font-size: 11px;
+                    vertical-alignment: center;
+                }
+
+                // Разделитель Name|Status
+                Rectangle {
+                    width: 9px; height: parent.height;
+                    property <length> drag-start-x; property <length> drag-start-w;
+                    Rectangle { width: 1px; height: parent.height; x: 4px; background: sep-ns.has-hover ? #3a5070 : #1e2a3a; }
+                    sep-ns := TouchArea {
+                        mouse-cursor: col-resize;
+                        pointer-event(e) => { if (e.kind == PointerEventKind.down) { drag-start-x = self.absolute-position.x + self.mouse-x; drag-start-w = col-name-w; } }
+                        moved => { col-name-w = clamp(drag-start-w + (self.absolute-position.x + self.mouse-x - drag-start-x), 40px, avail - col-status-w - col-done-w - col-down-w - 40px); }
+                    }
+                }
+
+                // Status
+                Text {
+                    width: col-status-w;
+                    text: tr-column-status;
+                    color: #4a5870; font-size: 11px;
+                    horizontal-alignment: center; vertical-alignment: center;
+                }
+
+                // Разделитель Status|Done
+                Rectangle {
+                    width: 9px; height: parent.height;
+                    property <length> drag-start-x; property <length> drag-start-w;
+                    Rectangle { width: 1px; height: parent.height; x: 4px; background: sep-sd.has-hover ? #3a5070 : #1e2a3a; }
+                    sep-sd := TouchArea {
+                        mouse-cursor: col-resize;
+                        pointer-event(e) => { if (e.kind == PointerEventKind.down) { drag-start-x = self.absolute-position.x + self.mouse-x; drag-start-w = col-status-w; } }
+                        moved => { col-status-w = clamp(drag-start-w + (self.absolute-position.x + self.mouse-x - drag-start-x), 40px, avail - col-name-w - col-done-w - col-down-w - 40px); }
+                    }
+                }
+
+                // Done — сортировка
+                Rectangle {
+                    width: col-done-w;
+                    hdr-done := TouchArea {
+                        clicked => {
+                            if (sort-col == "done") { sort-asc = !sort-asc; }
+                            else { sort-col = "done"; sort-asc = true; }
+                            sort-changed(sort-col, sort-asc);
+                        }
+                    }
+                    Text {
+                        text: tr-column-done + (sort-col == "done" ? (sort-asc ? " ↑" : " ↓") : "");
+                        color: #4a5870; font-size: 11px;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+
+                // Разделитель Done|Down
+                Rectangle {
+                    width: 9px; height: parent.height;
+                    property <length> drag-start-x; property <length> drag-start-w;
+                    Rectangle { width: 1px; height: parent.height; x: 4px; background: sep-dd.has-hover ? #3a5070 : #1e2a3a; }
+                    sep-dd := TouchArea {
+                        mouse-cursor: col-resize;
+                        pointer-event(e) => { if (e.kind == PointerEventKind.down) { drag-start-x = self.absolute-position.x + self.mouse-x; drag-start-w = col-done-w; } }
+                        moved => { col-done-w = clamp(drag-start-w + (self.absolute-position.x + self.mouse-x - drag-start-x), 30px, avail - col-name-w - col-status-w - col-down-w - 40px); }
+                    }
+                }
+
+                // Down — сортировка
+                Rectangle {
+                    width: col-down-w;
+                    hdr-down := TouchArea {
+                        clicked => {
+                            if (sort-col == "down") { sort-asc = !sort-asc; }
+                            else { sort-col = "down"; sort-asc = false; }
+                            sort-changed(sort-col, sort-asc);
+                        }
+                    }
+                    Text {
+                        text: tr-column-down + (sort-col == "down" ? (sort-asc ? " ↑" : " ↓") : "");
+                        color: #4a5870; font-size: 11px;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+
+                // Разделитель Down|Up
+                Rectangle {
+                    width: 9px; height: parent.height;
+                    property <length> drag-start-x; property <length> drag-start-w;
+                    Rectangle { width: 1px; height: parent.height; x: 4px; background: sep-du.has-hover ? #3a5070 : #1e2a3a; }
+                    sep-du := TouchArea {
+                        mouse-cursor: col-resize;
+                        pointer-event(e) => { if (e.kind == PointerEventKind.down) { drag-start-x = self.absolute-position.x + self.mouse-x; drag-start-w = col-down-w; } }
+                        moved => { col-down-w = clamp(drag-start-w + (self.absolute-position.x + self.mouse-x - drag-start-x), 40px, avail - col-name-w - col-status-w - col-done-w - 40px); }
+                    }
+                }
+
+                // Up — сортировка
+                Rectangle {
+                    horizontal-stretch: 1;
+                    hdr-up := TouchArea {
+                        clicked => {
+                            if (sort-col == "up") { sort-asc = !sort-asc; }
+                            else { sort-col = "up"; sort-asc = false; }
+                            sort-changed(sort-col, sort-asc);
+                        }
+                    }
+                    Text {
+                        text: tr-column-up + (sort-col == "up" ? (sort-asc ? " ↑" : " ↓") : "");
+                        color: #4a5870; font-size: 11px;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+
             }
         }
 
@@ -1251,23 +1426,22 @@ export component MainWindow inherits Window {
             for item[idx] in torrents : TorrentRow {
                 item: item;
                 is-even: mod(idx, 2) == 0;
-                toggle-pause(id) => {
-                    if (item.is-paused) { start-torrent(id); }
-                    else               { stop-torrent(id);  }
-                }
-                recheck(id) => { recheck-torrent(id); }
-                open-folder(dir) => { open-folder(dir); }
-                delete-torrent(id, del-files, tname) => {
-                    pending-id = id;
-                    pending-delete-files = del-files;
-                    pending-is-delete = true;
-                    pending-torrent-name = tname;
-                    if (del-files) {
-                        dialog-message = tr-dlg-delete-title;
-                    } else {
-                        dialog-message = tr-dlg-remove-title + "\n" + tr-dlg-remove-subtitle;
-                    }
-                    dialog-visible = true;
+                is-selected: idx == selected-index;
+                row-index: idx;
+                col-name-w:   col-name-w;
+                col-status-w: col-status-w;
+                col-done-w:   col-done-w;
+                col-down-w:   col-down-w;
+                request-context-menu(id, tname, tdir, is-paused, pos-x, pos-y, idx) => {
+                    selected-index = idx;
+                    context-menu-visible = true;
+                    context-menu-target-id = id;
+                    context-menu-target-index = idx;
+                    context-menu-torrent-name = tname;
+                    context-menu-torrent-dir = tdir;
+                    context-menu-target-paused = is-paused;
+                    context-menu-x = pos-x;
+                    context-menu-y = pos-y;
                 }
             }
         }
@@ -1289,17 +1463,256 @@ export component MainWindow inherits Window {
             Rectangle { y: 0; x: 0; width: 100%; height: 1px; background: #182030; }
 
             HorizontalLayout {
-                padding-left: 10px; padding-right: 10px;
-                spacing: 8px;
+                padding-left: 0px; padding-right: 10px;
+                spacing: 0px;
+
+                // ── IP + DHT/conn блок (200px — вровень с сайдбаром) ─────────
+                Rectangle {
+                    width: 200px;
+                    background: ip-ta.has-hover || rpc-popup-visible ? #141e2e : transparent;
+                    animate background { duration: 100ms; }
+                    Rectangle { x: parent.width - 1px; width: 1px; height: parent.height; background: #182030; }
+
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 6px;
+                        Rectangle {
+                            width: 6px; height: 6px; border-radius: 3px;
+                            background: connected ? #2a9a50 : #8a3030;
+                            y: (parent.height - self.height) / 2;
+                        }
+                        ip-text := Text {
+                            text: rpc-url;
+                            color: ip-ta.has-hover || rpc-popup-visible ? #90b8d8 : #4a6070;
+                            font-size: 11px; vertical-alignment: center;
+                            overflow: elide;
+                            animate color { duration: 100ms; }
+                        }
+                    }
+                    ip-ta := TouchArea {
+                        clicked => { if (rpc-candidates.length > 1) { rpc-popup-visible = !rpc-popup-visible; } }
+                    }
+                }
+
+                // ── DHT / conn — правее разделителя, левее StatsBar ──────────
+                if connected: HorizontalLayout {
+                    padding-left: 12px; padding-right: 12px; spacing: 8px;
+                    Text {
+                        text: tr-statusbar-dht + " " + stats.dht;
+                        color: #3a5060; font-size: 11px; vertical-alignment: center;
+                    }
+                    Rectangle { width: 1px; height: 12px; background: #182030; y: (parent.height - self.height) / 2; }
+                    Text {
+                        text: stats.peers + " " + tr-statusbar-conn;
+                        color: #3a5060; font-size: 11px; vertical-alignment: center;
+                    }
+                }
 
                 Rectangle { horizontal-stretch: 1; }
 
-                // Правая часть — статистика
-                if connected : StatsBar {
-                    stats: stats;
+                if connected : StatsBar { stats: stats; }
+            }
+        }
+
+        // ── RPC popup ────────────────────────────────────────────────────────
+        if rpc-popup-visible: Rectangle {
+            width: 100%; height: 100%; z: 300;
+            TouchArea { clicked => { rpc-popup-visible = false; } }
+            Rectangle {
+                x: 0px; y: parent.height - self.height - 26px;
+                width: 220px;
+                height: rpc-candidates.length * 28px + 8px;
+                background: #1a2230; border-radius: 6px;
+                border-width: 1px; border-color: #2a3a50;
+                drop-shadow-blur: 12px; drop-shadow-color: #00000088;
+                TouchArea { clicked => {} }
+                VerticalLayout {
+                    padding: 4px; spacing: 0px;
+                    for url in rpc-candidates: Rectangle {
+                        height: 28px; border-radius: 4px;
+                        background: row-ta.has-hover ? #253040 : (url == rpc-url ? #1e3040 : transparent);
+                        animate background { duration: 80ms; }
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 6px;
+                            Rectangle {
+                                width: 6px; height: 6px; border-radius: 3px;
+                                background: url == rpc-url ? #2a9a50 : #2a3a50;
+                                y: (parent.height - self.height) / 2;
+                            }
+                            Text {
+                                text: url; color: url == rpc-url ? #90b8d8 : #6a8090;
+                                font-size: 11px; vertical-alignment: center; overflow: elide;
+                            }
+                        }
+                        row-ta := TouchArea {
+                            clicked => { rpc-popup-visible = false; if (url != rpc-url) { switch-rpc(url); } }
+                        }
+                    }
                 }
             }
         }
+    } // end VerticalLayout MainWindow
+
+    // ── Context Menu (global) ────────────────────────────────────────────────
+    if context-menu-visible: Rectangle {
+        width: 100%; height: 100%;
+        z: 150;
+        TouchArea { clicked => { context-menu-visible = false; } }
+
+        Rectangle {
+            x: Math.max(8px, Math.min(context-menu-x * 1px, parent.width - self.width - 8px));
+            y: Math.max(8px, Math.min((context-menu-y - 106) * 1px, parent.height - self.height - 8px));
+            width: 240px; height: 212px;
+            background: #1e2430;
+            border-radius: 8px; border-width: 1px; border-color: #3a4560;
+            TouchArea { clicked => {} }
+
+            VerticalLayout {
+                x: 4px; y: 4px;
+                width: parent.width - 8px;
+                spacing: 4px;
+
+                Rectangle {
+                    width: parent.width; height: 30px;
+                    background: item-toggle.has-hover ? #2f3a50 : #2a3448;
+                    border-radius: 4px;
+                    item-toggle := TouchArea {
+                        clicked => {
+                            if (context-menu-target-paused) { start-torrent(context-menu-target-id); }
+                            else                            { stop-torrent(context-menu-target-id); }
+                            context-menu-visible = false;
+                        }
+                    }
+                    Text {
+                        text: (context-menu-target-paused ? "▶ " + tr-menu-start : "⏸ " + tr-menu-pause);
+                        color: #c0d0e8; font-size: 13px;
+                        x: 12px; y: (parent.height - self.height) / 2;
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width; height: 30px;
+                    background: item-recheck.has-hover ? #2f3a50 : #2a3448;
+                    border-radius: 4px;
+                    item-recheck := TouchArea {
+                        clicked => {
+                            recheck-torrent(context-menu-target-id);
+                            context-menu-visible = false;
+                        }
+                    }
+                    Text {
+                        text: "🔄 " + tr-menu-recheck;
+                        color: #c0d0e8; font-size: 13px;
+                        x: 12px; y: (parent.height - self.height) / 2;
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width; height: 30px;
+                    background: item-folder.has-hover ? #2f3a50 : #2a3448;
+                    border-radius: 4px;
+                    item-folder := TouchArea {
+                        clicked => {
+                            open-folder(context-menu-torrent-dir);
+                            context-menu-visible = false;
+                        }
+                    }
+                    Text {
+                        text: "📁 " + tr-menu-open-folder;
+                        color: #c0d0e8; font-size: 13px;
+                        x: 12px; y: (parent.height - self.height) / 2;
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width; height: 30px;
+                    background: item-location.has-hover ? #2f3a50 : #2a3448;
+                    border-radius: 4px;
+                    item-location := TouchArea {
+                        clicked => {
+                            let last_path = get-last-location();
+                            pick-context-menu-set-location(
+                                context-menu-target-id,
+                                context-menu-torrent-name,
+                                last_path != "" ? last_path : context-menu-torrent-dir
+                            );
+                            context-menu-visible = false;
+                        }
+                    }
+                    Text {
+                        text: "📍 " + tr-menu-set-location;
+                        color: #c0d0e8; font-size: 13px;
+                        x: 12px; y: (parent.height - self.height) / 2;
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width; height: 30px;
+                    background: item-remove.has-hover ? #3a2630 : #2a3448;
+                    border-radius: 4px;
+                    item-remove := TouchArea {
+                        clicked => {
+                            pending-id = context-menu-target-id;
+                            pending-torrent-name = context-menu-torrent-name;
+                            dialog-message = tr-dlg-remove-title + "\n" + tr-dlg-remove-subtitle;
+                            pending-is-delete = true;
+                            pending-delete-files = false;
+                            dialog-visible = true;
+                            context-menu-visible = false;
+                        }
+                    }
+                    Text {
+                        text: "✕ " + tr-menu-remove;
+                        color: #d8bcc8; font-size: 13px;
+                        x: 12px; y: (parent.height - self.height) / 2;
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width; height: 30px;
+                    background: item-delete.has-hover ? #4a2020 : #2a3448;
+                    border-radius: 4px;
+                    item-delete := TouchArea {
+                        clicked => {
+                            pending-id = context-menu-target-id;
+                            pending-torrent-name = context-menu-torrent-name;
+                            dialog-message = tr-dlg-delete-title;
+                            pending-is-delete = true;
+                            pending-delete-files = true;
+                            dialog-visible = true;
+                            context-menu-visible = false;
+                        }
+                    }
+                    Text {
+                        text: "🗑 " + tr-menu-delete;
+                        color: #f0b0b0; font-size: 13px;
+                        x: 12px; y: (parent.height - self.height) / 2;
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Set Location Dialog ──────────────────────────────────────────────────
+    SetLocationDialog {
+        width: 100%; height: 100%;
+        visible-dialog: set-location-dialog-visible;
+        torrent-name: set-location-torrent-name;
+        path <=> set-location-path;
+        do-move <=> set-location-do-move;
+        pick-folder => {
+            set-location-xdg-dialog(
+                set-location-torrent-id,
+                set-location-torrent-name,
+                set-location-path,
+                set-location-do-move
+            );
+            set-location-dialog-visible = false;
+        }
+        confirmed(p, mv) => {
+            set-location-dialog-visible = false;
+            set-location-cmd(set-location-torrent-id, p, mv);
+        }
+        cancelled => { set-location-dialog-visible = false; }
     }
 
     // ── Overlays ──────────────────────────────────────────────────────────────

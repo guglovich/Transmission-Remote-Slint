@@ -90,8 +90,8 @@ pub async fn ensure_daemon(
         return (DaemonHandle::External, fallback, ProbeResult { ok: false, status_msg: "Not installed".into() });
     };
 
-    if let Ok(mut child) = Command::new(&bin).stdout(Stdio::null()).stderr(Stdio::null()).spawn() {
-        let _ = child.wait();
+    if let Ok(mut child) = tokio::process::Command::new(&bin).stdout(Stdio::null()).stderr(Stdio::null()).spawn() {
+        let _ = child.wait().await;
     }
     eprintln!("[daemon] Spawned {bin}");
 
