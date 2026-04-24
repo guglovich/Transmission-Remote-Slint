@@ -100,7 +100,45 @@ pub fn save(cfg: &AppConfig) {
     }
 }
 
-/// Обновляет autostart .desktop файл
+/// Устанавливает иконку и .desktop файл при первом запуске
+pub fn install_icon() {
+    let home = dirs_home();
+
+    // Иконка в hicolor
+    let icon_dir = home.join(".local/share/icons/hicolor/256x256/apps");
+    let icon_path = icon_dir.join("transmission-remote-slint.png");
+    if !icon_path.exists() {
+        let _ = std::fs::create_dir_all(&icon_dir);
+        let png = include_bytes!("../ui/app-icon.png");
+        if let Err(e) = std::fs::write(&icon_path, png) {
+            eprintln!("[icon] Failed to install icon: {e}");
+        } else {
+            eprintln!("[icon] Installed icon: {}", icon_path.display());
+            // Обновляем кэш иконок
+            let _ = std::process::Command::new("gtk-update-icon-cache")
+                .args(["-f", "-t", home.join(".local/share/icons/hicolor").to_str().unwrap_or("")])
+                .status();
+        }
+    }
+
+    // .desktop файл
+    let desktop_dir = home.join(".local/share/applications");
+    let desktop_path = desktop_dir.join("transmission-remote-slint.desktop");
+    if !desktop_path.exists() {
+        let _ = std::fs::create_dir_all(&desktop_dir);
+        let exe = std::env::current_exe()
+            .unwrap_or_else(|_| std::path::PathBuf::from("transmission-remote-slint"));
+        let content = format!(
+            "[Desktop Entry]\nType=Application\nName=Transmission Remote\nComment=BitTorrent client remote control\nExec={}\nIcon=transmission-remote-slint\nCategories=Network;FileTransfer;P2P;\nTerminal=false\n",
+            exe.display()
+        );
+        if let Err(e) = std::fs::write(&desktop_path, &content) {
+            eprintln!("[icon] Failed to install .desktop: {e}");
+        } else {
+            eprintln!("[icon] Installed .desktop: {}", desktop_path.display());
+        }
+    }
+}
 pub fn sync_autostart(enabled: bool) {
     let autostart_dir = dirs_home().join(".config").join("autostart");
     let desktop = autostart_dir.join("transmission-remote-slint.desktop");

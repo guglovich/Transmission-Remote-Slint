@@ -429,6 +429,7 @@ fn main() -> anyhow::Result<()> {
 
     // Загружаем конфиг приложения (создаёт дефолт если нет)
     let app_cfg = app_config::load();
+    app_config::install_icon();
 
     // ── Инициализируем язык ────────────────────────────────────────────────────
     i18n::init(&app_cfg.language);
