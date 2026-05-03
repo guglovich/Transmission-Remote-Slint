@@ -103,21 +103,19 @@ pub fn save(cfg: &AppConfig) {
 /// Устанавливает иконку и .desktop файл при первом запуске
 pub fn install_icon() {
     let home = dirs_home();
+    let icon_src = include_bytes!("../ui/app-icon.png");
+    let mut needs_cache_update = false;
 
-    // Иконка в hicolor
-    let icon_dir = home.join(".local/share/icons/hicolor/256x256/apps");
-    let icon_path = icon_dir.join("transmission-remote-slint.png");
-    if !icon_path.exists() {
-        let _ = std::fs::create_dir_all(&icon_dir);
-        let png = include_bytes!("../ui/app-icon.png");
-        if let Err(e) = std::fs::write(&icon_path, png) {
-            eprintln!("[icon] Failed to install icon: {e}");
-        } else {
-            eprintln!("[icon] Installed icon: {}", icon_path.display());
-            // Обновляем кэш иконок
-            let _ = std::process::Command::new("gtk-update-icon-cache")
-                .args(["-f", "-t", home.join(".local/share/icons/hicolor").to_str().unwrap_or("")])
-                .status();
+    // Устанавливаем иконку во все стандартные размеры hicolor
+    for size in &[16u32, 32, 48, 128, 256] {
+        let icon_dir = home.join(format!(".local/share/icons/hicolor/{size}x{size}/apps"));
+        let icon_path = icon_dir.join("transmission-remote-slint.png");
+        if !icon_path.exists() {
+            let _ = std::fs::create_dir_all(&icon_dir);
+            if std::fs::write(&icon_path, icon_src).is_ok() {
+                eprintln!("[icon] Installed {size}x{size} icon");
+                needs_cache_update = true;
+            }
         }
     }
 
@@ -132,11 +130,26 @@ pub fn install_icon() {
             "[Desktop Entry]\nType=Application\nName=Transmission Remote\nComment=BitTorrent client remote control\nExec={}\nIcon=transmission-remote-slint\nCategories=Network;FileTransfer;P2P;\nTerminal=false\n",
             exe.display()
         );
-        if let Err(e) = std::fs::write(&desktop_path, &content) {
-            eprintln!("[icon] Failed to install .desktop: {e}");
-        } else {
-            eprintln!("[icon] Installed .desktop: {}", desktop_path.display());
+        if std::fs::write(&desktop_path, &content).is_ok() {
+            eprintln!("[icon] Installed .desktop");
+            needs_cache_update = true;
         }
+    }
+
+    // Всегда обновляем кэш иконок — он может быть повреждён после ребута
+    let hicolor = home.join(".local/share/icons/hicolor");
+    let ok = std::process::Command::new("gtk-update-icon-cache")
+        .args(["-f", "-t", hicolor.to_str().unwrap_or("")])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    if ok {
+        eprintln!("[icon] Icon cache updated");
+    } else if needs_cache_update {
+        let _ = std::process::Command::new("xdg-desktop-menu").arg("forceupdate").status();
+        let _ = std::process::Command::new("update-desktop-database")
+            .arg(desktop_dir.to_str().unwrap_or(""))
+            .status();
     }
 }
 pub fn sync_autostart(enabled: bool) {
