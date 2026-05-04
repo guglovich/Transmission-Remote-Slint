@@ -936,6 +936,7 @@ fn main() -> anyhow::Result<()> {
                         } else {
                             // Показываем напрямую — suspend не нужен
                             win.show().ok();
+                            wm_icon::set_wm_icon_by_pid();
                         }
                     }
                 }
