@@ -899,19 +899,28 @@ export component MainWindow inherits Window {
                     width: 80px;
                     height: 28px;
                     y: 7px;
-                    background: btn-rehash.has-hover ? #21253a : transparent;
+                    background: count-error > 0
+                        ? (btn-rehash.has-hover ? #2a1e10 : #1a1208)
+                        : (btn-rehash.has-hover ? #21253a : transparent);
                     border-radius: 5px;
                     border-width: 1px;
-                    border-color: btn-rehash.has-hover ? #343858 : transparent;
+                    border-color: count-error > 0
+                        ? (btn-rehash.has-hover ? #c87030 : #6a3808)
+                        : (btn-rehash.has-hover ? #343858 : transparent);
                     animate background { duration: 80ms; }
                     animate border-color { duration: 80ms; }
-                    btn-rehash := TouchArea { clicked => { rehash-errors(); } }
+                    btn-rehash := TouchArea {
+                        clicked => { if (count-error > 0) { rehash-errors(); } }
+                    }
                     Text {
-                        text: "🔄 " + tr-toolbar-rehash;
-                        color: #8f97b8;
+                        text: "⟳ " + tr-toolbar-rehash;
+                        color: count-error > 0
+                            ? (btn-rehash.has-hover ? #e8a050 : #b06820)
+                            : #3a4258;
                         font-size: 12px;
                         horizontal-alignment: center;
                         vertical-alignment: center;
+                        animate color { duration: 80ms; }
                     }
                 }
 
