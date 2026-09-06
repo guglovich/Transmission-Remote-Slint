@@ -1768,6 +1768,7 @@ fn main() -> anyhow::Result<()> {
             let active = ACTIVE_RPC_URL.lock().unwrap().clone().unwrap_or_default();
             if url_endpoint(&active) == url_endpoint(&display_str) {
                 eprintln!("[switch-rpc] {display_str} is already active — no-op");
+                if let Some(ui) = ui_weak.upgrade() { ui.set_is_switching_host(false); }
                 return;
             }
             // Находим полный URL по display-имени (host:port)
@@ -1779,6 +1780,7 @@ fn main() -> anyhow::Result<()> {
             // Повторная no-op проверка уже по полному URL
             if url_endpoint(&full_url) == url_endpoint(&active) {
                 eprintln!("[switch-rpc] {full_url} is already active — no-op");
+                if let Some(ui) = ui_weak.upgrade() { ui.set_is_switching_host(false); }
                 return;
             }
 
