@@ -1564,7 +1564,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
-                                    NumField { value: cfg-dl-queue-max; value-changed(v) => { cfg-dl-queue-max = v; touched(); }; min-val: 0; max-val: 999; }
+                                    NumField { value: cfg-dl-queue-max; value-changed(v) => { cfg-dl-queue-max = v; touched(); }; min-val: 0; max-val: 9999; }
                                     Rectangle {
                                         width: 32px; height: 32px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #343858;
                                         Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
