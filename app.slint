@@ -422,20 +422,23 @@ component TimeField inherits Rectangle {
 }
 
 
-component PathField inherits Rectangle {
+component PathField inherits HorizontalLayout {
     in-out property <string> text;
     callback pick();
-    width: 260px; height: 32px;
-    border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
-    ti := TextInput {
-        x: 10px; width: parent.width - 46px; height: parent.height;
-        font-size: 12px; color: #dce4f5;
-        vertical-alignment: center; single-line: true;
-        text <=> root.text;
+    spacing: 6px; height: 32px;
+    Rectangle {
+        width: 224px; height: 32px;
+        border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
+        ti := TextInput {
+            x: 10px; width: parent.width - 20px; height: parent.height;
+            font-size: 12px; color: #dce4f5;
+            vertical-alignment: center; single-line: true;
+            text <=> root.text;
+        }
     }
     Rectangle {
-        x: parent.width - 32px; width: 32px; height: 32px;
-        background: #1a1b2a;
+        width: 32px; height: 32px;
+        border-radius: 4px; background: #232741; border-width: 1px; border-color: #343858;
         Text { text: "📁"; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
         TouchArea { mouse-cursor: pointer; clicked => { root.pick(); } }
     }
@@ -1599,15 +1602,19 @@ component SettingsDialog inherits Rectangle {
                                 Text {
                                     text: Tr.done_script_dl;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
-                                    width: 230px; wrap: word-wrap;
                                 }
-                                
-                                if cfg-dl-done-script-enabled: PathField {
+                            }
+                            if cfg-dl-done-script-enabled: HorizontalLayout {
+                                alignment: start;
+                                PathField {
                                     text <=> cfg-dl-done-script;
                                     pick => { pick-dl-script-path(); }
                                 }
-                                if !cfg-dl-done-script-enabled: Rectangle {
-                                    width: 260px; height: 32px; border-radius: 4px;
+                            }
+                            if !cfg-dl-done-script-enabled: HorizontalLayout {
+                                alignment: start;
+                                Rectangle {
+                                    width: 262px; height: 32px; border-radius: 4px;
                                     background: #171825; border-width: 1px; border-color: #2c2d42;
                                     Text {
                                         x: 8px; vertical-alignment: center; text: Tr.path_to_script; color: #3e445e; font-size: 12px;
