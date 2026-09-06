@@ -2,7 +2,7 @@
 # Created with assistance from Qwen 3.6 Plus (Alibaba).
 
 pkgname=transmission-remote-slint
-pkgver=0.5.0
+pkgver=0.7.0
 pkgrel=1
 pkgdesc="Lightweight Transmission BitTorrent GUI built with Slint (no GTK)"
 arch=('x86_64')
@@ -30,7 +30,7 @@ optdepends=(
     'xfce4-statusnotifier-plugin: system tray support in XFCE'
 )
 source=("$pkgname-$pkgver.tar.gz::https://github.com/guglovich/Transmission-Remote-Slint/archive/refs/tags/v${pkgver}.tar.gz")
-sha256sums=('7e180a7f469861106d45e3e2d13e9d7cde8df24d82b502aff75a08bda05f9dfa')
+sha256sums=('80da2656f8ad023d7e50cbadc6901c5de3cf99d1c2d948dc89ebd5b276106fb1')
 
 prepare() {
     cd "Transmission-Remote-Slint-${pkgver}"
