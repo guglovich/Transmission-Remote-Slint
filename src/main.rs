@@ -2098,23 +2098,28 @@ fn main() -> anyhow::Result<()> {
         });
     }
 
-    // Форс логического размера окна (некоторые WM игнорируют preferred и восстанавливают свой)
-    {
-        let ui0 = ui.as_weak();
-        slint::Timer::single_shot(Duration::from_millis(120), move || {
+    // Форс логического размера окна: WM игнорирует preferred и открывает по min-width (740),
+    // причём применяет свою геометрию ПОСЛЕ маппинга — поэтому принуждаем цепочкой ~4 сек.
+    fn enforce_window_size(ui0: slint::Weak<MainWindow>, n: u32) {
+        if n == 0 { return; }
+        slint::Timer::single_shot(Duration::from_millis(300), move || {
             if let Some(ui) = ui0.upgrade() {
                 let w = ui.window();
                 let sz = w.size();
-                eprintln!("[window] size at startup: {sz:?}");
-                // WM часто игнорирует preferred-width и открывает окно по min-width (740) —
-                // выглядит «вертикально». Форсируем preferred при любом меньшем размере.
-                let sf = w.scale_factor() as u32;
-                if sz.width < 1060 * sf || sz.height < 700 * sf {
+                let sf = w.scale_factor() as f32;
+                let min_w = (1060.0 * sf) as u32;
+                let min_h = (700.0 * sf) as u32;
+                if sz.width < min_w || sz.height < min_h {
                     w.set_size(slint::WindowSize::Logical(slint::LogicalSize::new(1060.0, 700.0)));
-                    eprintln!("[window] too small → forced 1060x700 logical");
+                    eprintln!("[window] #{n} was {sz:?} → forced 1060x700");
                 }
+                enforce_window_size(ui0, n - 1);
             }
         });
+    }
+    {
+        let ui0 = ui.as_weak();
+        enforce_window_size(ui0, 14);
     }
 
     slint::run_event_loop_until_quit()?;
