@@ -454,7 +454,12 @@ component TimeField inherits Rectangle {
         accepted => { sync-from-minutes(); }
     }
     TouchArea {
+        x: 0; width: 28px; height: parent.height;
         clicked => { if (editable) { hhi.focus(); hhi.select-all(); } }
+    }
+    TouchArea {
+        x: 46px; width: 28px; height: parent.height;
+        clicked => { if (editable) { mmi.focus(); mmi.select-all(); } }
     }
 }
 
@@ -499,45 +504,6 @@ component NumFieldF inherits Rectangle {
 }
 
 // Поле времени HH:MM (внутри хранятся минуты): ввод 3-4 цифр как ЧЧММ
-component TimeField inherits Rectangle {
-    in-out property <int> minutes;
-    callback touched-cb();
-    in property <bool> editable: true;
-    property <string> txt;
-    init => {
-        txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
-    }
-    changed minutes => {
-        touched-cb();
-        if (!ti.has-focus) {
-            txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
-        }
-    }
-    width: 60px; height: 28px;
-    border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
-    opacity: editable ? 1.0 : 0.5;
-    ti := TextInput {
-        x: 0; width: parent.width; height: parent.height;
-        font-size: 13px; color: #dce4f5;
-        horizontal-alignment: center; vertical-alignment: center;
-        enabled: editable; input-type: number;
-        text <=> txt;
-        edited => {
-            if (self.text.is-empty) { return; }
-            minutes = Math.clamp(
-                Math.floor(self.text.to-float() / 100) * 60 + Math.min(Math.mod(Math.round(self.text.to-float()), 100), 59),
-                0, 1439);
-        }
-        accepted => {
-            txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
-        }
-    }
-    TouchArea {
-        clicked => { if (editable) { ti.focus(); ti.select-all(); } }
-    }
-}
-
-
 component PathField inherits HorizontalLayout {
     in property <string> text;
     callback text-changed(string);
@@ -1403,10 +1369,10 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         // Time begin
-                                        TimeField { minutes <=> cfg-alt-speed-time-begin; touched-cb() => { touched(); }; editable: cfg-alt-speed-enabled; }
+                                        TimeField { minutes <=> cfg-alt-speed-time-begin; touched-cb() => { touched(); }; editable: cfg-alt-speed-enabled && cfg-alt-speed-schedule; }
                                         Text { text: Tr.sched_to; color: #7a8296; font-size: 13px; vertical-alignment: center; }
                                         // Time end
-                                        TimeField { minutes <=> cfg-alt-speed-time-end; touched-cb() => { touched(); }; editable: cfg-alt-speed-enabled; }
+                                        TimeField { minutes <=> cfg-alt-speed-time-end; touched-cb() => { touched(); }; editable: cfg-alt-speed-enabled && cfg-alt-speed-schedule; }
                                     }
                                 }
 
