@@ -354,7 +354,7 @@ component NumField inherits Rectangle {
         }
     }
     TouchArea {
-        clicked => { if (editable) { ti.focus(); } }
+        clicked => { if (editable) { ti.focus(); ti.select-all(); } }
     }
 }
 
@@ -395,7 +395,7 @@ component NumFieldF inherits Rectangle {
         }
     }
     TouchArea {
-        clicked => { if (editable) { ti.focus(); } }
+        clicked => { if (editable) { ti.focus(); ti.select-all(); } }
     }
 }
 
@@ -434,7 +434,7 @@ component TimeField inherits Rectangle {
         }
     }
     TouchArea {
-        clicked => { if (editable) { ti.focus(); } }
+        clicked => { if (editable) { ti.focus(); ti.select-all(); } }
     }
 }
 
