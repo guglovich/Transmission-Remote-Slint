@@ -352,6 +352,42 @@ component NumField inherits Rectangle {
     }
 }
 
+
+component NumFieldF inherits Rectangle {
+    in-out property <int> value;        // сотые доли: 244 = 2.44
+    in property <int> min-val: 0;
+    in property <int> max-val: 10000;
+    in property <bool> editable: true;
+    in property <length> field-width: 56px;
+    in property <length> field-height: 26px;
+    property <string> txt;
+    init => { txt = Math.floor(value / 100) + "." + Math.mod(Math.floor(value / 10), 10) + Math.mod(value, 10); }
+    changed value => {
+        if (!ti.has-focus) {
+            txt = Math.floor(value / 100) + "." + Math.mod(Math.floor(value / 10), 10) + Math.mod(value, 10);
+        }
+    }
+    width: field-width; height: field-height;
+    border-radius: 4px;
+    background: #171825;
+    border-width: 1px;
+    border-color: ti.has-focus ? #3f72f6 : #2c2d42;
+    opacity: editable ? 1.0 : 0.45;
+    ti := TextInput {
+        x: 8px; width: parent.width - 12px; height: parent.height;
+        font-size: 12px; color: editable ? #e2e8f0 : #4e556e;
+        vertical-alignment: center; single-line: true;
+        enabled: editable; input-type: decimal;
+        text <=> txt;
+        edited => {
+            value = Math.clamp(Math.round(self.text.to-float() * 100), min-val, max-val);
+        }
+        accepted => {
+            txt = Math.floor(value / 100) + "." + Math.mod(Math.floor(value / 10), 10) + Math.mod(value, 10);
+        }
+    }
+}
+
 // Поле времени HH:MM (внутри хранятся минуты): ввод 3-4 цифр как ЧЧММ
 component TimeField inherits Rectangle {
     in-out property <int> minutes;
@@ -1616,14 +1652,10 @@ component SettingsDialog inherits Rectangle {
                                 
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
-                                    Rectangle {
-                                        width: 50px; height: 26px; border-radius: 4px;
-                                        background: #171825; border-width: 1px; border-color: #2c2d42;
-                                        Text {
-                                            text: (cfg-seed-ratio / 100) + "." + (Math.mod(cfg-seed-ratio, 100) / 10);
-                                            color: #e2e8f0; font-size: 12px;
-                                            vertical-alignment: center; x: 12px;
-                                        }
+                                    NumFieldF {
+                                        value <=> cfg-seed-ratio;
+                                        min-val: 0; max-val: 10000;
+                                        field-width: 56px; field-height: 26px;
                                     }
                                     Rectangle {
                                         width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
@@ -1661,14 +1693,10 @@ component SettingsDialog inherits Rectangle {
                                 
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
-                                    Rectangle {
-                                        width: 50px; height: 26px; border-radius: 4px;
-                                        background: #171825; border-width: 1px; border-color: #2c2d42;
-                                        Text {
-                                            text: cfg-seed-idle-min;
-                                            color: #e2e8f0; font-size: 12px;
-                                            vertical-alignment: center; x: 12px;
-                                        }
+                                    NumField {
+                                        value <=> cfg-seed-idle-min;
+                                        min-val: 1; max-val: 9999;
+                                        field-width: 56px; field-height: 26px;
                                     }
                                     Rectangle {
                                         width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
@@ -1697,21 +1725,23 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 Text {
                                     text: Tr.done_script_seed;
-                                    color: #bfcade; font-size: 13px; vertical-alignment: center; width: 280px;
+                                    color: #bfcade; font-size: 13px; vertical-alignment: center;
                                 }
-                                
-                                if cfg-seed-done-script-enabled: PathField {
+                            }
+                            if cfg-seed-done-script-enabled: HorizontalLayout {
+                                alignment: start;
+                                PathField {
                                     text <=> cfg-seed-done-script;
                                     pick => { pick-seed-script-path(); }
                                 }
-                                if !cfg-seed-done-script-enabled: HorizontalLayout {
-                                    spacing: 8px; horizontal-stretch: 1;
-                                    Rectangle {
-                                        horizontal-stretch: 1; height: 32px; border-radius: 4px;
-                                        background: #171825; border-width: 1px; border-color: #2c2d42;
-                                        Text {
-                                            x: 8px; vertical-alignment: center; text: Tr.path_to_script; color: #3e445e; font-size: 13px;
-                                        }
+                            }
+                            if !cfg-seed-done-script-enabled: HorizontalLayout {
+                                alignment: start;
+                                Rectangle {
+                                    width: 260px; height: 32px; border-radius: 4px;
+                                    background: #171825; border-width: 1px; border-color: #2c2d42;
+                                    Text {
+                                        x: 8px; vertical-alignment: center; text: Tr.path_to_script; color: #3e445e; font-size: 12px;
                                     }
                                 }
                             }
