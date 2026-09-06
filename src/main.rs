@@ -1476,8 +1476,8 @@ fn main() -> anyhow::Result<()> {
                 };
                 if changed {
                     *ls_c.lock().unwrap() = Some(s.clone());
+                    eprintln!("[settings] close flush: begin={} end={} → session-set", s.alt_speed_time_begin, s.alt_speed_time_end);
                     let _ = tx_c.send(Command::SaveDaemonSettings(s));
-                    eprintln!("[settings] close flush: change detected → session-set");
                     let _ = apply_app_config_from_ui(&ui);
                     app_config::sync_autostart(config_lock().lock().unwrap().autostart);
                 }
@@ -1869,7 +1869,7 @@ fn main() -> anyhow::Result<()> {
             };
             if !changed { return; }
             *ls.lock().unwrap() = Some(s.clone());
-            eprintln!("[settings] auto-save: change detected → session-set");
+            eprintln!("[settings] auto-save: change detected begin={} end={} → session-set", s.alt_speed_time_begin, s.alt_speed_time_end);
             let _ = tx.send(Command::SaveDaemonSettings(s));
 
             // AppConfig (не-демонские настройки) — онлайн в конфиг

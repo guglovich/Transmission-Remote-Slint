@@ -428,7 +428,7 @@ component PathField inherits HorizontalLayout {
     in property <length> field-w: 224px;
     spacing: 6px; height: 32px;
     Rectangle {
-        width: root.field-w; height: 32px;
+        min-width: root.field-w; horizontal-stretch: 1; height: 32px;
         border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
         ti := TextInput {
             x: 10px; width: parent.width - 20px; height: parent.height;
@@ -1162,7 +1162,7 @@ component SettingsDialog inherits Rectangle {
                                         up-cb := TouchArea { clicked => { cfg-speed-up-enabled = !cfg-speed-up-enabled; } }
                                         if cfg-speed-up-enabled: Text { text: "✓"; color: #fff; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
                                     }
-                                    Text { text: Tr.ulimit_lbl;  color: #939cb0; font-size: 13px; vertical-alignment: center; width: 140px; }
+                                    Text { text: Tr.ulimit_lbl;  color: #939cb0; font-size: 13px; vertical-alignment: center; width: 200px; }
                                     
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
@@ -1191,7 +1191,7 @@ component SettingsDialog inherits Rectangle {
                                         dn-cb := TouchArea { clicked => { cfg-speed-down-enabled = !cfg-speed-down-enabled; } }
                                         if cfg-speed-down-enabled: Text { text: "✓"; color: #fff; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
                                     }
-                                    Text { text: Tr.dlimit_lbl;  color: #939cb0; font-size: 13px; vertical-alignment: center; width: 140px; }
+                                    Text { text: Tr.dlimit_lbl;  color: #939cb0; font-size: 13px; vertical-alignment: center; width: 200px; }
                                     
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
@@ -1510,7 +1510,7 @@ component SettingsDialog inherits Rectangle {
                                 Text {
                                     text: Tr.seed_ratio_min_lbl;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
-                                    width: 262px; wrap: word-wrap;
+                                    width: 240px; wrap: word-wrap;
                                 }
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
