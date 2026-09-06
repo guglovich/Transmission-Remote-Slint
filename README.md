@@ -69,7 +69,7 @@ The result: the UI stays responsive at 1,000+ or 4,000+ torrents because the mai
 
 - **Torrent list** — name, status, progress, ↓/↑ speed, inline error messages
 - **Per-torrent actions** — Start / Pause / Recheck / Open folder / Remove / Delete with files
-- **Bulk actions** — Start All / Stop All with confirmation dialog, mass re-verify via the Rehash button
+- **Bulk actions** — mass re-verify via the Rehash button
 - **Status filters** — filter torrents by status (All, Downloading, Seeding, Completed, Stopped, Active, Inactive, Checking, Error)
 - **Instant search** — filter by torrent name without waiting for RPC
 - **System tray** — StatusNotifierItem via D-Bus (native zbus 4, no ksni/GTK)
