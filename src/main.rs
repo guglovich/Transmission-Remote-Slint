@@ -1162,6 +1162,49 @@ fn main() -> anyhow::Result<()> {
     }
 
     {
+        let ui_weak = ui.as_weak();
+        let uw1 = ui_weak.clone();
+        ui.on_pick_dl_dir(move || {
+            let ui2 = uw1.clone();
+            std::thread::spawn(move || {
+                if let Ok(path) = filepicker::pick_directory("Select download directory") {
+                    let _ = slint::invoke_from_event_loop(move || {
+                        if let Some(ui) = ui2.upgrade() {
+                            ui.set_cfg_dl_dir(path.into());
+                        }
+                    });
+                }
+            });
+        });
+        let uw2 = ui_weak.clone();
+        ui.on_pick_incomplete_dir(move || {
+            let ui2 = uw2.clone();
+            std::thread::spawn(move || {
+                if let Ok(path) = filepicker::pick_directory("Select incomplete directory") {
+                    let _ = slint::invoke_from_event_loop(move || {
+                        if let Some(ui) = ui2.upgrade() {
+                            ui.set_cfg_dl_incomplete_dir(path.into());
+                        }
+                    });
+                }
+            });
+        });
+        let uw3 = ui_weak.clone();
+        ui.on_pick_watch_dir(move || {
+            let ui2 = uw3.clone();
+            std::thread::spawn(move || {
+                if let Ok(path) = filepicker::pick_directory("Select watch directory") {
+                    let _ = slint::invoke_from_event_loop(move || {
+                        if let Some(ui) = ui2.upgrade() {
+                            ui.set_cfg_dl_watch_dir(path.into());
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    {
         let tx = cmd_tx.clone();
         ui.on_add_torrent_url(move |url| {
             let s = url.trim().to_string();
@@ -2052,6 +2095,25 @@ fn main() -> anyhow::Result<()> {
                     Err(_) => eprintln!("[open] Directory selection cancelled"),
                 }
             });
+        });
+    }
+
+    // Форс логического размера окна (некоторые WM игнорируют preferred и восстанавливают свой)
+    {
+        let ui0 = ui.as_weak();
+        slint::Timer::single_shot(Duration::from_millis(120), move || {
+            if let Some(ui) = ui0.upgrade() {
+                let w = ui.window();
+                let sz = w.size();
+                eprintln!("[window] size at startup: {sz:?}");
+                // WM часто игнорирует preferred-width и открывает окно по min-width (740) —
+                // выглядит «вертикально». Форсируем preferred при любом меньшем размере.
+                let sf = w.scale_factor() as u32;
+                if sz.width < 1060 * sf || sz.height < 700 * sf {
+                    w.set_size(slint::WindowSize::Logical(slint::LogicalSize::new(1060.0, 700.0)));
+                    eprintln!("[window] too small → forced 1060x700 logical");
+                }
+            }
         });
     }
 

@@ -356,7 +356,10 @@ component NumField inherits Rectangle {
 component TimeField inherits Rectangle {
     in-out property <int> minutes;
     in property <bool> editable: true;
-    property <string> txt: Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
+    property <string> txt;
+    init => {
+        txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
+    }
     changed minutes => {
         if (!ti.has-focus) {
             txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
@@ -379,6 +382,26 @@ component TimeField inherits Rectangle {
         accepted => {
             txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
         }
+    }
+}
+
+
+component PathField inherits Rectangle {
+    in-out property <string> text;
+    callback pick();
+    width: 260px; height: 32px;
+    border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
+    ti := TextInput {
+        x: 10px; width: parent.width - 46px; height: parent.height;
+        font-size: 12px; color: #dce4f5;
+        vertical-alignment: center; single-line: true;
+        text <=> root.text;
+    }
+    Rectangle {
+        x: parent.width - 32px; width: 32px; height: 32px;
+        background: #1a1b2a;
+        Text { text: "📁"; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+        TouchArea { mouse-cursor: pointer; clicked => { root.pick(); } }
     }
 }
 
@@ -622,6 +645,9 @@ component SettingsDialog inherits Rectangle {
     callback delete-host(string);
     callback pick-dl-script-path();
     callback pick-seed-script-path();
+    callback pick-dl-dir();
+    callback pick-incomplete-dir();
+    callback pick-watch-dir();
     in-out property <bool> cfg-speed-up-enabled: false;
     in-out property <int> cfg-speed-up-kbs: 0;
     in-out property <bool> cfg-speed-down-enabled: false;
@@ -1296,13 +1322,9 @@ component SettingsDialog inherits Rectangle {
                                     width: 230px; wrap: word-wrap;
                                 }
                                 
-                                if cfg-dl-watch-dir-enabled: Rectangle {
-                                    width: 150px; height: 32px; border-radius: 4px;
-                                    background: #171825; border-width: 1px; border-color: #2c2d42;
-                                    LineEdit {
-                                        width: 100%; height: 100%;
-                                        text <=> cfg-dl-watch-dir;
-                                    }
+                                if cfg-dl-watch-dir-enabled: PathField {
+                                    text <=> cfg-dl-watch-dir;
+                                    pick => { pick-watch-dir(); }
                                 }
                             }
                             
@@ -1373,18 +1395,9 @@ component SettingsDialog inherits Rectangle {
                                         color: #bfcade; font-size: 13px; vertical-alignment: center;
                                         width: 180px;
                                     }
-                                    Rectangle {
-                                        width: 140px; height: 32px; border-radius: 4px;
-                                        background: #171825; border-width: 1px; border-color: #2c2d42;
-                                        LineEdit {
-                                            width: 100%; height: 100%;
-                                            text <=> cfg-dl-dir;
-                                        }
-                                    }
-                                    Rectangle {
-                                        width: 32px; height: 32px; border-radius: 4px;
-                                        background: #1a1b2a; border-width: 1px; border-color: #282a41;
-                                        Text { text: "📁"; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+                                    PathField {
+                                        text <=> cfg-dl-dir;
+                                        pick => { pick-dl-dir(); }
                                     }
                                 }
                                 HorizontalLayout {
@@ -1521,13 +1534,9 @@ component SettingsDialog inherits Rectangle {
                                     width: 230px; wrap: word-wrap;
                                 }
                                 
-                                if cfg-dl-incomplete-dir-enabled: Rectangle {
-                                    width: 150px; height: 32px; border-radius: 4px;
-                                    background: #171825; border-width: 1px; border-color: #2c2d42;
-                                    LineEdit {
-                                        width: 100%; height: 100%;
-                                        text <=> cfg-dl-incomplete-dir;
-                                    }
+                                if cfg-dl-incomplete-dir-enabled: PathField {
+                                    text <=> cfg-dl-incomplete-dir;
+                                    pick => { pick-incomplete-dir(); }
                                 }
                                 if !cfg-dl-incomplete-dir-enabled: Rectangle {
                                     width: 150px; height: 32px; border-radius: 4px;
@@ -1557,28 +1566,15 @@ component SettingsDialog inherits Rectangle {
                                     width: 230px; wrap: word-wrap;
                                 }
                                 
-                                if cfg-dl-done-script-enabled: HorizontalLayout {
-                                    spacing: 8px; alignment: start;
-                                    Rectangle {
-                                        width: 220px; height: 32px; border-radius: 4px;
-                                        background: #171825; border-width: 1px; border-color: #2c2d42;
-                                        LineEdit {
-                                            width: 100%; height: 100%;
-                                            text <=> cfg-dl-done-script;
-                                        }
-                                    }
-                                    Rectangle {
-                                        width: 32px; height: 32px; border-radius: 4px;
-                                        background: #1a1b2a; border-width: 1px; border-color: #282a41;
-                                        Text { text: "📁"; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
-                                        TouchArea { clicked => { pick-dl-script-path(); } }
-                                    }
+                                if cfg-dl-done-script-enabled: PathField {
+                                    text <=> cfg-dl-done-script;
+                                    pick => { pick-dl-script-path(); }
                                 }
-                                if !cfg-dl-done-script-enabled: HorizontalLayout {
-                                    alignment: start;
-                                    LineEdit {
-                                        width: 220px; height: 32px;
-                                        text <=> cfg-dl-done-script;
+                                if !cfg-dl-done-script-enabled: Rectangle {
+                                    width: 260px; height: 32px; border-radius: 4px;
+                                    background: #171825; border-width: 1px; border-color: #2c2d42;
+                                    Text {
+                                        x: 8px; vertical-alignment: center; text: Tr.path_to_script; color: #3e445e; font-size: 12px;
                                     }
                                 }
                             }
@@ -1704,22 +1700,9 @@ component SettingsDialog inherits Rectangle {
                                     color: #bfcade; font-size: 13px; vertical-alignment: center; width: 280px;
                                 }
                                 
-                                if cfg-seed-done-script-enabled: HorizontalLayout {
-                                    spacing: 8px;
-                                    Rectangle {
-                                        width: 220px; height: 32px; border-radius: 4px;
-                                        background: #171825; border-width: 1px; border-color: #2c2d42;
-                                        LineEdit {
-                                            width: 100%; height: 100%;
-                                            text <=> cfg-seed-done-script;
-                                        }
-                                    }
-                                    Rectangle {
-                                        width: 32px; height: 32px; border-radius: 4px;
-                                        background: #1a1b2a; border-width: 1px; border-color: #282a41;
-                                        Text { text: "📁"; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
-                                        TouchArea { clicked => { pick-seed-script-path(); } }
-                                    }
+                                if cfg-seed-done-script-enabled: PathField {
+                                    text <=> cfg-seed-done-script;
+                                    pick => { pick-seed-script-path(); }
                                 }
                                 if !cfg-seed-done-script-enabled: HorizontalLayout {
                                     spacing: 8px; horizontal-stretch: 1;
@@ -3098,6 +3081,9 @@ export component MainWindow inherits Window {
     callback settings-open();
     callback pick-dl-script-path();
     callback pick-seed-script-path();
+    callback pick-dl-dir();
+    callback pick-incomplete-dir();
+    callback pick-watch-dir();
     callback start-torrent(int);
     callback stop-torrent(int);
     callback start-all();
@@ -3631,5 +3617,8 @@ export component MainWindow inherits Window {
         delete-host(n) => { root.delete-host(n); }
         pick-dl-script-path => { pick-dl-script-path(); }
         pick-seed-script-path => { pick-seed-script-path(); }
+        pick-dl-dir => { pick-dl-dir(); }
+        pick-incomplete-dir => { pick-incomplete-dir(); }
+        pick-watch-dir => { pick-watch-dir(); }
     }
 }
