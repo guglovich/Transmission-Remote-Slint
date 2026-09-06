@@ -1560,7 +1560,7 @@ component SettingsDialog inherits Rectangle {
                                 if cfg-dl-done-script-enabled: HorizontalLayout {
                                     spacing: 8px; alignment: start;
                                     Rectangle {
-                                        width: 110px; height: 32px; border-radius: 4px;
+                                        width: 220px; height: 32px; border-radius: 4px;
                                         background: #171825; border-width: 1px; border-color: #2c2d42;
                                         LineEdit {
                                             width: 100%; height: 100%;
@@ -1701,7 +1701,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 Text {
                                     text: Tr.done_script_seed;
-                                    color: #bfcade; font-size: 13px; vertical-alignment: center; width: 260px;
+                                    color: #bfcade; font-size: 13px; vertical-alignment: center; width: 280px;
                                 }
                                 
                                 if cfg-seed-done-script-enabled: HorizontalLayout {
@@ -1905,12 +1905,12 @@ component SettingsDialog inherits Rectangle {
                                         Rectangle {
                                             width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
                                             Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
-                                            TouchArea { clicked => { if (cfg-net-max-peers-total > 10) { cfg-net-max-peers-total = cfg-net-max-peers-total - 5; } } }
+                                            TouchArea { clicked => { if (cfg-net-max-peers-total > 1) { cfg-net-max-peers-total = cfg-net-max-peers-total - 1; } } }
                                         }
                                         Rectangle {
                                             width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
                                             Text { text: "+"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
-                                            TouchArea { clicked => { cfg-net-max-peers-total = cfg-net-max-peers-total + 5; } }
+                                            TouchArea { clicked => { cfg-net-max-peers-total = cfg-net-max-peers-total + 1; } }
                                         }
                                     }
                                 }
@@ -2607,12 +2607,12 @@ component SettingsDialog inherits Rectangle {
                                     text: Tr.update_freq;
                                     color: #939cb0; font-size: 12px; vertical-alignment: center; width: 170px;
                                 }
-                                Rectangle {
-                                    width: 180px; height: 32px; border-radius: 4px;
-                                    background: #171825; border-width: 1px; border-color: #2c2d42;
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    NumField { value <=> cfg-refresh-interval; min-val: 1; max-val: 60; }
                                     Text {
-                                        text: cfg-refresh-interval + " s";
-                                        color: #e2e8f0; font-size: 12px; vertical-alignment: center; x: 12px;
+                                        text: selected-language == "ru" ? "сек" : "sec";
+                                        color: #5e637a; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
                             }
@@ -3506,6 +3506,16 @@ export component MainWindow inherits Window {
         minimize-to-tray => { close-dialog-visible = false; do-minimize-tray(); }
         quit-app => { close-dialog-visible = false; do-quit(); }
         cancelled => { close-dialog-visible = false; }
+    }
+
+    CloseAnimDialog {
+        width: 100%; height: 100%; visible-dialog: close-anim-visible;
+        trackers-count: close-anim-trackers;
+        phase: close-anim-phase;
+        s-left: close-anim-left;
+        ticker: close-anim-ticker;
+        selected-language: selected-language;
+        force-quit => { close-anim-force(); }
     }
 
 
