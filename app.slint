@@ -401,14 +401,15 @@ component NumFieldF inherits Rectangle {
 
 // Поле времени HH:MM (внутри хранятся минуты): ввод 3-4 цифр как ЧЧММ
 component TimeField inherits Rectangle {
-    in property <int> minutes;
-    callback minutes-changed(int);
+    in-out property <int> minutes;
+    callback touched-cb();
     in property <bool> editable: true;
     property <string> txt;
     init => {
         txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
     }
     changed minutes => {
+        touched-cb();
         if (!ti.has-focus) {
             txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
         }
@@ -424,9 +425,9 @@ component TimeField inherits Rectangle {
         text <=> txt;
         edited => {
             if (self.text.is-empty) { return; }
-            root.minutes-changed(Math.clamp(
+            minutes = Math.clamp(
                 Math.floor(self.text.to-float() / 100) * 60 + Math.min(Math.mod(Math.round(self.text.to-float()), 100), 59),
-                0, 1439));
+                0, 1439);
         }
         accepted => {
             txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
@@ -1303,10 +1304,10 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         // Time begin
-                                        TimeField { minutes: cfg-alt-speed-time-begin; minutes-changed(m2) => { cfg-alt-speed-time-begin = m2; touched(); }; editable: cfg-alt-speed-enabled; }
+                                        TimeField { minutes <=> cfg-alt-speed-time-begin; touched-cb() => { touched(); }; editable: cfg-alt-speed-enabled; }
                                         Text { text: Tr.sched_to; color: #7a8296; font-size: 13px; vertical-alignment: center; }
                                         // Time end
-                                        TimeField { minutes: cfg-alt-speed-time-end; minutes-changed(m2) => { cfg-alt-speed-time-end = m2; touched(); }; editable: cfg-alt-speed-enabled; }
+                                        TimeField { minutes <=> cfg-alt-speed-time-end; touched-cb() => { touched(); }; editable: cfg-alt-speed-enabled; }
                                     }
                                 }
 
