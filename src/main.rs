@@ -1461,6 +1461,8 @@ fn main() -> anyhow::Result<()> {
     let last_settings: std::sync::Arc<std::sync::Mutex<Option<DaemonSettings>>> =
         std::sync::Arc::new(std::sync::Mutex::new(None));
     let last_app_auto = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    // Юзер редактировал настройки с момента открытия диалога → поздний Loaded игнорируем
+    let edits_since_open = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
 
     // Немедленный flush настроек при закрытии диалога (автосейв 800мс мог не успеть)
     {
@@ -1507,6 +1509,7 @@ fn main() -> anyhow::Result<()> {
         let do_quit_tmr = do_quit_tmr.clone();
         let cmd_tx_fast = cmd_tx.clone();
         let last_settings = last_settings.clone();
+        let eso = edits_since_open.clone();
         move || {
         while let Ok(msg) = status_rx.try_recv() {
             if let Some(ui) = ui_h.upgrade() {
@@ -1518,8 +1521,12 @@ fn main() -> anyhow::Result<()> {
         while let Ok(result) = settings_rx.try_recv() {
             match result {
                 SettingsResult::Loaded(s) => {
-                    // Гонка: если юзер уже редактировал настройки с момента открытия диалога —
+                    // Гонка: юзер уже редактировал настройки с момента открытия диалога —
                     // поздний ответ Load перезаписал бы его правки. Пропускаем.
+                    if eso.load(std::sync::atomic::Ordering::Relaxed) {
+                        eprintln!("[settings] Loaded skipped — user edited since open (race guard)");
+                        continue;
+                    }
                     if let Some(ui2) = ui_h.upgrade() {
                         let cur = build_daemon_settings(&ui2);
                         let user_edited = match last_settings.lock().unwrap().as_ref() {
@@ -1857,8 +1864,16 @@ fn main() -> anyhow::Result<()> {
     // Settings dialog: Load daemon settings when opened
     {
         let tx = cmd_tx.clone();
+        let edits = edits_since_open.clone();
         ui.on_settings_open(move || {
+            edits.store(false, std::sync::atomic::Ordering::Relaxed);
             let _ = tx.send(Command::LoadDaemonSettings);
+        });
+    }
+    {
+        let edits = edits_since_open.clone();
+        ui.on_settings_touched(move || {
+            edits.store(true, std::sync::atomic::Ordering::Relaxed);
         });
     }
 

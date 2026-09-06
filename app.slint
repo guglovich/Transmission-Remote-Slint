@@ -674,6 +674,7 @@ component MagnetDialog inherits Rectangle {
 
 
 component SettingsDialog inherits Rectangle {
+    callback touched();
     in property <bool> visible-dialog;
     property <string> refresh-interval-str: "\{cfg-refresh-interval}";
     in-out property <string> selected-language: "en";
@@ -969,7 +970,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-suspend = !cfg-suspend; }
+                                        clicked => { cfg-suspend = !cfg-suspend; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -987,7 +988,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-autostart = !cfg-autostart; }
+                                        clicked => { cfg-autostart = !cfg-autostart; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -1005,7 +1006,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-start-minimized = !cfg-start-minimized; }
+                                        clicked => { cfg-start-minimized = !cfg-start-minimized; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -1098,7 +1099,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-notify-add = !cfg-notify-add; }
+                                        clicked => { cfg-notify-add = !cfg-notify-add; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -1116,7 +1117,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-notify-complete = !cfg-notify-complete; }
+                                        clicked => { cfg-notify-complete = !cfg-notify-complete; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -1134,7 +1135,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-notify-sound = !cfg-notify-sound; }
+                                        clicked => { cfg-notify-sound = !cfg-notify-sound; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -1165,7 +1166,7 @@ component SettingsDialog inherits Rectangle {
                                     Rectangle { width: 18px; height: 18px; border-radius: 4px;
                                         background: cfg-speed-up-enabled ? #4a7cf7 : transparent;
                                         border-width: 1px; border-color: cfg-speed-up-enabled ? #4a7cf7 : #343858;
-                                        up-cb := TouchArea { clicked => { cfg-speed-up-enabled = !cfg-speed-up-enabled; } }
+                                        up-cb := TouchArea { clicked => { cfg-speed-up-enabled = !cfg-speed-up-enabled; touched(); } }
                                         if cfg-speed-up-enabled: Text { text: "✓"; color: #fff; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
                                     }
                                     Text { text: Tr.ulimit_lbl;  color: #939cb0; font-size: 13px; vertical-alignment: center; width: 200px; }
@@ -1174,7 +1175,7 @@ component SettingsDialog inherits Rectangle {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         // Input field
                                         Rectangle { width: 54px; height: 28px; border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
-                                            NumField { value: cfg-speed-up-kbs; value-changed(v) => { cfg-speed-up-kbs = v; }; min-val: 0; max-val: 9999; editable: cfg-speed-up-enabled; field-width: 54px; field-height: 28px; plain: true; }
+                                            NumField { value: cfg-speed-up-kbs; value-changed(v) => { cfg-speed-up-kbs = v; touched(); }; min-val: 0; max-val: 9999; editable: cfg-speed-up-enabled; field-width: 54px; field-height: 28px; plain: true; }
                                         }
                                         // − button
                                         Rectangle { width: 28px; height: 28px; border-radius: 4px; background: up-min-ta.has-hover ? #252d40 : transparent; border-width: 1px; border-color: #343858;
@@ -1194,7 +1195,7 @@ component SettingsDialog inherits Rectangle {
                                     Rectangle { width: 18px; height: 18px; border-radius: 4px;
                                         background: cfg-speed-down-enabled ? #4a7cf7 : transparent;
                                         border-width: 1px; border-color: cfg-speed-down-enabled ? #4a7cf7 : #343858;
-                                        dn-cb := TouchArea { clicked => { cfg-speed-down-enabled = !cfg-speed-down-enabled; } }
+                                        dn-cb := TouchArea { clicked => { cfg-speed-down-enabled = !cfg-speed-down-enabled; touched(); } }
                                         if cfg-speed-down-enabled: Text { text: "✓"; color: #fff; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
                                     }
                                     Text { text: Tr.dlimit_lbl;  color: #939cb0; font-size: 13px; vertical-alignment: center; width: 200px; }
@@ -1202,7 +1203,7 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         Rectangle { width: 54px; height: 28px; border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
-                                            NumField { value: cfg-speed-down-kbs; value-changed(v) => { cfg-speed-down-kbs = v; }; min-val: 0; max-val: 9999; editable: cfg-speed-down-enabled; field-width: 54px; field-height: 28px; plain: true; }
+                                            NumField { value: cfg-speed-down-kbs; value-changed(v) => { cfg-speed-down-kbs = v; touched(); }; min-val: 0; max-val: 9999; editable: cfg-speed-down-enabled; field-width: 54px; field-height: 28px; plain: true; }
                                         }
                                         Rectangle { width: 28px; height: 28px; border-radius: 4px; background: dn-min-ta.has-hover ? #252d40 : transparent; border-width: 1px; border-color: #343858;
                                             dn-min-ta := TouchArea { clicked => { if cfg-speed-down-enabled { cfg-speed-down-kbs = Math.max(0, cfg-speed-down-kbs - 1); } } }
@@ -1227,7 +1228,7 @@ component SettingsDialog inherits Rectangle {
                                     Rectangle { width: 18px; height: 18px; border-radius: 4px;
                                         background: cfg-alt-speed-enabled ? #4a7cf7 : transparent;
                                         border-width: 1px; border-color: cfg-alt-speed-enabled ? #4a7cf7 : #343858;
-                                        alt-cb := TouchArea { clicked => { cfg-alt-speed-enabled = !cfg-alt-speed-enabled; } }
+                                        alt-cb := TouchArea { clicked => { cfg-alt-speed-enabled = !cfg-alt-speed-enabled; touched(); } }
                                         if cfg-alt-speed-enabled: Text { text: "✓"; color: #fff; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
                                     }
                                     Text { text: Tr.alt_override; color: #e4e7f2; font-size: 13px; font-weight: 700; vertical-alignment: center; }
@@ -1240,7 +1241,7 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         Rectangle { width: 54px; height: 28px; border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
-                                            NumField { value: cfg-alt-speed-up-kbs; value-changed(v) => { cfg-alt-speed-up-kbs = v; }; min-val: 0; max-val: 9999; editable: cfg-alt-speed-enabled; field-width: 54px; field-height: 28px; plain: true; }
+                                            NumField { value: cfg-alt-speed-up-kbs; value-changed(v) => { cfg-alt-speed-up-kbs = v; touched(); }; min-val: 0; max-val: 9999; editable: cfg-alt-speed-enabled; field-width: 54px; field-height: 28px; plain: true; }
                                         }
                                         Rectangle { width: 28px; height: 28px; border-radius: 4px; background: au-min-ta.has-hover ? #252d40 : transparent; border-width: 1px; border-color: #343858;
                                             au-min-ta := TouchArea { clicked => { if cfg-alt-speed-enabled { cfg-alt-speed-up-kbs = Math.max(0, cfg-alt-speed-up-kbs - 1); } } }
@@ -1260,7 +1261,7 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         Rectangle { width: 54px; height: 28px; border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
-                                            NumField { value: cfg-alt-speed-down-kbs; value-changed(v) => { cfg-alt-speed-down-kbs = v; }; min-val: 0; max-val: 9999; editable: cfg-alt-speed-enabled; field-width: 54px; field-height: 28px; plain: true; }
+                                            NumField { value: cfg-alt-speed-down-kbs; value-changed(v) => { cfg-alt-speed-down-kbs = v; touched(); }; min-val: 0; max-val: 9999; editable: cfg-alt-speed-enabled; field-width: 54px; field-height: 28px; plain: true; }
                                         }
                                         Rectangle { width: 28px; height: 28px; border-radius: 4px; background: ad-min-ta.has-hover ? #252d40 : transparent; border-width: 1px; border-color: #343858;
                                             ad-min-ta := TouchArea { clicked => { if cfg-alt-speed-enabled { cfg-alt-speed-down-kbs = Math.max(0, cfg-alt-speed-down-kbs - 1); } } }
@@ -1284,20 +1285,12 @@ component SettingsDialog inherits Rectangle {
                                     Text { text: Tr.by_schedule; color: cfg-alt-speed-enabled ? #7a8296 : #4e556e; font-size: 13px; vertical-alignment: center; width: 100px; }
                                     
                                     HorizontalLayout {
-                                        horizontal-stretch: 1; alignment: end; spacing: 10px;
-                                        Rectangle { width: 24px; height: 26px; border-radius: 4px; background: #1a1b2a; border-width: 1px; border-color: #343858;
-                                            Text { text: "−"; color: #8f97b8; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
-                                            TouchArea { clicked => { if (cfg-alt-speed-time-begin >= 5) { cfg-alt-speed-time-begin -= 5; } } }
-                                        }
+                                        horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         // Time begin
-                                        TimeField { minutes: cfg-alt-speed-time-begin; minutes-changed(m2) => { cfg-alt-speed-time-begin = m2; }; editable: cfg-alt-speed-enabled; }
+                                        TimeField { minutes: cfg-alt-speed-time-begin; minutes-changed(m2) => { cfg-alt-speed-time-begin = m2; touched(); }; editable: cfg-alt-speed-enabled; }
                                         Text { text: Tr.sched_to; color: #7a8296; font-size: 13px; vertical-alignment: center; }
                                         // Time end
-                                        TimeField { minutes: cfg-alt-speed-time-end; minutes-changed(m2) => { cfg-alt-speed-time-end = m2; }; editable: cfg-alt-speed-enabled; }
-                                        Rectangle { width: 24px; height: 26px; border-radius: 4px; background: #1a1b2a; border-width: 1px; border-color: #343858;
-                                            Text { text: "+"; color: #8f97b8; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
-                                            TouchArea { clicked => { if (cfg-alt-speed-time-begin <= 1434) { cfg-alt-speed-time-begin += 5; } } }
-                                        }
+                                        TimeField { minutes: cfg-alt-speed-time-end; minutes-changed(m2) => { cfg-alt-speed-time-end = m2; touched(); }; editable: cfg-alt-speed-enabled; }
                                     }
                                 }
 
@@ -1361,7 +1354,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 12px; height: 32px; alignment: start;
                                 TouchArea {
-                                    clicked => { cfg-dl-watch-dir-enabled = !cfg-dl-watch-dir-enabled; }
+                                    clicked => { cfg-dl-watch-dir-enabled = !cfg-dl-watch-dir-enabled; touched(); }
                                     width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                     Rectangle {
                                         width: 14px; height: 14px; border-radius: 3px;
@@ -1380,7 +1373,7 @@ component SettingsDialog inherits Rectangle {
                                     field-w: 150px;
                                     text: cfg-dl-watch-dir;
 
-                                    text-changed(t) => { cfg-dl-watch-dir = t; };
+                                    text-changed(t) => { cfg-dl-watch-dir = t;  touched(); };
                                     pick => { pick-watch-dir(); }
                                 }
                             }
@@ -1389,7 +1382,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 12px; height: 24px;
                                 TouchArea {
-                                    clicked => { cfg-dl-show-dialog = !cfg-dl-show-dialog; }
+                                    clicked => { cfg-dl-show-dialog = !cfg-dl-show-dialog; touched(); }
                                     width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                     Rectangle {
                                         width: 14px; height: 14px; border-radius: 3px;
@@ -1408,7 +1401,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 12px; height: 24px;
                                 TouchArea {
-                                    clicked => { cfg-dl-start-added = !cfg-dl-start-added; }
+                                    clicked => { cfg-dl-start-added = !cfg-dl-start-added; touched(); }
                                     width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                     Rectangle {
                                         width: 14px; height: 14px; border-radius: 3px;
@@ -1427,7 +1420,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 12px; height: 24px;
                                 TouchArea {
-                                    clicked => { cfg-dl-trash-torrent = !cfg-dl-trash-torrent; }
+                                    clicked => { cfg-dl-trash-torrent = !cfg-dl-trash-torrent; touched(); }
                                     width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                     Rectangle {
                                         width: 14px; height: 14px; border-radius: 3px;
@@ -1456,7 +1449,7 @@ component SettingsDialog inherits Rectangle {
                                         field-w: 170px;
                                         text: cfg-dl-dir;
 
-                                        text-changed(t) => { cfg-dl-dir = t; };
+                                        text-changed(t) => { cfg-dl-dir = t;  touched(); };
                                         pick => { pick-dl-dir(); }
                                     }
                                 }
@@ -1489,7 +1482,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
-                                    NumField { value: cfg-dl-queue-max; value-changed(v) => { cfg-dl-queue-max = v; }; min-val: 0; max-val: 999; }
+                                    NumField { value: cfg-dl-queue-max; value-changed(v) => { cfg-dl-queue-max = v; touched(); }; min-val: 0; max-val: 999; }
                                     Rectangle {
                                         width: 32px; height: 32px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #343858;
                                         Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
@@ -1508,7 +1501,7 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         spacing: 12px; height: 24px;
                                         TouchArea {
-                                            clicked => { cfg-dl-queue-enabled = !cfg-dl-queue-enabled; }
+                                            clicked => { cfg-dl-queue-enabled = !cfg-dl-queue-enabled; touched(); }
                                             width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                             Rectangle {
                                                 width: 14px; height: 14px; border-radius: 3px;
@@ -1532,7 +1525,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
-                                    NumField { value: cfg-dl-seed-ratio-limit-min; value-changed(v) => { cfg-dl-seed-ratio-limit-min = v; }; min-val: 0; max-val: 9999; }
+                                    NumField { value: cfg-dl-seed-ratio-limit-min; value-changed(v) => { cfg-dl-seed-ratio-limit-min = v; touched(); }; min-val: 0; max-val: 9999; }
                                     Rectangle {
                                         width: 32px; height: 32px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #343858;
                                         Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
@@ -1561,7 +1554,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 12px; height: 24px; alignment: stretch;
                                 TouchArea {
-                                    clicked => { cfg-dl-part-ext = !cfg-dl-part-ext; }
+                                    clicked => { cfg-dl-part-ext = !cfg-dl-part-ext; touched(); }
                                     width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                     Rectangle {
                                         width: 14px; height: 14px; border-radius: 3px;
@@ -1580,7 +1573,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 12px; height: 32px; alignment: start;
                                 TouchArea {
-                                    clicked => { cfg-dl-incomplete-dir-enabled = !cfg-dl-incomplete-dir-enabled; }
+                                    clicked => { cfg-dl-incomplete-dir-enabled = !cfg-dl-incomplete-dir-enabled; touched(); }
                                     width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                     Rectangle {
                                         width: 14px; height: 14px; border-radius: 3px;
@@ -1599,7 +1592,7 @@ component SettingsDialog inherits Rectangle {
                                     field-w: 150px;
                                     text: cfg-dl-incomplete-dir;
 
-                                    text-changed(t) => { cfg-dl-incomplete-dir = t; };
+                                    text-changed(t) => { cfg-dl-incomplete-dir = t;  touched(); };
                                     pick => { pick-incomplete-dir(); }
                                 }
                                 if !cfg-dl-incomplete-dir-enabled: Rectangle {
@@ -1615,7 +1608,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 12px; height: 32px; alignment: start;
                                 TouchArea {
-                                    clicked => { cfg-dl-done-script-enabled = !cfg-dl-done-script-enabled; }
+                                    clicked => { cfg-dl-done-script-enabled = !cfg-dl-done-script-enabled; touched(); }
                                     width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                     Rectangle {
                                         width: 14px; height: 14px; border-radius: 3px;
@@ -1634,7 +1627,7 @@ component SettingsDialog inherits Rectangle {
                                 PathField {
                                     text: cfg-dl-done-script;
 
-                                    text-changed(t) => { cfg-dl-done-script = t; };
+                                    text-changed(t) => { cfg-dl-done-script = t;  touched(); };
                                     pick => { pick-dl-script-path(); }
                                 }
                             }
@@ -1669,7 +1662,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; width: 230px;
                                     TouchArea {
-                                        clicked => { cfg-seed-ratio-enabled = !cfg-seed-ratio-enabled; }
+                                        clicked => { cfg-seed-ratio-enabled = !cfg-seed-ratio-enabled; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -1687,7 +1680,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
                                     NumFieldF {
-                                        value: cfg-seed-ratio; value-changed(v) => { cfg-seed-ratio = v; };
+                                        value: cfg-seed-ratio; value-changed(v) => { cfg-seed-ratio = v; touched(); };
                                         min-val: 0; max-val: 10000;
                                         field-width: 56px; field-height: 26px;
                                     }
@@ -1710,7 +1703,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; width: 230px;
                                     TouchArea {
-                                        clicked => { cfg-seed-idle-enabled = !cfg-seed-idle-enabled; }
+                                        clicked => { cfg-seed-idle-enabled = !cfg-seed-idle-enabled; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -1728,7 +1721,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
                                     NumField {
-                                        value: cfg-seed-idle-min; value-changed(v) => { cfg-seed-idle-min = v; };
+                                        value: cfg-seed-idle-min; value-changed(v) => { cfg-seed-idle-min = v; touched(); };
                                         min-val: 1; max-val: 9999;
                                         field-width: 56px; field-height: 26px;
                                     }
@@ -1748,7 +1741,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 12px; height: 32px; alignment: stretch;
                                 TouchArea {
-                                    clicked => { cfg-seed-done-script-enabled = !cfg-seed-done-script-enabled; }
+                                    clicked => { cfg-seed-done-script-enabled = !cfg-seed-done-script-enabled; touched(); }
                                     width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                     Rectangle {
                                         width: 14px; height: 14px; border-radius: 3px;
@@ -1767,7 +1760,7 @@ component SettingsDialog inherits Rectangle {
                                 PathField {
                                     text: cfg-seed-done-script;
 
-                                    text-changed(t) => { cfg-seed-done-script = t; };
+                                    text-changed(t) => { cfg-seed-done-script = t;  touched(); };
                                     pick => { pick-seed-script-path(); }
                                 }
                             }
@@ -1869,7 +1862,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-net-random-port = !cfg-net-random-port; }
+                                        clicked => { cfg-net-random-port = !cfg-net-random-port; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -1888,7 +1881,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-net-port-forward = !cfg-net-port-forward; }
+                                        clicked => { cfg-net-port-forward = !cfg-net-port-forward; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -1927,7 +1920,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                     HorizontalLayout {
                                         spacing: 8px; alignment: start;
-                                        NumField { value: cfg-net-max-peers-torrent; value-changed(v) => { cfg-net-max-peers-torrent = v; }; min-val: 1; max-val: 500; field-width: 50px; field-height: 26px; }
+                                        NumField { value: cfg-net-max-peers-torrent; value-changed(v) => { cfg-net-max-peers-torrent = v; touched(); }; min-val: 1; max-val: 500; field-width: 50px; field-height: 26px; }
                                         Rectangle {
                                             width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
                                             Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
@@ -1950,7 +1943,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                     HorizontalLayout {
                                         spacing: 8px; alignment: start;
-                                        NumField { value: cfg-net-max-peers-total; value-changed(v) => { cfg-net-max-peers-total = v; }; min-val: 1; max-val: 2000; field-width: 50px; field-height: 26px; }
+                                        NumField { value: cfg-net-max-peers-total; value-changed(v) => { cfg-net-max-peers-total = v; touched(); }; min-val: 1; max-val: 2000; field-width: 50px; field-height: 26px; }
                                         Rectangle {
                                             width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
                                             Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
@@ -1983,7 +1976,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-net-utp = !cfg-net-utp; }
+                                        clicked => { cfg-net-utp = !cfg-net-utp; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -1998,7 +1991,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-net-pex = !cfg-net-pex; }
+                                        clicked => { cfg-net-pex = !cfg-net-pex; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -2013,7 +2006,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-net-dht = !cfg-net-dht; }
+                                        clicked => { cfg-net-dht = !cfg-net-dht; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -2028,7 +2021,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 24px;
                                     TouchArea {
-                                        clicked => { cfg-net-lpd = !cfg-net-lpd; }
+                                        clicked => { cfg-net-lpd = !cfg-net-lpd; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -2066,7 +2059,7 @@ component SettingsDialog inherits Rectangle {
                                     le := LineEdit {
                                         width: 100%; height: 100%;
                                         placeholder-text: Tr.public_trackers_ph;
-                                        text: cfg-net-default-trackers; edited(t) => { cfg-net-default-trackers = t; };
+                                        text: cfg-net-default-trackers; edited(t) => { cfg-net-default-trackers = t;  touched(); };
                                     }
                                 }
                             }
@@ -2161,7 +2154,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 32px; alignment: start;
                                     TouchArea {
-                                        clicked => { cfg-priv-blocklist-enabled = !cfg-priv-blocklist-enabled; }
+                                        clicked => { cfg-priv-blocklist-enabled = !cfg-priv-blocklist-enabled; touched(); }
                                         width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                         Rectangle {
                                             width: 14px; height: 14px; border-radius: 3px;
@@ -2182,7 +2175,7 @@ component SettingsDialog inherits Rectangle {
                                             enabled: cfg-priv-blocklist-enabled;
                                             width: 100%; height: 100%;
                                             placeholder-text: Tr.blocklist_url;
-                                            text: cfg-priv-blocklist-url; edited(t) => { cfg-priv-blocklist-url = t; };
+                                            text: cfg-priv-blocklist-url; edited(t) => { cfg-priv-blocklist-url = t;  touched(); };
                                         }
                                     }
                                 }
@@ -2199,7 +2192,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 12px; height: 24px;
                                 TouchArea {
-                                    clicked => { cfg-priv-blocklist-auto-update = !cfg-priv-blocklist-auto-update; }
+                                    clicked => { cfg-priv-blocklist-auto-update = !cfg-priv-blocklist-auto-update; touched(); }
                                     width: 14px; height: 14px; y: (parent.height - self.height) / 2;
                                     Rectangle {
                                         width: 14px; height: 14px; border-radius: 3px;
@@ -2658,7 +2651,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 HorizontalLayout {
                                     spacing: 8px;
-                                    NumField { value: cfg-refresh-interval; value-changed(v) => { cfg-refresh-interval = v; }; min-val: 1; max-val: 60; }
+                                    NumField { value: cfg-refresh-interval; value-changed(v) => { cfg-refresh-interval = v; touched(); }; min-val: 1; max-val: 60; }
                                     Text {
                                         text: selected-language == "ru" ? "сек" : "sec";
                                         color: #5e637a; font-size: 12px; vertical-alignment: center;
@@ -3006,6 +2999,7 @@ export component MainWindow inherits Window {
 
     in-out property <bool>   settings-dialog-visible: false;
     callback settings-close();
+    callback settings-touched();
     in-out property <string> selected-language: "en";
     in-out property <int>     settings-tab: 0;
     in-out property <bool>   cfg-speed-up-enabled: false;
@@ -3675,6 +3669,7 @@ export component MainWindow inherits Window {
         language-changed(lang) => { language-changed(lang); }
         saved => { saved(); settings-dialog-visible = false; }
         cancelled => { settings-close(); settings-dialog-visible = false; }
+        touched => { settings-touched(); }
         profiles <=> root.profiles;
         port-test-state <=> root.port-test-state;
         is-local-config-detected <=> root.is-local-config-detected;
