@@ -347,6 +347,7 @@ component NumField inherits Rectangle {
             input-type: number;
             text <=> txt;
             edited => {
+                if (self.text.is-empty) { return; }
                 root.value-changed(Math.clamp(Math.round(self.text.to-float()), min-val, max-val));
             }
             accepted => { txt = value + ""; }
@@ -386,6 +387,7 @@ component NumFieldF inherits Rectangle {
         enabled: editable; input-type: decimal;
         text <=> txt;
         edited => {
+            if (self.text.is-empty) { return; }
             root.value-changed(Math.clamp(Math.round(self.text.to-float() * 100), min-val, max-val));
         }
         accepted => {
@@ -421,6 +423,7 @@ component TimeField inherits Rectangle {
         enabled: editable; input-type: number;
         text <=> txt;
         edited => {
+            if (self.text.is-empty) { return; }
             root.minutes-changed(Math.clamp(
                 Math.floor(self.text.to-float() / 100) * 60 + Math.min(Math.mod(Math.round(self.text.to-float()), 100), 59),
                 0, 1439));
@@ -687,6 +690,7 @@ component MagnetDialog inherits Rectangle {
 
 component SettingsDialog inherits Rectangle {
     callback touched();
+    callback tab-flush();
     in property <bool> visible-dialog;
     property <string> refresh-interval-str: "\{cfg-refresh-interval}";
     in-out property <string> selected-language: "en";
@@ -893,7 +897,7 @@ component SettingsDialog inherits Rectangle {
                         ]: Rectangle {
                             height: 34px; border-radius: 6px;
                             background: settings-tab == tab-info.n ? #252739 : transparent;
-                            TouchArea { clicked => { settings-tab = tab-info.n; } }
+                            TouchArea { clicked => { tab-flush(); settings-tab = tab-info.n; } }
                             HorizontalLayout {
                                 spacing: 10px; padding-left: 14px; alignment: start;
                                 Rectangle {
@@ -938,7 +942,7 @@ component SettingsDialog inherits Rectangle {
                         Rectangle {
                             height: 34px; border-radius: 6px;
                             background: settings-tab == 8 ? #252739 : transparent;
-                            TouchArea { clicked => { settings-tab = 8; } }
+                            TouchArea { clicked => { tab-flush(); settings-tab = 8; } }
                             HorizontalLayout {
                                 spacing: 10px; padding-left: 14px; alignment: start;
                                 Rectangle {
@@ -3682,6 +3686,7 @@ export component MainWindow inherits Window {
         saved => { saved(); settings-dialog-visible = false; }
         cancelled => { settings-close(); settings-dialog-visible = false; }
         touched => { settings-touched(); }
+        tab-flush => { settings-close(); }
         profiles <=> root.profiles;
         port-test-state <=> root.port-test-state;
         is-local-config-detected <=> root.is-local-config-detected;
