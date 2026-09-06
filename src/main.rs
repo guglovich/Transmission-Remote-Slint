@@ -1518,6 +1518,19 @@ fn main() -> anyhow::Result<()> {
         while let Ok(result) = settings_rx.try_recv() {
             match result {
                 SettingsResult::Loaded(s) => {
+                    // Гонка: если юзер уже редактировал настройки с момента открытия диалога —
+                    // поздний ответ Load перезаписал бы его правки. Пропускаем.
+                    if let Some(ui2) = ui_h.upgrade() {
+                        let cur = build_daemon_settings(&ui2);
+                        let user_edited = match last_settings.lock().unwrap().as_ref() {
+                            Some(prev) => cur != *prev,
+                            None => false,
+                        };
+                        if user_edited {
+                            eprintln!("[settings] Loaded skipped — user already edited (race guard)");
+                            continue;
+                        }
+                    }
                     if let Some(ui) = ui_h.upgrade() {
                     ui.set_cfg_speed_up_enabled(s.speed_limit_up_enabled);
                     ui.set_cfg_speed_up_kbs((s.speed_limit_up * 8 / 1000) as i32); // KB/s → Мбит/с

@@ -830,7 +830,7 @@ component SettingsDialog inherits Rectangle {
     Rectangle {
         width: 640px;
         height: settings-tab == 1 ? 490px :
-                settings-tab == 2 ? 520px :
+                settings-tab == 2 ? 545px :
                 settings-tab == 3 ? 480px :
                 settings-tab == 4 ? 640px :
                 settings-tab == 5 ? 460px :
@@ -1284,12 +1284,20 @@ component SettingsDialog inherits Rectangle {
                                     Text { text: Tr.by_schedule; color: cfg-alt-speed-enabled ? #7a8296 : #4e556e; font-size: 13px; vertical-alignment: center; width: 100px; }
                                     
                                     HorizontalLayout {
-                                        horizontal-stretch: 1; alignment: end; spacing: 12px;
+                                        horizontal-stretch: 1; alignment: end; spacing: 10px;
+                                        Rectangle { width: 24px; height: 26px; border-radius: 4px; background: #1a1b2a; border-width: 1px; border-color: #343858;
+                                            Text { text: "−"; color: #8f97b8; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
+                                            TouchArea { clicked => { if (cfg-alt-speed-time-begin >= 5) { cfg-alt-speed-time-begin -= 5; } } }
+                                        }
                                         // Time begin
                                         TimeField { minutes: cfg-alt-speed-time-begin; minutes-changed(m2) => { cfg-alt-speed-time-begin = m2; }; editable: cfg-alt-speed-enabled; }
                                         Text { text: Tr.sched_to; color: #7a8296; font-size: 13px; vertical-alignment: center; }
                                         // Time end
                                         TimeField { minutes: cfg-alt-speed-time-end; minutes-changed(m2) => { cfg-alt-speed-time-end = m2; }; editable: cfg-alt-speed-enabled; }
+                                        Rectangle { width: 24px; height: 26px; border-radius: 4px; background: #1a1b2a; border-width: 1px; border-color: #343858;
+                                            Text { text: "+"; color: #8f97b8; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
+                                            TouchArea { clicked => { if (cfg-alt-speed-time-begin <= 1434) { cfg-alt-speed-time-begin += 5; } } }
+                                        }
                                     }
                                 }
 
@@ -1584,7 +1592,7 @@ component SettingsDialog inherits Rectangle {
                                 Text {
                                     text: Tr.incomplete_dir_lbl;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
-                                    width: 200px; wrap: word-wrap;
+                                    width: 170px; wrap: word-wrap;
                                 }
                                 
                                 if cfg-dl-incomplete-dir-enabled: PathField {
