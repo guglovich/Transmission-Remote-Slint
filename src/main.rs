@@ -871,6 +871,7 @@ fn main() -> anyhow::Result<()> {
         *ACTIVE_RPC_URL.lock().unwrap() = Some(active_cfg.url.clone());
     }
     refresh_profiles(&ui);
+    push_dialog_tr(&ui);
     
     // Обновляем UI переводы
     ui.set_tr_toolbar_open(i18n::toolbar_open().into());
@@ -1183,6 +1184,10 @@ fn main() -> anyhow::Result<()> {
             let lang = lang.to_string();
             eprintln!("[i18n] Language changed to: {}", lang);
             i18n::set_language(&lang);
+            // Обновляем все строки диалогов/вкладок
+            if let Some(ui) = ui_weak.upgrade() {
+                push_dialog_tr(&ui);
+            }
             // Сохраняем в конфиг (применится после перезапуска)
             {
                 let mut cfg = config_lock().lock().unwrap();
@@ -2057,8 +2062,8 @@ fn main() -> anyhow::Result<()> {
 }
 
 /// Проталкивает все строки диалогов/вкладок в глобаль Tr (5 языков из i18n)
-fn push_dialog_tr() {
-    let g = Tr::get();
+fn push_dialog_tr(ui: &MainWindow) {
+    let g = Tr::get(ui);
     g.set_about_desc(i18n::d_about_desc().into());
     g.set_about_title(i18n::d_about_title().into());
     g.set_add_connection(i18n::d_add_connection().into());

@@ -32,6 +32,326 @@ export struct DiskItem {
     torrent-count: int,
 }
 
+export global Tr {
+    in-out property <string> lang: "en";
+    in-out property <string> about_desc;
+    in-out property <string> about_title;
+    in-out property <string> add_connection;
+    in-out property <string> alt_dl_lbl;
+    in-out property <string> alt_override;
+    in-out property <string> alt_up_lbl;
+    in-out property <string> append_part;
+    in-out property <string> at_add_url;
+    in-out property <string> at_browse;
+    in-out property <string> at_title;
+    in-out property <string> at_url_ph;
+    in-out property <string> auto_import;
+    in-out property <string> autostart_lbl;
+    in-out property <string> blocklist_auto;
+    in-out property <string> blocklist_enable;
+    in-out property <string> blocklist_entries;
+    in-out property <string> blocklist_entries2;
+    in-out property <string> blocklist_url;
+    in-out property <string> by_schedule;
+    in-out property <string> ca_done;
+    in-out property <string> ca_done_closing;
+    in-out property <string> ca_left;
+    in-out property <string> ca_notifying;
+    in-out property <string> ca_sending;
+    in-out property <string> ca_shutting;
+    in-out property <string> ca_units;
+    in-out property <string> cancel_btn;
+    in-out property <string> cd_min_tray;
+    in-out property <string> cd_quit;
+    in-out property <string> cd_what;
+    in-out property <string> check_port;
+    in-out property <string> config_found;
+    in-out property <string> config_not_found;
+    in-out property <string> conn_host;
+    in-out property <string> conn_profiles;
+    in-out property <string> ct_browse;
+    in-out property <string> ct_create;
+    in-out property <string> ct_path_ph;
+    in-out property <string> ct_title;
+    in-out property <string> ct_trackers;
+    in-out property <string> day_fr;
+    in-out property <string> day_mo;
+    in-out property <string> day_sa;
+    in-out property <string> day_su;
+    in-out property <string> day_th;
+    in-out property <string> day_tu;
+    in-out property <string> day_we;
+    in-out property <string> default_dir_lbl;
+    in-out property <string> del_btn;
+    in-out property <string> del_confirm;
+    in-out property <string> del_profile_q;
+    in-out property <string> del_secs;
+    in-out property <string> del_word;
+    in-out property <string> dev_with;
+    in-out property <string> dht;
+    in-out property <string> dlimit_lbl;
+    in-out property <string> done_script_dl;
+    in-out property <string> done_script_seed;
+    in-out property <string> edit_btn;
+    in-out property <string> enc_disabled;
+    in-out property <string> enc_prefer;
+    in-out property <string> enc_require;
+    in-out property <string> encryption_mode;
+    in-out property <string> enforce_auth;
+    in-out property <string> enforce_auth_short;
+    in-out property <string> exit_now;
+    in-out property <string> free_disk_note;
+    in-out property <string> host_lbl;
+    in-out property <string> incomplete_dir_lbl;
+    in-out property <string> lang_lbl;
+    in-out property <string> lang_section;
+    in-out property <string> license_lbl;
+    in-out property <string> local_host;
+    in-out property <string> login_ph;
+    in-out property <string> lpd;
+    in-out property <string> manage_profiles;
+    in-out property <string> mg_ph;
+    in-out property <string> mg_title;
+    in-out property <string> no_profiles;
+    in-out property <string> notify_add;
+    in-out property <string> notify_complete;
+    in-out property <string> notify_sound;
+    in-out property <string> on_close_ask;
+    in-out property <string> on_close_lbl;
+    in-out property <string> on_close_quit;
+    in-out property <string> on_close_tray;
+    in-out property <string> password_ph;
+    in-out property <string> path_to_script;
+    in-out property <string> peer_port_lbl;
+    in-out property <string> peers_max_global;
+    in-out property <string> peers_max_torrent;
+    in-out property <string> pex;
+    in-out property <string> port_checking;
+    in-out property <string> port_checking_cap;
+    in-out property <string> port_closed;
+    in-out property <string> port_open;
+    in-out property <string> port_unknown;
+    in-out property <string> prevent_sleep;
+    in-out property <string> profile_name;
+    in-out property <string> public_trackers_ph;
+    in-out property <string> queue_enable;
+    in-out property <string> queue_max_lbl;
+    in-out property <string> random_port;
+    in-out property <string> reload_note;
+    in-out property <string> renderer_lbl;
+    in-out property <string> save_btn;
+    in-out property <string> sched_to;
+    in-out property <string> sec_additions;
+    in-out property <string> sec_alt_limits;
+    in-out property <string> sec_blocklist_ip;
+    in-out property <string> sec_dl_process;
+    in-out property <string> sec_encryption;
+    in-out property <string> sec_features;
+    in-out property <string> sec_iface_lang;
+    in-out property <string> sec_iface_visual;
+    in-out property <string> sec_lbl;
+    in-out property <string> sec_network;
+    in-out property <string> sec_notifications;
+    in-out property <string> sec_peers;
+    in-out property <string> sec_privacy;
+    in-out property <string> sec_public_trackers;
+    in-out property <string> sec_queue;
+    in-out property <string> sec_remote;
+    in-out property <string> sec_seeding;
+    in-out property <string> sec_speed_limits;
+    in-out property <string> seed_idle_lbl;
+    in-out property <string> seed_ratio_lbl;
+    in-out property <string> seed_ratio_min_lbl;
+    in-out property <string> settings_title;
+    in-out property <string> show_opts_dlg;
+    in-out property <string> sl_pick;
+    in-out property <string> start_added;
+    in-out property <string> start_min_tray;
+    in-out property <string> status_lbl;
+    in-out property <string> sync_state;
+    in-out property <string> tab_downloading;
+    in-out property <string> tab_interface;
+    in-out property <string> tab_network;
+    in-out property <string> tab_privacy;
+    in-out property <string> tab_remote;
+    in-out property <string> tab_seeding;
+    in-out property <string> tab_speed;
+    in-out property <string> tab_system;
+    in-out property <string> trash_torrents;
+    in-out property <string> tray_lbl;
+    in-out property <string> uifw_lbl;
+    in-out property <string> ulimit_lbl;
+    in-out property <string> update_freq;
+    in-out property <string> upnp;
+    in-out property <string> utp;
+}
+
+export struct ProfileItem {
+    name: string,
+    host: string,
+    endpoint: string,
+    url: string,
+    active: bool,
+    is-custom: bool,
+}
+
+// Реальный диалог завершения: stopped-announce трекерам + ожидание смерти демона.
+component CloseAnimDialog inherits Rectangle {
+    in property <bool> visible-dialog;
+    in property <int> trackers-count;
+    in property <int> phase; // 0 = отправка, 1 = демон остановлен
+    in property <string> selected-language: "ru";
+    in property <string> s-left: "";
+    in property <[string]> ticker;
+    callback force-quit();
+
+    property <float> spin: 0;
+    property <float> bar-t: 0;
+    property <int> ticker-idx: 0;
+
+    visible: visible-dialog; z: 200;
+    background: #000000aa;
+
+    Timer {
+        interval: 33ms;
+        running: visible-dialog;
+        triggered() => {
+            spin = Math.mod(spin + 0.09, 1.0);
+            bar-t = Math.mod(bar-t + 0.008, 1.0);
+        }
+    }
+    Timer {
+        interval: 550ms;
+        running: visible-dialog && ticker.length > 0;
+        triggered() => { ticker-idx = Math.mod(ticker-idx + 1, ticker.length); }
+    }
+
+    TouchArea { width: 100%; height: 100%; }
+
+    Rectangle {
+        width: 460px; height: 330px;
+        background: #1c1d29; border-radius: 8px;
+        border-width: 1px; border-color: #2c2d42;
+        drop-shadow-blur: 16px; drop-shadow-color: #00000080; drop-shadow-offset-y: 4px;
+
+        VerticalLayout {
+            VerticalLayout {
+                padding: 22px; padding-bottom: 14px; spacing: 14px;
+                HorizontalLayout {
+                    spacing: 16px; alignment: start;
+                    Rectangle {
+                        width: 48px; height: 48px; border-radius: 24px;
+                        border-width: 2px; border-color: #3b3054;
+                        background: #1e1b30;
+                        Text {
+                            text: "↻"; font-size: 22px; color: #a47ef6;
+                            horizontal-alignment: center; vertical-alignment: center;
+                            rotation-angle: visible-dialog ? spin * 360deg : 0deg;
+                            rotation-origin-x: self.width / 2;
+                            rotation-origin-y: self.height / 2;
+                        }
+                    }
+                    VerticalLayout {
+                        alignment: center; spacing: 5px;
+                        Text {
+                            text: phase == 1 ? Tr.ca_done : Tr.ca_shutting;
+                            color: #ffffff; font-size: 15px; font-weight: 700;
+                        }
+                        Text { text: Tr.ca_sending; color: #5e637a; font-size: 11px; }
+                    }
+                }
+
+                Rectangle {
+                    width: 100%; height: 4px; border-radius: 2px; background: #2a2b38;
+                    Rectangle {
+                        width: parent.width * 0.4; height: parent.height; border-radius: 2px;
+                        background: phase == 1 ? #2a9a50 : #3f72f6;
+                        x: Math.abs(Math.sin(bar-t * 180deg)) * (parent.width - self.width);
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: phase == 1 ? Tr.ca_done_closing
+                            : (trackers-count > 0
+                                ? (Tr.ca_notifying + trackers-count + Tr.ca_units)
+                                : Tr.port_unknown);
+                        color: phase == 1 ? #2a9a50 : #b8c2d8; font-size: 12px;
+                    }
+                    Text { text: Tr.ca_left + s-left; color: #a2add0; font-size: 11px; }
+                }
+
+                Rectangle {
+                    width: 100%; height: 30px; border-radius: 5px;
+                    background: #101116; border-width: 1px; border-color: #20212f;
+                    HorizontalLayout {
+                        padding-left: 12px; padding-right: 12px;
+                        Text {
+                            width: parent.width;
+                            text: ticker.length > 0 ? ticker[ticker-idx] : "—";
+                            color: #7aa2f7; font-size: 11px; vertical-alignment: center; overflow: elide;
+                        }
+                    }
+                }
+            }
+
+            Rectangle { height: 1px; background: #2a2b38; }
+
+            Rectangle {
+                background: #181926; height: 52px;
+                border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+                HorizontalLayout {
+                    padding: 10px; padding-left: 24px; padding-right: 24px; spacing: 14px; alignment: center;
+                    Rectangle { horizontal-stretch: 1; }
+                    Rectangle {
+                        width: 130px; height: 30px; border-radius: 4px;
+                        background: ta-exit.has-hover ? #f06a60 : #e15f55;
+                        Text { text: Tr.exit_now; color: #ffffff; font-size: 12px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                        ta-exit := TouchArea { clicked => { force-quit(); } }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Числовое поле: клик → фокус → ввод цифр; Enter нормализует; кнопки −/+ меняют value извне
+component NumField inherits Rectangle {
+    in-out property <int> value;
+    in property <int> min-val: 0;
+    in property <int> max-val: 9999;
+    in property <bool> editable: true;
+    in property <length> field-width: 70px;
+    in property <length> field-height: 32px;
+    in property <bool> plain: false;
+    property <string> txt: value + "";
+    changed value => {
+        if (!ti.has-focus) { txt = value + ""; }
+    }
+    width: field-width; height: field-height;
+    border-radius: 4px;
+    background: plain ? transparent : #171825;
+    border-width: 1px;
+    border-color: ti.has-focus ? #3f72f6 : (plain ? #343858 : #2c2d42);
+    opacity: editable ? 1.0 : 0.45;
+    HorizontalLayout {
+        padding-left: 10px; padding-right: 8px;
+        ti := TextInput {
+            font-size: 13px;
+            color: editable ? #e2e8f0 : #4e556e;
+            vertical-alignment: center;
+            enabled: editable;
+            input-type: number;
+            text <=> txt;
+            edited => {
+                value = Math.clamp(Math.round(self.text.to-float()), min-val, max-val);
+            }
+            accepted => { txt = value + ""; }
+        }
+    }
+}
+
 component ConfirmDialog inherits Rectangle {
     in property <string> message;
     in property <string> torrent-name;
@@ -91,15 +411,15 @@ component CloseDialog inherits Rectangle {
         border-width: 1px; border-color: #3a4560;
         VerticalLayout {
             padding: 28px; spacing: 18px;
-            Text { text: "What would you like to do?"; color: #dce4f5; font-size: 14px; horizontal-alignment: center; }
+            Text { text: Tr.cd_what; color: #dce4f5; font-size: 14px; horizontal-alignment: center; }
             HorizontalLayout {
                 spacing: 10px; alignment: center;
-                Button { text: "⬇ Minimize to tray"; clicked => { minimize-to-tray(); } }
-                Button { text: "✕ Quit"; clicked => { quit-app(); } }
+                Button { text: Tr.cd_min_tray; clicked => { minimize-to-tray(); } }
+                Button { text: Tr.cd_quit; clicked => { quit-app(); } }
             }
             HorizontalLayout {
                 alignment: center;
-                Button { text: "Cancel"; clicked => { cancelled(); } }
+                Button { text: Tr.cancel_btn; clicked => { cancelled(); } }
             }
         }
     }
@@ -121,22 +441,22 @@ component AddTorrentDialog inherits Rectangle {
         border-width: 1px; border-color: #3a4560;
         VerticalLayout {
             padding: 24px; spacing: 14px;
-            Text { text: "Add torrent"; color: #dce4f5; font-size: 15px; font-weight: 600; horizontal-alignment: center; }
+            Text { text: Tr.at_title; color: #dce4f5; font-size: 15px; font-weight: 600; horizontal-alignment: center; }
             HorizontalLayout {
                 spacing: 8px;
                 LineEdit {
-                    horizontal-stretch: 1; placeholder-text: "magnet:?xt=urn:btih:…  or  https://…"; text <=> input-text;
+                    horizontal-stretch: 1; placeholder-text: Tr.at_url_ph; text <=> input-text;
                     accepted(t) => { if (t != "") { submitted-url(t); input-text = ""; } }
                 }
                 Button {
-                    text: "Add URL";
+                    text: Tr.at_add_url;
                     clicked => { if (input-text != "") { submitted-url(input-text); input-text = ""; } }
                 }
             }
             HorizontalLayout {
                 spacing: 12px; alignment: center;
-                Button { text: "📂 Browse .torrent…"; clicked => { pick-file(); } }
-                Button { text: "Cancel"; clicked => { input-text = ""; cancelled(); } }
+                Button { text: Tr.at_browse; clicked => { pick-file(); } }
+                Button { text: Tr.cancel_btn; clicked => { input-text = ""; cancelled(); } }
             }
         }
     }
@@ -159,17 +479,17 @@ component CreateTorrentDialog inherits Rectangle {
         border-width: 1px; border-color: #3a4560;
         VerticalLayout {
             padding: 24px; spacing: 14px;
-            Text { text: "Create torrent"; color: #dce4f5; font-size: 15px; font-weight: 600; horizontal-alignment: center; }
+            Text { text: Tr.ct_title; color: #dce4f5; font-size: 15px; font-weight: 600; horizontal-alignment: center; }
             HorizontalLayout {
                 spacing: 8px;
-                LineEdit { horizontal-stretch: 1; placeholder-text: "/path/to/folder or file"; text <=> path-text; }
-                Button { text: "📂 Browse…"; clicked => { pick-path(); } }
+                LineEdit { horizontal-stretch: 1; placeholder-text: Tr.ct_path_ph; text <=> path-text; }
+                Button { text: Tr.ct_browse; clicked => { pick-path(); } }
             }
-            LineEdit { placeholder-text: "Trackers (one URL per line, optional)"; text <=> trackers-text; }
+            LineEdit { placeholder-text: Tr.ct_trackers; text <=> trackers-text; }
             HorizontalLayout {
                 spacing: 12px; alignment: center;
-                Button { text: "✚ Create"; clicked => { if (path-text != "") { submitted(path-text, trackers-text); path-text = ""; trackers-text = ""; } } }
-                Button { text: "Cancel"; clicked => { path-text = ""; trackers-text = ""; cancelled(); } }
+                Button { text: Tr.ct_create; clicked => { if (path-text != "") { submitted(path-text, trackers-text); path-text = ""; trackers-text = ""; } } }
+                Button { text: Tr.cancel_btn; clicked => { path-text = ""; trackers-text = ""; cancelled(); } }
             }
         }
     }
@@ -195,7 +515,7 @@ component SetLocationDialog inherits Rectangle {
             padding: 22px; spacing: 16px;
             VerticalLayout {
                 spacing: 4px;
-                Text { text: "📍 Указать расположение"; color: #dce4f5; font-size: 15px; font-weight: 700; horizontal-alignment: center; }
+                Text { text: Tr.sl_pick; color: #dce4f5; font-size: 15px; font-weight: 700; horizontal-alignment: center; }
                 if torrent-name != "": Text { text: torrent-name; color: #6a8ab8; font-size: 12px; horizontal-alignment: center; overflow: elide; }
             }
             HorizontalLayout {
@@ -242,12 +562,12 @@ component MagnetDialog inherits Rectangle {
         border-width: 1px; border-color: #3a4560;
         VerticalLayout {
             padding: 24px; spacing: 14px;
-            Text { text: "Add Magnet Link"; color: #dce4f5; font-size: 15px; font-weight: 600; horizontal-alignment: center; }
-            LineEdit { horizontal-stretch: 1; placeholder-text: "magnet:?xt=urn:btih:..."; text <=> magnet-uri; }
+            Text { text: Tr.mg_title; color: #dce4f5; font-size: 15px; font-weight: 600; horizontal-alignment: center; }
+            LineEdit { horizontal-stretch: 1; placeholder-text: Tr.mg_ph; text <=> magnet-uri; }
             HorizontalLayout {
                 spacing: 12px; alignment: center;
                 Button { text: "OK"; clicked => { if (magnet-uri != "") { submitted(magnet-uri); magnet-uri = ""; } } }
-                Button { text: "Cancel"; clicked => { magnet-uri = ""; cancelled(); } }
+                Button { text: Tr.cancel_btn; clicked => { magnet-uri = ""; cancelled(); } }
             }
         }
     }
@@ -262,6 +582,14 @@ component SettingsDialog inherits Rectangle {
     callback language-changed(string);
     callback saved();
     callback cancelled();
+    in-out property <[ProfileItem]> profiles;
+    in-out property <int> port-test-state: 0;
+    in-out property <bool> is-local-config-detected;
+    in-out property <bool> local-host-active;
+    callback port-test-start();
+    callback switch-host(string);
+    callback save-host(string, string, int, string, string, string);
+    callback delete-host(string);
     callback pick-dl-script-path();
     callback pick-seed-script-path();
     in-out property <bool> cfg-speed-up-enabled: false;
@@ -287,6 +615,7 @@ component SettingsDialog inherits Rectangle {
     in-out property <bool> cfg-dl-start-added: true;
     in-out property <bool> cfg-dl-trash-torrent: false;
     in-out property <string> cfg-dl-dir: "";
+    in-out property <bool> cfg-dl-queue-enabled: true;
     in-out property <int> cfg-dl-queue-max: 5;
     in-out property <int> cfg-dl-seed-ratio-limit-min: 30;
     in-out property <bool> cfg-dl-part-ext: true;
@@ -352,10 +681,10 @@ component SettingsDialog inherits Rectangle {
     background: #00000099;
 
     // Connection profiles states
-    in-out property <bool> is-local-config-detected: true;
     in-out property <bool> is-editing-profile: false;
     in-out property <int> editing-id: 0;
     in-out property <string> edit-profile-name: "";
+    in-out property <string> editing-original-name: "";
     in-out property <string> edit-profile-host: "127.0.0.1";
     in-out property <int> edit-profile-port: 9091;
     in-out property <bool> edit-profile-auth: false;
@@ -388,8 +717,6 @@ component SettingsDialog inherits Rectangle {
     in-out property <string> p2-password: "";
     in-out property <bool> p2-active: false;
 
-    in-out property <bool> local-host-active: true;
-
     Timer {
         interval: 1000ms;
         running: show-delete-dialog && delete-countdown-val > 0;
@@ -420,7 +747,7 @@ component SettingsDialog inherits Rectangle {
             HorizontalLayout {
                 height: 52px; padding-left: 20px; padding-right: 20px;
                 Text {
-                    text: selected-language == "ru" ? "Настройки" : "Settings";
+                    text: Tr.settings_title;
                     color: #f1f5f9; font-size: 14px; font-weight: 600;
                     vertical-alignment: center;
                     horizontal-stretch: 1;
@@ -440,14 +767,14 @@ component SettingsDialog inherits Rectangle {
                         padding-top: 12px; padding-bottom: 12px; padding-left: 12px; padding-right: 12px;
                         spacing: 2px; alignment: start;
                         for tab-info in [
-                            {ico: "⏲", n: 1, label-en: "Speed", label-ru: "Скорость"},
-                            {ico: "⬇", n: 2, label-en: "Downloading", label-ru: "Загрузка"},
-                            {ico: "⬆", n: 3, label-en: "Seeding", label-ru: "Раздача"},
-                            {ico: "🌐", n: 4, label-en: "Network", label-ru: "Сеть"},
-                            {ico: "🛡", n: 5, label-en: "Privacy", label-ru: "Приватность"},
-                            {ico: "🖥", n: 0, label-en: "System", label-ru: "Система"},
+                            {ico: "⏲", n: 1},
+                            {ico: "⬇", n: 2},
+                            {ico: "⬆", n: 3},
+                            {ico: "🌐", n: 4},
+                            {ico: "🛡", n: 5},
+                            {ico: "🖥", n: 0},
                             {ico: "🔗", n: 6, label-en: "Remote", label-ru: "Remote"},
-                            {ico: "🎚", n: 7, label-en: "Interface", label-ru: "Интерфейс"},
+                            {ico: "🎚", n: 7},
                         ]: Rectangle {
                             height: 34px; border-radius: 6px;
                             background: settings-tab == tab-info.n ? #252739 : transparent;
@@ -474,7 +801,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? tab-info.label-ru : tab-info.label-en;
+                                    text: tab-info.n == 1 ? Tr.tab_speed : tab-info.n == 2 ? Tr.tab_downloading : tab-info.n == 3 ? Tr.tab_seeding : tab-info.n == 4 ? Tr.tab_network : tab-info.n == 5 ? Tr.tab_privacy : tab-info.n == 0 ? Tr.tab_system : tab-info.n == 6 ? Tr.tab_remote : Tr.tab_interface;
                                     color: settings-tab == tab-info.n ? #f1f5f9 : #8189a0;
                                     font-size: 12px;
                                     font-weight: settings-tab == tab-info.n ? 600 : 400;
@@ -511,7 +838,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? "О программе" : "About Client";
+                                    text: Tr.about_title;
                                     color: settings-tab == 8 ? #f1f5f9 : #8189a0;
                                     font-size: 12px;
                                     font-weight: settings-tab == 8 ? 600 : 400;
@@ -550,7 +877,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Запрещать переход в спящий режим при активных торрентах" : "Prevent sleep mode when torrents are active";
+                                        text: Tr.prevent_sleep;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
@@ -568,7 +895,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Автозапуск при входе в систему" : "Start Transmission down on login";
+                                        text: Tr.autostart_lbl;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
@@ -586,7 +913,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Запускать свёрнутым в трей" : "Start minimized to tray";
+                                        text: Tr.start_min_tray;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
@@ -595,7 +922,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 16px; height: 32px;
                                 Text {
-                                    text: selected-language == "ru" ? "При закрытии окна:" : "On window close:";
+                                    text: Tr.on_close_lbl;
                                     color: #939cb0; font-size: 12px; vertical-alignment: center; width: 140px;
                                 }
                                 Rectangle {
@@ -615,21 +942,21 @@ component SettingsDialog inherits Rectangle {
                                                     height: 28px; border-radius: 4px;
                                                     background: ta-onc0.has-hover ? #383a54 : transparent;
                                                     if cfg-on-close == 0: Rectangle { x: 4px; width: 3px; height: 14px; y: 7px; background: #3ec4f0; border-radius: 1.5px; }
-                                                    Text { text: selected-language == "ru" ? "Спрашивать + ждать трекеры" : "Ask + wait for trackers"; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-on-close == 0 ? 600 : 400; }
+                                                    Text { text: Tr.on_close_ask; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-on-close == 0 ? 600 : 400; }
                                                     ta-onc0 := TouchArea { clicked => { cfg-on-close = 0; on-close-popup.close(); } }
                                                 }
                                                 Rectangle {
                                                     height: 28px; border-radius: 4px;
                                                     background: ta-onc1.has-hover ? #383a54 : transparent;
                                                     if cfg-on-close == 1: Rectangle { x: 4px; width: 3px; height: 14px; y: 7px; background: #3ec4f0; border-radius: 1.5px; }
-                                                    Text { text: selected-language == "ru" ? "Сворачивать в трей" : "Minimize to tray"; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-on-close == 1 ? 600 : 400; }
+                                                    Text { text: Tr.on_close_tray; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-on-close == 1 ? 600 : 400; }
                                                     ta-onc1 := TouchArea { clicked => { cfg-on-close = 1; on-close-popup.close(); } }
                                                 }
                                                 Rectangle {
                                                     height: 28px; border-radius: 4px;
                                                     background: ta-onc2.has-hover ? #383a54 : transparent;
                                                     if cfg-on-close == 2: Rectangle { x: 4px; width: 3px; height: 14px; y: 7px; background: #3ec4f0; border-radius: 1.5px; }
-                                                    Text { text: selected-language == "ru" ? "Закрывать немедленно" : "Close immediately"; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-on-close == 2 ? 600 : 400; }
+                                                    Text { text: Tr.on_close_quit; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-on-close == 2 ? 600 : 400; }
                                                     ta-onc2 := TouchArea { clicked => { cfg-on-close = 2; on-close-popup.close(); } }
                                                 }
                                             }
@@ -637,9 +964,9 @@ component SettingsDialog inherits Rectangle {
                                     }
                                     
                                     Text {
-                                        text: cfg-on-close == 0 ? (selected-language == "ru" ? "Спрашивать + ждать трекеры" : "Ask + wait for trackers") :
-                                              (cfg-on-close == 1 ? (selected-language == "ru" ? "Сворачивать в трей" : "Minimize to tray") :
-                                                                   (selected-language == "ru" ? "Закрывать немедленно" : "Close immediately"));
+                                        text: cfg-on-close == 0 ? (Tr.on_close_ask) :
+                                              (cfg-on-close == 1 ? (Tr.on_close_tray) :
+                                                                   (Tr.on_close_quit));
                                         color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 12px;
                                     }
                                     
@@ -657,7 +984,7 @@ component SettingsDialog inherits Rectangle {
                                 spacing: 4px;
                                 Rectangle { height: 4px; }
                                 Text {
-                                    text: selected-language == "ru" ? "УВЕДОМЛЕНИЯ" : "NOTIFICATIONS";
+                                    text: Tr.sec_notifications;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                     letter-spacing: 0.5px;
                                 }
@@ -679,7 +1006,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Показывать уведомление после добавления торрентов" : "Show notification when adding torrents";
+                                        text: Tr.notify_add;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
@@ -697,7 +1024,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Показывать уведомление после завершения загрузки" : "Show notification when download completes";
+                                        text: Tr.notify_complete;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
@@ -715,7 +1042,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Воспроизводить звуковое уведомление при завершении" : "Play sound notification upon complete";
+                                        text: Tr.notify_sound;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
@@ -880,13 +1207,13 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout { alignment: start; padding-left: 120px; width: 100%;
                                     HorizontalLayout { spacing: 6px;
                                         for day-info in [
-                                            {label: "Mo", prop: 0},
-                                            {label: "Tu", prop: 1},
-                                            {label: "We", prop: 2},
-                                            {label: "Th", prop: 3},
-                                            {label: "Fr", prop: 4},
-                                            {label: "Sa", prop: 5},
-                                            {label: "Su", prop: 6},
+                                            {label: Tr.day_mo, prop: 0},
+                                            {label: Tr.day_tu, prop: 1},
+                                            {label: Tr.day_we, prop: 2},
+                                            {label: Tr.day_th, prop: 3},
+                                            {label: Tr.day_fr, prop: 4},
+                                            {label: Tr.day_sa, prop: 5},
+                                            {label: Tr.day_su, prop: 6},
                                         ]: Rectangle {
                                             property <bool> day-on: day-info.prop == 0 ? cfg-speed-day-mon
                                                 : day-info.prop == 1 ? cfg-speed-day-tue
@@ -926,7 +1253,7 @@ component SettingsDialog inherits Rectangle {
                             VerticalLayout {
                                 spacing: 6px;
                                 Text {
-                                    text: selected-language == "ru" ? "ДОБАВЛЕНИЕ" : "ADDITIONS PREFERENCES";
+                                    text: Tr.sec_additions;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -946,7 +1273,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? "Автоматически добавлять торрент-файлы из:" : "Automatically import torrents from folder:";
+                                    text: Tr.auto_import;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
                                     width: 230px; wrap: word-wrap;
                                 }
@@ -975,7 +1302,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? "Показывать диалог параметров торрента" : "Show torrent options dialog";
+                                    text: Tr.show_opts_dlg;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
                                 }
                             }
@@ -994,7 +1321,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? "Запускать добавленные торренты" : "Instantly trigger downloads after import";
+                                    text: Tr.start_added;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
                                 }
                             }
@@ -1013,7 +1340,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? "Убрать торрент-файл в корзину" : "Safely trash imported .torrents files";
+                                    text: Tr.trash_torrents;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
                                 }
                             }
@@ -1024,7 +1351,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 8px; height: 32px; alignment: start;
                                     Text {
-                                        text: selected-language == "ru" ? "Папка по умолчанию:" : "Default download location:";
+                                        text: Tr.default_dir_lbl;
                                         color: #bfcade; font-size: 13px; vertical-alignment: center;
                                         width: 180px;
                                     }
@@ -1045,7 +1372,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     alignment: start; padding-left: 188px;
                                     Text {
-                                        text: selected-language == "ru" ? "* 1.76 ТБ свободно на /dev/sda" : "* 1.76 TB free space on /dev/sda";
+                                        text: Tr.free_disk_note;
                                         color: #555b70; font-size: 11px;
                                     }
                                 }
@@ -1056,7 +1383,7 @@ component SettingsDialog inherits Rectangle {
                                 spacing: 6px;
                                 Rectangle { height: 10px; }
                                 Text {
-                                    text: selected-language == "ru" ? "ОЧЕРЕДЬ ЗАГРУЗКИ" : "ACTIVE DOWNLOADS QUEUE";
+                                    text: Tr.sec_queue;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -1066,7 +1393,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 12px; height: 32px;
                                 Text {
-                                    text: selected-language == "ru" ? "Максимум активных загрузок:" : "Maximum concurrent downloads:";
+                                    text: Tr.queue_max_lbl;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center; width: 230px;
                                 }
                                 HorizontalLayout {
@@ -1094,10 +1421,29 @@ component SettingsDialog inherits Rectangle {
                             }
                             
                             // Seed ratio limit min
-                            HorizontalLayout {
+// Checkbox: Enable download queue
+                                    HorizontalLayout {
+                                        spacing: 12px; height: 24px;
+                                        TouchArea {
+                                            clicked => { cfg-dl-queue-enabled = !cfg-dl-queue-enabled; }
+                                            width: 14px; height: 14px; y: (parent.height - self.height) / 2;
+                                            Rectangle {
+                                                width: 14px; height: 14px; border-radius: 3px;
+                                                background: cfg-dl-queue-enabled ? #3f72f6 : #13151c;
+                                                border-width: 1px; border-color: cfg-dl-queue-enabled ? #3f72f6 : #383a54;
+                                                if cfg-dl-queue-enabled : Text { text: "✓"; color: cfg-dl-queue-enabled ? #ffffff : transparent; font-size: 10px; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; }
+                                            }
+                                        }
+                                        Text {
+                                            text: Tr.queue_enable;
+                                            color: #bfcade; font-size: 13px; vertical-alignment: center;
+                                        }
+                                    }
+                                    
+                                                                HorizontalLayout {
                                 spacing: 12px; height: 32px;
                                 Text {
-                                    text: selected-language == "ru" ? "Данные раздачи за N мин активности:" : "Seed ratio limit min:";
+                                    text: Tr.seed_ratio_min_lbl;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center; width: 230px;
                                 }
                                 HorizontalLayout {
@@ -1129,7 +1475,7 @@ component SettingsDialog inherits Rectangle {
                                 spacing: 6px;
                                 Rectangle { height: 10px; }
                                 Text {
-                                    text: selected-language == "ru" ? "ПРОЦЕСС ЗАГРУЗКИ" : "DOWNLOAD PROCESS";
+                                    text: Tr.sec_dl_process;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -1149,7 +1495,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? "Добавлять «.part» к именам незавершённых файлов" : "Append «.part» to incomplete files names";
+                                    text: Tr.append_part;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
                                 }
                             }
@@ -1168,7 +1514,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? "Сохранять незавершённые торренты в:" : "Save incomplete torrents to:";
+                                    text: Tr.incomplete_dir_lbl;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
                                     width: 230px; wrap: word-wrap;
                                 }
@@ -1204,7 +1550,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? "Выполнять сценарий по окончании загрузки:" : "Execute action when torrent is done:";
+                                    text: Tr.done_script_dl;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
                                     width: 230px; wrap: word-wrap;
                                 }
@@ -1232,7 +1578,7 @@ component SettingsDialog inherits Rectangle {
                                         width: 150px; height: 32px; border-radius: 4px;
                                         background: #171825; border-width: 1px; border-color: #2c2d42;
                                         Text {
-                                            x: 8px; vertical-alignment: center; text: selected-language == "ru" ? "путь к скрипту" : "path to script"; color: #3e445e; font-size: 13px;
+                                            x: 8px; vertical-alignment: center; text: Tr.path_to_script; color: #3e445e; font-size: 13px;
                                         }
                                     }
                                 }
@@ -1246,7 +1592,7 @@ component SettingsDialog inherits Rectangle {
                             VerticalLayout {
                                 spacing: 6px;
                                 Text {
-                                    text: selected-language == "ru" ? "ОГРАНИЧЕНИЯ РАЗДАЧИ" : "SEEDING BOUNDARIES";
+                                    text: Tr.sec_seeding;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -1268,7 +1614,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Прекратить раздачу при рейтинге:" : "Stop seeding under ratio:";
+                                        text: Tr.seed_ratio_lbl;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
@@ -1313,7 +1659,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Прекратить раздачу при простое (мин):" : "Stop seeding if idle (minutes):";
+                                        text: Tr.seed_idle_lbl;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
@@ -1355,7 +1701,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? "Выполнять сценарий по окончании раздачи:" : "Call script when torrent is done seeding:";
+                                    text: Tr.done_script_seed;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
                                     width: 260px;
                                 }
@@ -1383,7 +1729,7 @@ component SettingsDialog inherits Rectangle {
                                         horizontal-stretch: 1; height: 32px; border-radius: 4px;
                                         background: #171825; border-width: 1px; border-color: #2c2d42;
                                         Text {
-                                            x: 8px; vertical-alignment: center; text: selected-language == "ru" ? "путь к скрипту" : "path to script"; color: #3e445e; font-size: 13px;
+                                            x: 8px; vertical-alignment: center; text: Tr.path_to_script; color: #3e445e; font-size: 13px;
                                         }
                                     }
                                 }
@@ -1397,7 +1743,7 @@ component SettingsDialog inherits Rectangle {
                             VerticalLayout {
                                 spacing: 6px;
                                 Text {
-                                    text: selected-language == "ru" ? "ПРОСЛУШИВАНИЕ ПОРТА" : "INCOMING LISTENING PORT";
+                                    text: Tr.sec_network;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -1413,7 +1759,7 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         spacing: 8px; height: 28px; alignment: start;
                                         Text {
-                                            text: selected-language == "ru" ? "Порт входящих подключений:" : "Peer listening port:";
+                                            text: Tr.peer_port_lbl;
                                             color: #939cb0; font-size: 12px; vertical-alignment: center; width: selected-language == "ru" ? 165px : 135px;
                                         }
                                         HorizontalLayout {
@@ -1441,7 +1787,7 @@ component SettingsDialog inherits Rectangle {
                                                 width: selected-language == "ru" ? 98px : 70px; height: 26px; border-radius: 4px;
                                                 background: chk-ta.has-hover ? #253356 : #1b233a; border-width: 1px; border-color: #3f72f6;
                                                 Text {
-                                                    text: selected-language == "ru" ? "Проверить порт" : "Check";
+                                                    text: Tr.check_port;
                                                     color: #e2e8f0; font-size: 11px; font-weight: 600;
                                                     horizontal-alignment: center; vertical-alignment: center;
                                                 }
@@ -1453,8 +1799,8 @@ component SettingsDialog inherits Rectangle {
                                         padding-left: selected-language == "ru" ? 225px : 180px;
                                         HorizontalLayout {
                                             spacing: 4px;
-                                            Text { text: selected-language == "ru" ? "Состояние:" : "Status:"; color: #7a7e8e; font-size: 10px; }
-                                            Text { text: selected-language == "ru" ? "неизвестно" : "unknown"; color: #b89c44; font-size: 10px; font-weight: 600; }
+                                            Text { text: Tr.status_lbl; color: #7a7e8e; font-size: 10px; }
+                                            Text { text: Tr.port_unknown; color: #b89c44; font-size: 10px; font-weight: 600; }
                                         }
                                     }
                                 }
@@ -1473,7 +1819,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Устанавливать случайный порт при каждом запуске" : "Randomize port number on program launch";
+                                        text: Tr.random_port;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
@@ -1492,7 +1838,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Использовать UPnP или NAT-PMP" : "Forward ports automatically using UPnP/NAT-PMP";
+                                        text: Tr.upnp;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center;
                                     }
                                 }
@@ -1502,7 +1848,7 @@ component SettingsDialog inherits Rectangle {
                                 spacing: 6px;
                                 Rectangle { height: 2px; }
                                 Text {
-                                    text: selected-language == "ru" ? "ОГРАНИЧЕНИЯ УЧАСТНИКОВ" : "PEERS & CONNECTIONS BOUNDARIES";
+                                    text: Tr.sec_peers;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -1516,7 +1862,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 26px;
                                     Text {
-                                        text: selected-language == "ru" ? "Макс. участников на торрент:" : "Max peers per torrent:";
+                                        text: Tr.peers_max_torrent;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center; width: 170px;
                                     }
                                     HorizontalLayout {
@@ -1547,7 +1893,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 12px; height: 26px;
                                     Text {
-                                        text: selected-language == "ru" ? "Общий максимум участников:" : "Global total peers limit:";
+                                        text: Tr.peers_max_global;
                                         color: #939cb0; font-size: 12px; vertical-alignment: center; width: 170px;
                                     }
                                     HorizontalLayout {
@@ -1580,7 +1926,7 @@ component SettingsDialog inherits Rectangle {
                                 spacing: 6px;
                                 Rectangle { height: 2px; }
                                 Text {
-                                    text: selected-language == "ru" ? "ПАРАМЕТРЫ" : "FEATURES";
+                                    text: Tr.sec_features;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -1602,7 +1948,7 @@ component SettingsDialog inherits Rectangle {
                                             if cfg-net-utp : Text { text: "✓"; color: #ffffff; font-size: 10px; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; }
                                         }
                                     }
-                                    Text { text: selected-language == "ru" ? "Использовать µTP для связи с участниками" : "Enable Micro Transport Protocol (µTP)"; color: #939cb0; font-size: 12px; vertical-alignment: center; }
+                                    Text { text: Tr.utp; color: #939cb0; font-size: 12px; vertical-alignment: center; }
                                 }
                                 
                                 HorizontalLayout {
@@ -1617,7 +1963,7 @@ component SettingsDialog inherits Rectangle {
                                             if cfg-net-pex : Text { text: "✓"; color: #ffffff; font-size: 10px; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; }
                                         }
                                     }
-                                    Text { text: selected-language == "ru" ? "Использовать PEX для обмена списками участников" : "Use Peer Exchange (PEX)"; color: #939cb0; font-size: 12px; vertical-alignment: center; }
+                                    Text { text: Tr.pex; color: #939cb0; font-size: 12px; vertical-alignment: center; }
                                 }
                                 
                                 HorizontalLayout {
@@ -1632,7 +1978,7 @@ component SettingsDialog inherits Rectangle {
                                             if cfg-net-dht : Text { text: "✓"; color: #ffffff; font-size: 10px; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; }
                                         }
                                     }
-                                    Text { text: selected-language == "ru" ? "Использовать DHT для обнаружения участников" : "Use Distributed Hash Table (DHT)"; color: #939cb0; font-size: 12px; vertical-alignment: center; }
+                                    Text { text: Tr.dht; color: #939cb0; font-size: 12px; vertical-alignment: center; }
                                 }
                                 
                                 HorizontalLayout {
@@ -1647,7 +1993,7 @@ component SettingsDialog inherits Rectangle {
                                             if cfg-net-lpd : Text { text: "✓"; color: #ffffff; font-size: 10px; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; }
                                         }
                                     }
-                                    Text { text: selected-language == "ru" ? "Использовать локальное обнаружение участников" : "Use Local Peer Discovery (LPD)"; color: #939cb0; font-size: 12px; vertical-alignment: center; }
+                                    Text { text: Tr.lpd; color: #939cb0; font-size: 12px; vertical-alignment: center; }
                                 }
                             }
                             
@@ -1655,7 +2001,7 @@ component SettingsDialog inherits Rectangle {
                                 spacing: 6px;
                                 Rectangle { height: 2px; }
                                 Text {
-                                    text: selected-language == "ru" ? "СТАНДАРТНЫЕ ПУБЛИЧНЫЕ ТРЕКЕРЫ" : "DEFAULT PUBLIC TRACKERS";
+                                    text: Tr.sec_public_trackers;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -1675,7 +2021,7 @@ component SettingsDialog inherits Rectangle {
                                     animate y { duration: 150ms; easing: ease-in-out; }
                                     le := LineEdit {
                                         width: 100%; height: 100%;
-                                        placeholder-text: selected-language == "ru" ? "Добавьте трекеры, по одному на строку..." : "Add trackers here, one per line...";
+                                        placeholder-text: Tr.public_trackers_ph;
                                         text <=> cfg-net-default-trackers;
                                     }
                                 }
@@ -1689,7 +2035,7 @@ component SettingsDialog inherits Rectangle {
                             VerticalLayout {
                                 spacing: 6px;
                                 Text {
-                                    text: selected-language == "ru" ? "ШИФРОВАНИЕ" : "PROTOCOL ENCRYPTION";
+                                    text: Tr.sec_encryption;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -1698,7 +2044,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 20px; height: 32px;
                                 Text {
-                                    text: selected-language == "ru" ? "Режим:" : "Encryption mode:";
+                                    text: Tr.encryption_mode;
                                     color: #939cb0; font-size: 12px; vertical-alignment: center; width: 140px;
                                 }
                                 Rectangle {
@@ -1718,21 +2064,21 @@ component SettingsDialog inherits Rectangle {
                                                     height: 28px; border-radius: 4px;
                                                     background: ta-enc0.has-hover ? #383a54 : transparent;
                                                     if cfg-priv-encryption == 0: Rectangle { x: 4px; width: 3px; height: 14px; y: 7px; background: #3ec4f0; border-radius: 1.5px; }
-                                                    Text { text: selected-language == "ru" ? "Предпочитать шифрование" : "Prefer Encryption"; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-priv-encryption == 0 ? 600 : 400; }
+                                                    Text { text: Tr.enc_prefer; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-priv-encryption == 0 ? 600 : 400; }
                                                     ta-enc0 := TouchArea { clicked => { cfg-priv-encryption = 0; encryption-popup.close(); } }
                                                 }
                                                 Rectangle {
                                                     height: 28px; border-radius: 4px;
                                                     background: ta-enc1.has-hover ? #383a54 : transparent;
                                                     if cfg-priv-encryption == 1: Rectangle { x: 4px; width: 3px; height: 14px; y: 7px; background: #3ec4f0; border-radius: 1.5px; }
-                                                    Text { text: selected-language == "ru" ? "Требовать шифрование" : "Require Encryption"; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-priv-encryption == 1 ? 600 : 400; }
+                                                    Text { text: Tr.enc_require; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-priv-encryption == 1 ? 600 : 400; }
                                                     ta-enc1 := TouchArea { clicked => { cfg-priv-encryption = 1; encryption-popup.close(); } }
                                                 }
                                                 Rectangle {
                                                     height: 28px; border-radius: 4px;
                                                     background: ta-enc2.has-hover ? #383a54 : transparent;
                                                     if cfg-priv-encryption == 2: Rectangle { x: 4px; width: 3px; height: 14px; y: 7px; background: #3ec4f0; border-radius: 1.5px; }
-                                                    Text { text: selected-language == "ru" ? "Не шифровать" : "Disabled"; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-priv-encryption == 2 ? 600 : 400; }
+                                                    Text { text: Tr.enc_disabled; color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 14px; font-weight: cfg-priv-encryption == 2 ? 600 : 400; }
                                                     ta-enc2 := TouchArea { clicked => { cfg-priv-encryption = 2; encryption-popup.close(); } }
                                                 }
                                             }
@@ -1740,9 +2086,9 @@ component SettingsDialog inherits Rectangle {
                                     }
                                     
                                     Text {
-                                        text: cfg-priv-encryption == 0 ? (selected-language == "ru" ? "Предпочитать шифрование" : "Prefer Encryption") :
-                                              (cfg-priv-encryption == 1 ? (selected-language == "ru" ? "Требовать шифрование" : "Require Encryption") :
-                                                                          (selected-language == "ru" ? "Не шифровать" : "Disabled"));
+                                        text: cfg-priv-encryption == 0 ? (Tr.enc_prefer) :
+                                              (cfg-priv-encryption == 1 ? (Tr.enc_require) :
+                                                                          (Tr.enc_disabled));
                                         color: #e2e8f0; font-size: 13px; vertical-alignment: center; x: 12px;
                                     }
                                     
@@ -1760,7 +2106,7 @@ component SettingsDialog inherits Rectangle {
                                 spacing: 6px;
                                 Rectangle { height: 10px; }
                                 Text {
-                                    text: selected-language == "ru" ? "ЧЁРНЫЙ СПИСОК IP" : "IP BLOCKLIST";
+                                    text: Tr.sec_blocklist_ip;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -1781,7 +2127,7 @@ component SettingsDialog inherits Rectangle {
                                         }
                                     }
                                     Text {
-                                        text: selected-language == "ru" ? "Включить чёрный список:" : "Enable blocklist:";
+                                        text: Tr.blocklist_enable;
                                         color: #bfcade; font-size: 13px; vertical-alignment: center; width: 170px; wrap: word-wrap;
                                     }
                                     
@@ -1791,7 +2137,7 @@ component SettingsDialog inherits Rectangle {
                                         LineEdit {
                                             enabled: cfg-priv-blocklist-enabled;
                                             width: 100%; height: 100%;
-                                            placeholder-text: selected-language == "ru" ? "URL списка" : "Blocklist URL";
+                                            placeholder-text: Tr.blocklist_url;
                                             text <=> cfg-priv-blocklist-url;
                                         }
                                     }
@@ -1800,7 +2146,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     padding-left: 26px;
                                     Text {
-                                        text: selected-language == "ru" ? "В чёрном списке " + cfg-priv-blocklist-entries + " записей" : "Blocklist contains " + cfg-priv-blocklist-entries + " records";
+                                        text: Tr.blocklist_entries + cfg-priv-blocklist-entries + Tr.blocklist_entries2;
                                         color: #555b70; font-size: 11px;
                                     }
                                 }
@@ -1819,7 +2165,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                 }
                                 Text {
-                                    text: selected-language == "ru" ? "Разрешить автоматическое обновление" : "Allow automatic updates";
+                                    text: Tr.blocklist_auto;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
                                 }
                             }
@@ -1837,7 +2183,7 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         alignment: space-between;
                                         Text {
-                                            text: selected-language == "ru" ? "ПРОФИЛИ ПОДКЛЮЧЕНИЙ" : "CONNECTION PROFILES";
+                                            text: Tr.conn_profiles;
                                             color: #5e637a; font-size: 10px; font-weight: 700;
                                             vertical-alignment: center;
                                         }
@@ -1856,8 +2202,8 @@ component SettingsDialog inherits Rectangle {
                                                 }
                                                 Text {
                                                     text: is-local-config-detected ? 
-                                                          (selected-language == "ru" ? "КОНФИГ НАЙДЕН" : "CONFIG FILE FOUND") : 
-                                                          (selected-language == "ru" ? "КОНФИГ НЕ НАЙДЕН" : "NO CONFIG FILE FOUND");
+                                                          (Tr.config_found) : 
+                                                          (Tr.config_not_found);
                                                     color: is-local-config-detected ? #10b981 : #8189a0;
                                                     font-size: 9px; font-weight: 700; vertical-alignment: center;
                                                 }
@@ -1881,7 +2227,7 @@ component SettingsDialog inherits Rectangle {
                                                 alignment: center; spacing: 6px;
                                                 Text { text: "+"; color: #3f72f6; font-size: 13px; font-weight: 700; vertical-alignment: center; }
                                                 Text {
-                                                    text: selected-language == "ru" ? "Добавить" : "Add Connection";
+                                                    text: Tr.add_connection;
                                                     color: ta-add-profile.has-hover ? #ffffff : #e4e7f2; font-size: 11px; font-weight: 600; vertical-alignment: center;
                                                 }
                                             }
@@ -1891,8 +2237,9 @@ component SettingsDialog inherits Rectangle {
                                                     edit-profile-host = "";
                                                     edit-profile-port = 9091;
                                                     edit-profile-auth = false;
-                                                    edit-profile-username = "admin";
+                                                    edit-profile-username = "";
                                                     edit-profile-password = "";
+                                                    editing-original-name = "";
                                                     editing-id = 3;
                                                     is-editing-profile = true;
                                                 }
@@ -1905,136 +2252,62 @@ component SettingsDialog inherits Rectangle {
                                         VerticalLayout {
                                             padding: 1px;
                                             
-                                            // Profile 0: Local Host
-                                            if is-local-config-detected : Rectangle {
-                                                height: 52px; background: local-host-active ? #1315254d : transparent;
+                                            for p in profiles: Rectangle {
+                                                height: 52px; background: p.active ? #1315254d : transparent;
                                                 HorizontalLayout {
                                                     padding-left: 14px; padding-right: 14px;
-                                                    
+
                                                     TouchArea {
                                                         width: 200px;
                                                         clicked => {
-                                                            local-host-active = true;
-                                                            p1-active = false;
-                                                            p2-active = false;
+                                                            if (!p.active) { switch-host(p.url); }
                                                         }
                                                         HorizontalLayout {
                                                             spacing: 12px;
                                                             Rectangle {
                                                                 width: 7px; height: 7px; border-radius: 3.5px;
-                                                                background: local-host-active ? #10b981 : #4d516d;
+                                                                background: p.active ? #10b981 : #4d516d;
                                                                 y: (parent.height - self.height) / 2;
                                                             }
                                                             VerticalLayout {
                                                                 alignment: center; spacing: 2px;
-                                                                Text { text: "Local Host"; color: local-host-active ? #e4e7f2 : #8189a0; font-size: 12px; font-weight: 600; }
-                                                                Text { text: "127.0.0.1:9091"; color: #5e637a; font-size: 10px; }
+                                                                Text { text: p.name; color: p.active ? #e4e7f2 : #8189a0; font-size: 12px; font-weight: 600; }
+                                                                Text { text: p.endpoint; color: #5e637a; font-size: 10px; }
                                                             }
                                                         }
                                                     }
-                                                    
+
                                                     VerticalLayout {
                                                         alignment: center;
                                                         HorizontalLayout {
                                                             alignment: end; spacing: 8px;
-                                                            Rectangle {
+                                                            if p.is-custom : Rectangle {
                                                                 width: 50px; height: 26px; border-radius: 4px;
-                                                                background: ta-edit-lh.has-hover ? #252844 : #1a1c2e;
-                                                                border-width: 1px; border-color: ta-edit-lh.has-hover ? #373a5a : #282a44;
-                                                                Text { text: selected-language == "ru" ? "Ред." : "Edit"; color: ta-edit-lh.has-hover ? #e4e7f2 : #8189a0; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
-                                                                ta-edit-lh := TouchArea {
+                                                                background: ta-edit-p.has-hover ? #252844 : #1a1c2e;
+                                                                border-width: 1px; border-color: ta-edit-p.has-hover ? #373a5a : #282a44;
+                                                                Text { text: Tr.edit_btn; color: ta-edit-p.has-hover ? #e4e7f2 : #8189a0; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                                                                ta-edit-p := TouchArea {
                                                                     clicked => {
-                                                                        edit-profile-name = "Local Host";
-                                                                        edit-profile-host = "127.0.0.1";
+                                                                        editing-original-name = p.name;
+                                                                        edit-profile-name = p.name;
+                                                                        edit-profile-host = p.host;
                                                                         edit-profile-port = 9091;
                                                                         edit-profile-auth = false;
-                                                                        edit-profile-username = "admin";
+                                                                        edit-profile-username = "";
                                                                         edit-profile-password = "";
-                                                                        editing-id = 0;
-                                                                        is-editing-profile = true;
-                                                                    }
-                                                                }
-                                                            }
-                                                            Rectangle {
-                                                                width: 54px; height: 26px; border-radius: 4px;
-                                                                background: ta-del-lh.has-hover ? #341b25 : #24161c;
-                                                                border-width: 1px; border-color: ta-del-lh.has-hover ? #5a2434 : #421d28;
-                                                                Text { text: selected-language == "ru" ? "Удал." : "Delete"; color: ta-del-lh.has-hover ? #ff6b6b : #ef4444; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
-                                                                ta-del-lh := TouchArea {
-                                                                    clicked => {
-                                                                        delete-target-id = 0;
-                                                                        delete-target-name = "Local Host";
-                                                                        delete-countdown-val = 5;
-                                                                        show-delete-dialog = true;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                            if is-local-config-detected && (has-profile-1 || has-profile-2) : Rectangle { height: 1px; background: #1e2030; }
-
-                                            // Profile 1
-                                            if has-profile-1 : Rectangle {
-                                                height: 52px; background: p1-active ? #1315254d : transparent;
-                                                HorizontalLayout {
-                                                    padding-left: 14px; padding-right: 14px;
-                                                    
-                                                    TouchArea {
-                                                        width: 200px;
-                                                        clicked => {
-                                                            p1-active = true;
-                                                            local-host-active = false;
-                                                            p2-active = false;
-                                                        }
-                                                        HorizontalLayout {
-                                                            spacing: 12px;
-                                                            Rectangle {
-                                                                width: 7px; height: 7px; border-radius: 3.5px;
-                                                                background: p1-active ? #10b981 : #4d516d;
-                                                                y: (parent.height - self.height) / 2;
-                                                            }
-                                                            VerticalLayout {
-                                                                alignment: center; spacing: 2px;
-                                                                Text { text: p1-name; color: p1-active ? #e4e7f2 : #8189a0; font-size: 12px; font-weight: 600; }
-                                                                Text { text: p1-host + ":" + p1-port; color: #5e637a; font-size: 10px; }
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    VerticalLayout {
-                                                        alignment: center;
-                                                        HorizontalLayout {
-                                                            alignment: end; spacing: 8px;
-                                                            Rectangle {
-                                                                width: 50px; height: 26px; border-radius: 4px;
-                                                                background: ta-edit-p1.has-hover ? #252844 : #1a1c2e;
-                                                                border-width: 1px; border-color: ta-edit-p1.has-hover ? #373a5a : #282a44;
-                                                                Text { text: selected-language == "ru" ? "Ред." : "Edit"; color: ta-edit-p1.has-hover ? #e4e7f2 : #8189a0; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
-                                                                ta-edit-p1 := TouchArea {
-                                                                    clicked => {
-                                                                        edit-profile-name = p1-name;
-                                                                        edit-profile-host = p1-host;
-                                                                        edit-profile-port = p1-port;
-                                                                        edit-profile-auth = p1-auth;
-                                                                        edit-profile-username = p1-username;
-                                                                        edit-profile-password = p1-password;
                                                                         editing-id = 1;
                                                                         is-editing-profile = true;
                                                                     }
                                                                 }
                                                             }
-                                                            Rectangle {
+                                                            if p.is-custom : Rectangle {
                                                                 width: 54px; height: 26px; border-radius: 4px;
-                                                                background: ta-del-p1.has-hover ? #341b25 : #24161c;
-                                                                border-width: 1px; border-color: ta-del-p1.has-hover ? #5a2434 : #421d28;
-                                                                Text { text: selected-language == "ru" ? "Удал." : "Delete"; color: ta-del-p1.has-hover ? #ff6b6b : #ef4444; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
-                                                                ta-del-p1 := TouchArea {
+                                                                background: ta-del-p.has-hover ? #341b25 : #24161c;
+                                                                border-width: 1px; border-color: ta-del-p.has-hover ? #5a2434 : #421d28;
+                                                                Text { text: Tr.del_btn; color: ta-del-p.has-hover ? #ff6b6b : #ef4444; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                                                                ta-del-p := TouchArea {
                                                                     clicked => {
-                                                                        delete-target-id = 1;
-                                                                        delete-target-name = p1-name;
+                                                                        delete-target-name = p.name;
                                                                         delete-countdown-val = 5;
                                                                         show-delete-dialog = true;
                                                                     }
@@ -2045,81 +2318,10 @@ component SettingsDialog inherits Rectangle {
                                                 }
                                             }
 
-                                            if has-profile-1 && has-profile-2 : Rectangle { height: 1px; background: #1e2030; }
-
-                                            // Profile 2
-                                            if has-profile-2 : Rectangle {
-                                                height: 52px; background: p2-active ? #1315254d : transparent;
-                                                HorizontalLayout {
-                                                    padding-left: 14px; padding-right: 14px;
-                                                    
-                                                    TouchArea {
-                                                        width: 200px;
-                                                        clicked => {
-                                                            p2-active = true;
-                                                            local-host-active = false;
-                                                            p1-active = false;
-                                                        }
-                                                        HorizontalLayout {
-                                                            spacing: 12px;
-                                                            Rectangle {
-                                                                width: 7px; height: 7px; border-radius: 3.5px;
-                                                                background: p2-active ? #10b981 : #4d516d;
-                                                                y: (parent.height - self.height) / 2;
-                                                            }
-                                                            VerticalLayout {
-                                                                alignment: center; spacing: 2px;
-                                                                Text { text: p2-name; color: p2-active ? #e4e7f2 : #8189a0; font-size: 12px; font-weight: 600; }
-                                                                Text { text: p2-host + ":" + p2-port; color: #5e637a; font-size: 10px; }
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    VerticalLayout {
-                                                        alignment: center;
-                                                        HorizontalLayout {
-                                                            alignment: end; spacing: 8px;
-                                                            Rectangle {
-                                                                width: 50px; height: 26px; border-radius: 4px;
-                                                                background: ta-edit-p2.has-hover ? #252844 : #1a1c2e;
-                                                                border-width: 1px; border-color: ta-edit-p2.has-hover ? #373a5a : #282a44;
-                                                                Text { text: selected-language == "ru" ? "Ред." : "Edit"; color: ta-edit-p2.has-hover ? #e4e7f2 : #8189a0; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
-                                                                ta-edit-p2 := TouchArea {
-                                                                    clicked => {
-                                                                        edit-profile-name = p2-name;
-                                                                        edit-profile-host = p2-host;
-                                                                        edit-profile-port = p2-port;
-                                                                        edit-profile-auth = p2-auth;
-                                                                        edit-profile-username = p2-username;
-                                                                        edit-profile-password = p2-password;
-                                                                        editing-id = 2;
-                                                                        is-editing-profile = true;
-                                                                    }
-                                                                }
-                                                            }
-                                                            Rectangle {
-                                                                width: 54px; height: 26px; border-radius: 4px;
-                                                                background: ta-del-p2.has-hover ? #341b25 : #24161c;
-                                                                border-width: 1px; border-color: ta-del-p2.has-hover ? #5a2434 : #421d28;
-                                                                Text { text: selected-language == "ru" ? "Удал." : "Delete"; color: ta-del-p2.has-hover ? #ff6b6b : #ef4444; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
-                                                                ta-del-p2 := TouchArea {
-                                                                    clicked => {
-                                                                        delete-target-id = 2;
-                                                                        delete-target-name = p2-name;
-                                                                        delete-countdown-val = 5;
-                                                                        show-delete-dialog = true;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                            if !is-local-config-detected && !has-profile-1 && !has-profile-2 : Rectangle {
+                                            if profiles.length < 1 : Rectangle {
                                                 height: 80px;
                                                 Text {
-                                                    text: selected-language == "ru" ? "Нет activeных профилей подключений." : "No connection profiles configured.";
+                                                    text: Tr.no_profiles;
                                                     color: #5e637a; font-size: 12px; horizontal-alignment: center; vertical-alignment: center;
                                                 }
                                             }
@@ -2132,7 +2334,7 @@ component SettingsDialog inherits Rectangle {
                                     
                                     VerticalLayout {
                                         spacing: 6px;
-                                        Text { text: selected-language == "ru" ? "Название профиля:" : "Profile name:"; color: #939cb0; font-size: 11px; font-weight: 500; }
+                                        Text { text: Tr.profile_name; color: #939cb0; font-size: 11px; font-weight: 500; }
                                         Rectangle {
                                             width: 240px; height: 32px; border-radius: 4px;
                                             background: #171825; border-width: 1px; border-color: #2c2d42;
@@ -2145,7 +2347,7 @@ component SettingsDialog inherits Rectangle {
 
                                     VerticalLayout {
                                         spacing: 6px;
-                                        Text { text: selected-language == "ru" ? "IP-адрес / Хост:" : "IP address / Host:"; color: #939cb0; font-size: 11px; font-weight: 500; }
+                                        Text { text: Tr.host_lbl; color: #939cb0; font-size: 11px; font-weight: 500; }
                                         HorizontalLayout {
                                             spacing: 12px;
                                             Rectangle {
@@ -2156,15 +2358,7 @@ component SettingsDialog inherits Rectangle {
                                                     text <=> edit-profile-host;
                                                 }
                                             }
-                                            Rectangle {
-                                                width: 78px; height: 32px; border-radius: 4px;
-                                                background: #171825; border-width: 1px; border-color: #2c2d42;
-                                                LineEdit {
-                                                    width: 100%; height: 100%;
-                                                    text: "9091";
-                                                    enabled: false;
-                                                }
-                                            }
+                                            NumField { value <=> edit-profile-port; min-val: 1; max-val: 65535; field-width: 78px; field-height: 32px; }
                                         }
                                     }
 
@@ -2180,7 +2374,7 @@ component SettingsDialog inherits Rectangle {
                                                 if edit-profile-auth : Text { text: "✓"; color: #ffffff; font-size: 10px; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; }
                                             }
                                         }
-                                        Text { text: selected-language == "ru" ? "Требовать аутентификацию (пароль)" : "Enforce authentication password"; color: #939cb0; font-size: 12px; vertical-alignment: center; }
+                                        Text { text: Tr.enforce_auth_short; color: #939cb0; font-size: 12px; vertical-alignment: center; }
                                     }
 
                                     HorizontalLayout {
@@ -2191,7 +2385,7 @@ component SettingsDialog inherits Rectangle {
                                             LineEdit {
                                                 enabled: edit-profile-auth;
                                                 width: 100%; height: 100%;
-                                                placeholder-text: "Login";
+                                                placeholder-text: Tr.login_ph;
                                                 text <=> edit-profile-username;
                                             }
                                         }
@@ -2201,7 +2395,7 @@ component SettingsDialog inherits Rectangle {
                                             LineEdit {
                                                 enabled: edit-profile-auth;
                                                 width: 100%; height: 100%;
-                                                placeholder-text: "Password";
+                                                placeholder-text: Tr.password_ph;
                                                 text <=> edit-profile-password;
                                             }
                                         }
@@ -2214,44 +2408,15 @@ component SettingsDialog inherits Rectangle {
                                             background: (edit-profile-name != "" && edit-profile-host != "") ? #25283f : #1a1c28;
                                             border-width: 1px; border-color: (edit-profile-name != "" && edit-profile-host != "") ? #303350 : #2c2e42;
                                             Text { 
-                                                text: selected-language == "ru" ? "Сохранить" : "Save"; 
+                                                text: Tr.save_btn; 
                                                 color: (edit-profile-name != "" && edit-profile-host != "") ? #e4e7f2 : #5e637a; 
                                                 font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; 
                                             }
                                             TouchArea {
                                                 enabled: edit-profile-name != "" && edit-profile-host != "";
                                                 clicked => {
-                                                    if (editing-id == 0) {
-                                                        // Local Host
-                                                    } else if (editing-id == 1) {
-                                                        p1-name = edit-profile-name;
-                                                        p1-host = edit-profile-host;
-                                                        p1-auth = edit-profile-auth;
-                                                        p1-username = edit-profile-username;
-                                                        p1-password = edit-profile-password;
-                                                    } else if (editing-id == 2) {
-                                                        p2-name = edit-profile-name;
-                                                        p2-host = edit-profile-host;
-                                                        p2-auth = edit-profile-auth;
-                                                        p2-username = edit-profile-username;
-                                                        p2-password = edit-profile-password;
-                                                    } else if (editing-id == 3) {
-                                                        if (!has-profile-1) {
-                                                            p1-name = edit-profile-name;
-                                                            p1-host = edit-profile-host;
-                                                            p1-auth = edit-profile-auth;
-                                                            p1-username = edit-profile-username;
-                                                            p1-password = edit-profile-password;
-                                                            has-profile-1 = true;
-                                                        } else {
-                                                            p2-name = edit-profile-name;
-                                                            p2-host = edit-profile-host;
-                                                            p2-auth = edit-profile-auth;
-                                                            p2-username = edit-profile-username;
-                                                            p2-password = edit-profile-password;
-                                                            has-profile-2 = true;
-                                                        }
-                                                    }
+                                                    save-host(edit-profile-name, edit-profile-host, edit-profile-port, edit-profile-username, edit-profile-password, editing-original-name);
+                                                    editing-id = 0;
                                                     is-editing-profile = false;
                                                 }
                                             }
@@ -2262,7 +2427,7 @@ component SettingsDialog inherits Rectangle {
                                             background: ta-cancel-edit.has-hover ? #25283f : #1b1c2a;
                                             border-width: 1px;
                                             border-color: ta-cancel-edit.has-hover ? #383a54 : #27293d;
-                                            Text { text: selected-language == "ru" ? "Отмена" : "Cancel"; color: ta-cancel-edit.has-hover ? #e4e7f2 : #8189a0; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                                            Text { text: Tr.cancel_btn; color: ta-cancel-edit.has-hover ? #e4e7f2 : #8189a0; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
                                             ta-cancel-edit := TouchArea {
                                                 clicked => {
                                                     is-editing-profile = false;
@@ -2297,13 +2462,11 @@ component SettingsDialog inherits Rectangle {
                                             VerticalLayout {
                                                 spacing: 6px; alignment: center;
                                                 Text {
-                                                    text: selected-language == "ru" ? "Удалить профиль?" : "Delete Profile?";
+                                                    text: Tr.del_profile_q;
                                                     color: #ffffff; font-size: 14px; font-weight: 700;
                                                 }
                                                 Text {
-                                                    text: selected-language == "ru" ? 
-                                                          "Вы уверены, что хотите навсегда удалить профиль \"" + delete-target-name + "\"?" : 
-                                                          "Are you sure you want to permanently delete \"" + delete-target-name + "\"?";
+                                                    text: Tr.del_confirm + " \"" + delete-target-name + "\"?";
                                                     color: #939cb0; font-size: 12px; wrap: word-wrap;
                                                 }
                                             }
@@ -2316,7 +2479,7 @@ component SettingsDialog inherits Rectangle {
                                                 width: 80px; height: 32px; border-radius: 4px;
                                                 background: ta-cancel-del.has-hover ? #25283f : #1b1c2a;
                                                 border-width: 1px; border-color: ta-cancel-del.has-hover ? #383a54 : #27293d;
-                                                Text { text: selected-language == "ru" ? "Отмена" : "Cancel"; color: ta-cancel-del.has-hover ? #e4e7f2 : #8189a0; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                                                Text { text: Tr.cancel_btn; color: ta-cancel-del.has-hover ? #e4e7f2 : #8189a0; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
                                                 ta-cancel-del := TouchArea { clicked => { show-delete-dialog = false; } }
                                             }
                                             
@@ -2327,33 +2490,17 @@ component SettingsDialog inherits Rectangle {
                                                 
                                                 Text {
                                                     text: delete-countdown-val > 0 ? 
-                                                          (selected-language == "ru" ? "Удалить (" + delete-countdown-val + "с)" : "Delete (" + delete-countdown-val + "s)") : 
-                                                          (selected-language == "ru" ? "Удалить" : "Delete");
+                                                          (Tr.del_word + " (" + delete-countdown-val + Tr.del_secs + ")") : 
+                                                          (Tr.del_word);
                                                     color: delete-countdown-val > 0 ? #5e637e : #ffffff;
                                                     font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center;
                                                 }
                                                 
                                                 ta-confirm-del := TouchArea {
                                                     enabled: delete-countdown-val == 0;
-                                                    clicked => {
-                                                        if (delete-target-id == 0) {
-                                                            is-local-config-detected = false;
-                                                            local-host-active = false;
-                                                            if (has-profile-1) { p1-active = true; }
-                                                            else if (has-profile-2) { p2-active = true; }
-                                                        } else if (delete-target-id == 1) {
-                                                            has-profile-1 = false;
-                                                            p1-active = false;
-                                                            if (is-local-config-detected) { local-host-active = true; }
-                                                            else if (has-profile-2) { p2-active = true; }
-                                                        } else if (delete-target-id == 2) {
-                                                            has-profile-2 = false;
-                                                            p2-active = false;
-                                                            if (is-local-config-detected) { local-host-active = true; }
-                                                            else if (has-profile-1) { p1-active = true; }
-                                                        }
-                                                        show-delete-dialog = false;
-                                                    }
+                                                clicked => {
+                                                    delete-host(delete-target-name);
+                                                    show-delete-dialog = false;
                                                 }
                                             }
                                         }
@@ -2363,6 +2510,7 @@ component SettingsDialog inherits Rectangle {
                         }
                         
                         // 7. INTERFACE CONFIGURATION
+                        }
                         if settings-tab == 7: VerticalLayout {
                             padding: 24px; spacing: 20px; alignment: start;
                             
@@ -2371,7 +2519,7 @@ component SettingsDialog inherits Rectangle {
                                 VerticalLayout {
                                     spacing: 6px;
                                     Text {
-                                        text: selected-language == "ru" ? "ЯЗЫК ИНТЕРФЕЙСА" : "INTERFACE LANGUAGE";
+                                        text: Tr.lang_section;
                                         color: #5e637a; font-size: 10px; font-weight: 700;
                                     }
                                     Rectangle { height: 1px; background: #2a2b38; }
@@ -2442,7 +2590,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 
                                 Text {
-                                    text: selected-language == "ru" ? "* Для полной смены локали может потребоваться перезапуск программы" : "* Dynamic elements will require standard client reload to change fully";
+                                    text: Tr.reload_note;
                                     color: #5e637a; font-size: 10px; font-italic: true;
                                 }
                             }
@@ -2452,7 +2600,7 @@ component SettingsDialog inherits Rectangle {
                             VerticalLayout {
                                 spacing: 6px;
                                 Text {
-                                    text: selected-language == "ru" ? "ОБЩИЙ ВИД" : "GENERAL VISUAL SETTINGS";
+                                    text: Tr.sec_iface_visual;
                                     color: #5e637a; font-size: 10px; font-weight: 700;
                                 }
                                 Rectangle { height: 1px; background: #2a2b38; }
@@ -2461,7 +2609,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 20px; height: 32px;
                                 Text {
-                                    text: selected-language == "ru" ? "Обновление списка раздач:" : "GUI list update frequency:";
+                                    text: Tr.update_freq;
                                     color: #939cb0; font-size: 12px; vertical-alignment: center; width: 170px;
                                 }
                                 Rectangle {
@@ -2507,8 +2655,7 @@ component SettingsDialog inherits Rectangle {
                             HorizontalLayout {
                                 alignment: center;
                                 Text {
-                                    text: selected-language == "ru" ? "Лёгкий нативный GUI для Transmission daemon.\nБез GTK, без Qt — рендеринг через Skia/OpenGL и Vulkan." :
-                                                                      "Lightweight native GUI for Transmission daemon.\nNo GTK, no Qt — rendering via Skia/OpenGL and Vulkan.";
+                                    text: Tr.about_desc;
                                     color: #939cb0; font-size: 11px;
                                     horizontal-alignment: center; wrap: word-wrap;
                                     width: 250px;
@@ -2564,27 +2711,27 @@ component SettingsDialog inherits Rectangle {
                                     width: 250px; spacing: 8px;
                                     
                                     HorizontalLayout {
-                                        Text { width: 90px; text: selected-language == "ru" ? "Лицензия" : "License"; color: #5e637a; font-size: 11px; }
+                                        Text { width: 90px; text: Tr.license_lbl; color: #5e637a; font-size: 11px; }
                                         Text { text: "GPL-2.0-or-later"; color: #939cb0; font-size: 11px; }
                                     }
                                     HorizontalLayout {
-                                        Text { width: 90px; text: selected-language == "ru" ? "Язык" : "Language"; color: #5e637a; font-size: 11px; }
+                                        Text { width: 90px; text: Tr.lang_lbl; color: #5e637a; font-size: 11px; }
                                         Text { text: "Rust 2021 edition"; color: #939cb0; font-size: 11px; }
                                     }
                                     HorizontalLayout {
-                                        Text { width: 90px; text: selected-language == "ru" ? "UI-фреймворк" : "UI-Framework"; color: #5e637a; font-size: 11px; }
+                                        Text { width: 90px; text: Tr.uifw_lbl; color: #5e637a; font-size: 11px; }
                                         Text { text: "Slint 1.7 (GPLv3)"; color: #939cb0; font-size: 11px; }
                                     }
                                     HorizontalLayout {
-                                        Text { width: 90px; text: selected-language == "ru" ? "Рендерер" : "Renderer"; color: #5e637a; font-size: 11px; }
+                                        Text { width: 90px; text: Tr.renderer_lbl; color: #5e637a; font-size: 11px; }
                                         Text { text: "Skia / OpenGL / Vulkan"; color: #939cb0; font-size: 11px; }
                                     }
                                     HorizontalLayout {
-                                        Text { width: 90px; text: selected-language == "ru" ? "Трей" : "Tray"; color: #5e637a; font-size: 11px; }
+                                        Text { width: 90px; text: Tr.tray_lbl; color: #5e637a; font-size: 11px; }
                                         Text { text: "zbus 4 (SNI/D-Bus)"; color: #939cb0; font-size: 11px; }
                                     }
                                     HorizontalLayout {
-                                        Text { width: 90px; text: selected-language == "ru" ? "Разработано с" : "Developed with"; color: #5e637a; font-size: 11px; }
+                                        Text { width: 90px; text: Tr.dev_with; color: #5e637a; font-size: 11px; }
                                         Text { text: "Claude (Anthropic)"; color: #939cb0; font-size: 11px; }
                                     }
                                 }
@@ -2770,6 +2917,14 @@ export component MainWindow inherits Window {
     in-out property <string>   rpc-url: "localhost";
     in-out property <[string]> rpc-candidates: ["localhost:9091", "seedbox:9091"];
     in-out property <bool>     rpc-popup-visible: false;
+    in-out property <[ProfileItem]> profiles;
+    in-out property <int>      port-test-state: 0;
+    in-out property <bool>     is-local-config-detected: true;
+    in-out property <bool>     local-host-active: true; // 0=неизвестно 1=проверка 2=открыт 3=закрыт
+    callback port-test-start();
+    callback switch-host(string);
+    callback save-host(string, string, int, string, string, string);
+    callback delete-host(string);
     in-out property <bool>     is-switching-host: false;
     in-out property <string>   switching-host-name: "";
     callback switch-rpc(string);
@@ -2782,6 +2937,13 @@ export component MainWindow inherits Window {
     in-out property <string> pending-torrent-name: "";
 
     in-out property <bool>   close-dialog-visible: false;
+    // Анимация закрытия: stopped-announce трекерам, GUI закрывается после демона
+    in-out property <bool>   close-anim-visible: false;
+    in-out property <int>    close-anim-trackers: 0;
+    in-out property <int>    close-anim-phase: 0; // 0 = отправка, 1 = демон остановлен
+    in-out property <string> close-anim-left: "";
+    in-out property <[string]> close-anim-ticker;
+    callback close-anim-force();
 
     in-out property <string> tr-dlg-remove-title: "Remove torrent?";
     in-out property <string> tr-dlg-remove-subtitle: "(files will be kept)";
@@ -2823,6 +2985,7 @@ export component MainWindow inherits Window {
     in-out property <bool>   cfg-dl-start-added: true;
     in-out property <bool>   cfg-dl-trash-torrent: false;
     in-out property <string> cfg-dl-dir: "";
+    in-out property <bool>   cfg-dl-queue-enabled: true;
     in-out property <int>     cfg-dl-queue-max: 5;
     in-out property <int>     cfg-dl-seed-ratio-limit-min: 30;
     in-out property <bool>   cfg-dl-part-ext: true;
@@ -3350,6 +3513,7 @@ export component MainWindow inherits Window {
         cancelled => { close-dialog-visible = false; }
     }
 
+
     AddTorrentDialog {
         width: 100%; height: 100%; visible-dialog: add-dialog-visible;
         submitted-url(url) => { add-dialog-visible = false; add-torrent-url(url); }
@@ -3402,7 +3566,7 @@ export component MainWindow inherits Window {
                 VerticalLayout {
                     spacing: 3px;
                     Text {
-                        text: selected-language == "ru" ? "Подключение к хосту…" : "Connecting to host…";
+                        text: Tr.conn_host;
                         color: #e4e7f2;
                         font-size: 13px;
                         font-weight: 700;
@@ -3427,7 +3591,7 @@ export component MainWindow inherits Window {
                     }
                 }
                 Text {
-                    text: selected-language == "ru" ? "Синхронизация состояния сессии и списка раздач…" : "Synchronizing session state and torrent listings…";
+                    text: Tr.sync_state;
                     color: #7b90ab;
                     font-size: 10px;
                     horizontal-alignment: center;
@@ -3441,7 +3605,7 @@ export component MainWindow inherits Window {
         cfg-speed-up-enabled <=> cfg-speed-up-enabled; cfg-speed-up-kbs <=> cfg-speed-up-kbs; cfg-speed-down-enabled <=> cfg-speed-down-enabled; cfg-speed-down-kbs <=> cfg-speed-down-kbs;
         cfg-alt-speed-enabled <=> cfg-alt-speed-enabled; cfg-alt-speed-up-kbs <=> cfg-alt-speed-up-kbs; cfg-alt-speed-down-kbs <=> cfg-alt-speed-down-kbs; cfg-alt-speed-schedule <=> cfg-alt-speed-schedule; cfg-alt-speed-time-begin <=> cfg-alt-speed-time-begin; cfg-alt-speed-time-end <=> cfg-alt-speed-time-end;
         cfg-speed-day-mon <=> cfg-speed-day-mon; cfg-speed-day-tue <=> cfg-speed-day-tue; cfg-speed-day-wed <=> cfg-speed-day-wed; cfg-speed-day-thu <=> cfg-speed-day-thu; cfg-speed-day-fri <=> cfg-speed-day-fri; cfg-speed-day-sat <=> cfg-speed-day-sat; cfg-speed-day-sun <=> cfg-speed-day-sun;
-        cfg-dl-watch-dir-enabled <=> cfg-dl-watch-dir-enabled; cfg-dl-watch-dir <=> cfg-dl-watch-dir; cfg-dl-show-dialog <=> cfg-dl-show-dialog; cfg-dl-start-added <=> cfg-dl-start-added; cfg-dl-trash-torrent <=> cfg-dl-trash-torrent; cfg-dl-dir <=> cfg-dl-dir; cfg-dl-queue-max <=> cfg-dl-queue-max; cfg-dl-seed-ratio-limit-min <=> cfg-dl-seed-ratio-limit-min; cfg-dl-part-ext <=> cfg-dl-part-ext; cfg-dl-incomplete-dir-enabled <=> cfg-dl-incomplete-dir-enabled; cfg-dl-incomplete-dir <=> cfg-dl-incomplete-dir; cfg-dl-done-script-enabled <=> cfg-dl-done-script-enabled; cfg-dl-done-script <=> cfg-dl-done-script;
+        cfg-dl-watch-dir-enabled <=> cfg-dl-watch-dir-enabled; cfg-dl-watch-dir <=> cfg-dl-watch-dir; cfg-dl-show-dialog <=> cfg-dl-show-dialog; cfg-dl-start-added <=> cfg-dl-start-added; cfg-dl-trash-torrent <=> cfg-dl-trash-torrent; cfg-dl-dir <=> cfg-dl-dir; cfg-dl-queue-enabled <=> cfg-dl-queue-enabled; cfg-dl-queue-max <=> cfg-dl-queue-max; cfg-dl-seed-ratio-limit-min <=> cfg-dl-seed-ratio-limit-min; cfg-dl-part-ext <=> cfg-dl-part-ext; cfg-dl-incomplete-dir-enabled <=> cfg-dl-incomplete-dir-enabled; cfg-dl-incomplete-dir <=> cfg-dl-incomplete-dir; cfg-dl-done-script-enabled <=> cfg-dl-done-script-enabled; cfg-dl-done-script <=> cfg-dl-done-script;
         cfg-seed-ratio-enabled <=> cfg-seed-ratio-enabled; cfg-seed-ratio <=> cfg-seed-ratio; cfg-seed-idle-enabled <=> cfg-seed-idle-enabled; cfg-seed-idle-min <=> cfg-seed-idle-min; cfg-seed-done-script-enabled <=> cfg-seed-done-script-enabled; cfg-seed-done-script <=> cfg-seed-done-script;
         cfg-net-port <=> cfg-net-port; cfg-net-random-port <=> cfg-net-random-port; cfg-net-port-forward <=> cfg-net-port-forward; cfg-net-max-peers-torrent <=> cfg-net-max-peers-torrent; cfg-net-max-peers-total <=> cfg-net-max-peers-total; cfg-net-utp <=> cfg-net-utp; cfg-net-pex <=> cfg-net-pex; cfg-net-dht <=> cfg-net-dht; cfg-net-lpd <=> cfg-net-lpd; cfg-net-default-trackers <=> cfg-net-default-trackers;
         cfg-priv-encryption <=> cfg-priv-encryption; cfg-priv-blocklist-enabled <=> cfg-priv-blocklist-enabled; cfg-priv-blocklist-url <=> cfg-priv-blocklist-url; cfg-priv-blocklist-auto-update <=> cfg-priv-blocklist-auto-update; cfg-priv-blocklist-entries <=> cfg-priv-blocklist-entries;
@@ -3452,6 +3616,14 @@ export component MainWindow inherits Window {
         language-changed(lang) => { language-changed(lang); }
         saved => { saved(); settings-dialog-visible = false; }
         cancelled => { settings-dialog-visible = false; }
+        profiles <=> root.profiles;
+        port-test-state <=> root.port-test-state;
+        is-local-config-detected <=> root.is-local-config-detected;
+        local-host-active <=> root.local-host-active;
+        port-test-start() => { root.port-test-start(); }
+        switch-host(u) => { root.switch-host(u); }
+        save-host(n, h, p, u, pw, o) => { root.save-host(n, h, p, u, pw, o); }
+        delete-host(n) => { root.delete-host(n); }
         pick-dl-script-path => { pick-dl-script-path(); }
         pick-seed-script-path => { pick-seed-script-path(); }
     }
