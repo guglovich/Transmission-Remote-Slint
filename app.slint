@@ -318,14 +318,16 @@ component CloseAnimDialog inherits Rectangle {
 
 // Числовое поле: клик → фокус → ввод цифр; Enter нормализует; кнопки −/+ меняют value извне
 component NumField inherits Rectangle {
-    in-out property <int> value;
+    in property <int> value;
+    callback value-changed(int);
     in property <int> min-val: 0;
     in property <int> max-val: 9999;
     in property <bool> editable: true;
     in property <length> field-width: 70px;
     in property <length> field-height: 32px;
     in property <bool> plain: false;
-    property <string> txt: value + "";
+    property <string> txt;
+    init => { txt = value + ""; }
     changed value => {
         if (!ti.has-focus) { txt = value + ""; }
     }
@@ -345,7 +347,7 @@ component NumField inherits Rectangle {
             input-type: number;
             text <=> txt;
             edited => {
-                value = Math.clamp(Math.round(self.text.to-float()), min-val, max-val);
+                root.value-changed(Math.clamp(Math.round(self.text.to-float()), min-val, max-val));
             }
             accepted => { txt = value + ""; }
         }
@@ -354,7 +356,8 @@ component NumField inherits Rectangle {
 
 
 component NumFieldF inherits Rectangle {
-    in-out property <int> value;        // сотые доли: 244 = 2.44
+    in property <int> value;        // сотые доли: 244 = 2.44
+    callback value-changed(int);
     in property <int> min-val: 0;
     in property <int> max-val: 10000;
     in property <bool> editable: true;
@@ -380,7 +383,7 @@ component NumFieldF inherits Rectangle {
         enabled: editable; input-type: decimal;
         text <=> txt;
         edited => {
-            value = Math.clamp(Math.round(self.text.to-float() * 100), min-val, max-val);
+            root.value-changed(Math.clamp(Math.round(self.text.to-float() * 100), min-val, max-val));
         }
         accepted => {
             txt = Math.floor(value / 100) + "." + Math.mod(Math.floor(value / 10), 10) + Math.mod(value, 10);
@@ -390,7 +393,8 @@ component NumFieldF inherits Rectangle {
 
 // Поле времени HH:MM (внутри хранятся минуты): ввод 3-4 цифр как ЧЧММ
 component TimeField inherits Rectangle {
-    in-out property <int> minutes;
+    in property <int> minutes;
+    callback minutes-changed(int);
     in property <bool> editable: true;
     property <string> txt;
     init => {
@@ -411,9 +415,9 @@ component TimeField inherits Rectangle {
         enabled: editable; input-type: number;
         text <=> txt;
         edited => {
-            minutes = Math.clamp(
+            root.minutes-changed(Math.clamp(
                 Math.floor(self.text.to-float() / 100) * 60 + Math.min(Math.mod(Math.round(self.text.to-float()), 100), 59),
-                0, 1439);
+                0, 1439));
         }
         accepted => {
             txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
@@ -423,7 +427,8 @@ component TimeField inherits Rectangle {
 
 
 component PathField inherits HorizontalLayout {
-    in-out property <string> text;
+    in property <string> text;
+    callback text-changed(string);
     callback pick();
     in property <length> field-w: 224px;
     spacing: 6px; height: 32px;
@@ -434,7 +439,8 @@ component PathField inherits HorizontalLayout {
             x: 10px; width: parent.width - 20px; height: parent.height;
             font-size: 12px; color: #dce4f5;
             vertical-alignment: center; single-line: true;
-            text <=> root.text;
+            text: root.text;
+            edited => { root.text-changed(self.text); }
         }
     }
     Rectangle {
@@ -1168,7 +1174,7 @@ component SettingsDialog inherits Rectangle {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         // Input field
                                         Rectangle { width: 54px; height: 28px; border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
-                                            NumField { value <=> cfg-speed-up-kbs; min-val: 0; max-val: 9999; editable: cfg-speed-up-enabled; field-width: 54px; field-height: 28px; plain: true; }
+                                            NumField { value: cfg-speed-up-kbs; value-changed(v) => { cfg-speed-up-kbs = v; }; min-val: 0; max-val: 9999; editable: cfg-speed-up-enabled; field-width: 54px; field-height: 28px; plain: true; }
                                         }
                                         // − button
                                         Rectangle { width: 28px; height: 28px; border-radius: 4px; background: up-min-ta.has-hover ? #252d40 : transparent; border-width: 1px; border-color: #343858;
@@ -1196,7 +1202,7 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         Rectangle { width: 54px; height: 28px; border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
-                                            NumField { value <=> cfg-speed-down-kbs; min-val: 0; max-val: 9999; editable: cfg-speed-down-enabled; field-width: 54px; field-height: 28px; plain: true; }
+                                            NumField { value: cfg-speed-down-kbs; value-changed(v) => { cfg-speed-down-kbs = v; }; min-val: 0; max-val: 9999; editable: cfg-speed-down-enabled; field-width: 54px; field-height: 28px; plain: true; }
                                         }
                                         Rectangle { width: 28px; height: 28px; border-radius: 4px; background: dn-min-ta.has-hover ? #252d40 : transparent; border-width: 1px; border-color: #343858;
                                             dn-min-ta := TouchArea { clicked => { if cfg-speed-down-enabled { cfg-speed-down-kbs = Math.max(0, cfg-speed-down-kbs - 1); } } }
@@ -1234,7 +1240,7 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         Rectangle { width: 54px; height: 28px; border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
-                                            NumField { value <=> cfg-alt-speed-up-kbs; min-val: 0; max-val: 9999; editable: cfg-alt-speed-enabled; field-width: 54px; field-height: 28px; plain: true; }
+                                            NumField { value: cfg-alt-speed-up-kbs; value-changed(v) => { cfg-alt-speed-up-kbs = v; }; min-val: 0; max-val: 9999; editable: cfg-alt-speed-enabled; field-width: 54px; field-height: 28px; plain: true; }
                                         }
                                         Rectangle { width: 28px; height: 28px; border-radius: 4px; background: au-min-ta.has-hover ? #252d40 : transparent; border-width: 1px; border-color: #343858;
                                             au-min-ta := TouchArea { clicked => { if cfg-alt-speed-enabled { cfg-alt-speed-up-kbs = Math.max(0, cfg-alt-speed-up-kbs - 1); } } }
@@ -1254,7 +1260,7 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         Rectangle { width: 54px; height: 28px; border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
-                                            NumField { value <=> cfg-alt-speed-down-kbs; min-val: 0; max-val: 9999; editable: cfg-alt-speed-enabled; field-width: 54px; field-height: 28px; plain: true; }
+                                            NumField { value: cfg-alt-speed-down-kbs; value-changed(v) => { cfg-alt-speed-down-kbs = v; }; min-val: 0; max-val: 9999; editable: cfg-alt-speed-enabled; field-width: 54px; field-height: 28px; plain: true; }
                                         }
                                         Rectangle { width: 28px; height: 28px; border-radius: 4px; background: ad-min-ta.has-hover ? #252d40 : transparent; border-width: 1px; border-color: #343858;
                                             ad-min-ta := TouchArea { clicked => { if cfg-alt-speed-enabled { cfg-alt-speed-down-kbs = Math.max(0, cfg-alt-speed-down-kbs - 1); } } }
@@ -1280,10 +1286,10 @@ component SettingsDialog inherits Rectangle {
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
                                         // Time begin
-                                        TimeField { minutes <=> cfg-alt-speed-time-begin; editable: cfg-alt-speed-enabled; }
+                                        TimeField { minutes: cfg-alt-speed-time-begin; minutes-changed(m2) => { cfg-alt-speed-time-begin = m2; }; editable: cfg-alt-speed-enabled; }
                                         Text { text: Tr.sched_to; color: #7a8296; font-size: 13px; vertical-alignment: center; }
                                         // Time end
-                                        TimeField { minutes <=> cfg-alt-speed-time-end; editable: cfg-alt-speed-enabled; }
+                                        TimeField { minutes: cfg-alt-speed-time-end; minutes-changed(m2) => { cfg-alt-speed-time-end = m2; }; editable: cfg-alt-speed-enabled; }
                                     }
                                 }
 
@@ -1359,12 +1365,14 @@ component SettingsDialog inherits Rectangle {
                                 Text {
                                     text: Tr.auto_import;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
-                                    width: 230px; wrap: word-wrap;
+                                    width: 200px; wrap: word-wrap;
                                 }
                                 
                                 if cfg-dl-watch-dir-enabled: PathField {
-                                    field-w: 180px;
-                                    text <=> cfg-dl-watch-dir;
+                                    field-w: 150px;
+                                    text: cfg-dl-watch-dir;
+
+                                    text-changed(t) => { cfg-dl-watch-dir = t; };
                                     pick => { pick-watch-dir(); }
                                 }
                             }
@@ -1438,7 +1446,9 @@ component SettingsDialog inherits Rectangle {
                                     }
                                     PathField {
                                         field-w: 170px;
-                                        text <=> cfg-dl-dir;
+                                        text: cfg-dl-dir;
+
+                                        text-changed(t) => { cfg-dl-dir = t; };
                                         pick => { pick-dl-dir(); }
                                     }
                                 }
@@ -1471,7 +1481,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
-                                    NumField { value <=> cfg-dl-queue-max; min-val: 0; max-val: 999; }
+                                    NumField { value: cfg-dl-queue-max; value-changed(v) => { cfg-dl-queue-max = v; }; min-val: 0; max-val: 999; }
                                     Rectangle {
                                         width: 32px; height: 32px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #343858;
                                         Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
@@ -1514,7 +1524,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
-                                    NumField { value <=> cfg-dl-seed-ratio-limit-min; min-val: 0; max-val: 9999; }
+                                    NumField { value: cfg-dl-seed-ratio-limit-min; value-changed(v) => { cfg-dl-seed-ratio-limit-min = v; }; min-val: 0; max-val: 9999; }
                                     Rectangle {
                                         width: 32px; height: 32px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #343858;
                                         Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
@@ -1574,12 +1584,14 @@ component SettingsDialog inherits Rectangle {
                                 Text {
                                     text: Tr.incomplete_dir_lbl;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
-                                    width: 230px; wrap: word-wrap;
+                                    width: 200px; wrap: word-wrap;
                                 }
                                 
                                 if cfg-dl-incomplete-dir-enabled: PathField {
-                                    field-w: 180px;
-                                    text <=> cfg-dl-incomplete-dir;
+                                    field-w: 150px;
+                                    text: cfg-dl-incomplete-dir;
+
+                                    text-changed(t) => { cfg-dl-incomplete-dir = t; };
                                     pick => { pick-incomplete-dir(); }
                                 }
                                 if !cfg-dl-incomplete-dir-enabled: Rectangle {
@@ -1612,7 +1624,9 @@ component SettingsDialog inherits Rectangle {
                             if cfg-dl-done-script-enabled: HorizontalLayout {
                                 alignment: start;
                                 PathField {
-                                    text <=> cfg-dl-done-script;
+                                    text: cfg-dl-done-script;
+
+                                    text-changed(t) => { cfg-dl-done-script = t; };
                                     pick => { pick-dl-script-path(); }
                                 }
                             }
@@ -1665,7 +1679,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
                                     NumFieldF {
-                                        value <=> cfg-seed-ratio;
+                                        value: cfg-seed-ratio; value-changed(v) => { cfg-seed-ratio = v; };
                                         min-val: 0; max-val: 10000;
                                         field-width: 56px; field-height: 26px;
                                     }
@@ -1706,7 +1720,7 @@ component SettingsDialog inherits Rectangle {
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
                                     NumField {
-                                        value <=> cfg-seed-idle-min;
+                                        value: cfg-seed-idle-min; value-changed(v) => { cfg-seed-idle-min = v; };
                                         min-val: 1; max-val: 9999;
                                         field-width: 56px; field-height: 26px;
                                     }
@@ -1743,7 +1757,9 @@ component SettingsDialog inherits Rectangle {
                             if cfg-seed-done-script-enabled: HorizontalLayout {
                                 alignment: start;
                                 PathField {
-                                    text <=> cfg-seed-done-script;
+                                    text: cfg-seed-done-script;
+
+                                    text-changed(t) => { cfg-seed-done-script = t; };
                                     pick => { pick-seed-script-path(); }
                                 }
                             }
@@ -1903,7 +1919,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                     HorizontalLayout {
                                         spacing: 8px; alignment: start;
-                                        NumField { value <=> cfg-net-max-peers-torrent; min-val: 1; max-val: 500; field-width: 50px; field-height: 26px; }
+                                        NumField { value: cfg-net-max-peers-torrent; value-changed(v) => { cfg-net-max-peers-torrent = v; }; min-val: 1; max-val: 500; field-width: 50px; field-height: 26px; }
                                         Rectangle {
                                             width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
                                             Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
@@ -1926,7 +1942,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                     HorizontalLayout {
                                         spacing: 8px; alignment: start;
-                                        NumField { value <=> cfg-net-max-peers-total; min-val: 1; max-val: 2000; field-width: 50px; field-height: 26px; }
+                                        NumField { value: cfg-net-max-peers-total; value-changed(v) => { cfg-net-max-peers-total = v; }; min-val: 1; max-val: 2000; field-width: 50px; field-height: 26px; }
                                         Rectangle {
                                             width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
                                             Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
@@ -2042,7 +2058,7 @@ component SettingsDialog inherits Rectangle {
                                     le := LineEdit {
                                         width: 100%; height: 100%;
                                         placeholder-text: Tr.public_trackers_ph;
-                                        text <=> cfg-net-default-trackers;
+                                        text: cfg-net-default-trackers; edited(t) => { cfg-net-default-trackers = t; };
                                     }
                                 }
                             }
@@ -2158,7 +2174,7 @@ component SettingsDialog inherits Rectangle {
                                             enabled: cfg-priv-blocklist-enabled;
                                             width: 100%; height: 100%;
                                             placeholder-text: Tr.blocklist_url;
-                                            text <=> cfg-priv-blocklist-url;
+                                            text: cfg-priv-blocklist-url; edited(t) => { cfg-priv-blocklist-url = t; };
                                         }
                                     }
                                 }
@@ -2378,7 +2394,7 @@ component SettingsDialog inherits Rectangle {
                                                     text <=> edit-profile-host;
                                                 }
                                             }
-                                            NumField { value <=> edit-profile-port; min-val: 1; max-val: 65535; field-width: 78px; field-height: 32px; }
+                                            NumField { value: edit-profile-port; value-changed(v) => { edit-profile-port = v; }; min-val: 1; max-val: 65535; field-width: 78px; field-height: 32px; }
                                         }
                                     }
 
@@ -2634,7 +2650,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 HorizontalLayout {
                                     spacing: 8px;
-                                    NumField { value <=> cfg-refresh-interval; min-val: 1; max-val: 60; }
+                                    NumField { value: cfg-refresh-interval; value-changed(v) => { cfg-refresh-interval = v; }; min-val: 1; max-val: 60; }
                                     Text {
                                         text: selected-language == "ru" ? "сек" : "sec";
                                         color: #5e637a; font-size: 12px; vertical-alignment: center;
