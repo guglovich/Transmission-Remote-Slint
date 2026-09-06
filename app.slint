@@ -3276,6 +3276,7 @@ export component MainWindow inherits Window {
                         }
                     }
                     btn-open := TouchArea { clicked => { pick-torrent-file(); } }
+                }
                 Rectangle {
                     width: 13px;
                     Rectangle {
@@ -3285,7 +3286,6 @@ export component MainWindow inherits Window {
                         background: #243048;
                         border-radius: 0.5px;
                     }
-                }
                 }
                 Rectangle {
                     width: 86px; height: 28px; y: 7px;
@@ -3306,6 +3306,7 @@ export component MainWindow inherits Window {
                         }
                     }
                     btn-magnet := TouchArea { clicked => { magnet-dialog-visible = true; } }
+                }
                 Rectangle {
                     width: 13px;
                     Rectangle {
@@ -3315,7 +3316,6 @@ export component MainWindow inherits Window {
                         background: #243048;
                         border-radius: 0.5px;
                     }
-                }
                 }
                 Rectangle {
                     width: selected-language == "ru" ? 92px : 84px; height: 28px; y: 7px;
@@ -3336,6 +3336,7 @@ export component MainWindow inherits Window {
                         }
                     }
                     btn-create := TouchArea { clicked => { create-dialog-visible = true; } }
+                }
                 Rectangle {
                     width: 13px;
                     Rectangle {
@@ -3345,7 +3346,6 @@ export component MainWindow inherits Window {
                         background: #243048;
                         border-radius: 0.5px;
                     }
-                }
                 }
                 Rectangle {
                     width: 88px; height: 28px; y: 7px;
