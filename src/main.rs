@@ -1527,6 +1527,7 @@ fn main() -> anyhow::Result<()> {
                         eprintln!("[settings] Loaded skipped — user edited since open (race guard)");
                         continue;
                     }
+                    eprintln!("[settings] Loaded from daemon: begin={} end={} enabled={}", s.alt_speed_time_begin, s.alt_speed_time_end, s.alt_speed_time_enabled);
                     if let Some(ui2) = ui_h.upgrade() {
                         let cur = build_daemon_settings(&ui2);
                         let user_edited = match last_settings.lock().unwrap().as_ref() {
@@ -1867,6 +1868,7 @@ fn main() -> anyhow::Result<()> {
         let edits = edits_since_open.clone();
         ui.on_settings_open(move || {
             edits.store(false, std::sync::atomic::Ordering::Relaxed);
+            eprintln!("[settings] dialog open → Load sent");
             let _ = tx.send(Command::LoadDaemonSettings);
         });
     }
