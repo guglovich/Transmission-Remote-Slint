@@ -48,7 +48,7 @@ impl StatusNotifierItem {
     #[zbus(property)]
     fn status(&self) -> &str { "Active" }
     #[zbus(property)]
-    fn icon_name(&self) -> &str { "transmission" }
+    fn icon_name(&self) -> &str { "transmission-remote-slint" }
     #[zbus(property)]
     fn icon_pixmap(&self) -> Vec<(i32, i32, Vec<u8>)> {
         get_cached_icon().clone()
@@ -59,7 +59,7 @@ impl StatusNotifierItem {
     fn attention_icon_name(&self) -> &str { "" }
     #[zbus(property)]
     fn tool_tip(&self) -> (String, Vec<(i32, i32, Vec<u8>)>, String, String) {
-        ("transmission".into(), vec![], "Transmission Remote".into(), "BitTorrent client".into())
+        ("transmission-remote-slint".into(), vec![], "Transmission Remote".into(), "BitTorrent client".into())
     }
     #[zbus(property)]
     fn menu(&self) -> zbus::zvariant::ObjectPath<'_> {

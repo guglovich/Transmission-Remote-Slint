@@ -277,7 +277,300 @@ impl TransmissionClient {
     }
 }
 
+// ── Session settings ──────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct DaemonSettings {
+    pub speed_limit_up_enabled: bool,
+    pub speed_limit_up: i64,
+    pub speed_limit_down_enabled: bool,
+    pub speed_limit_down: i64,
+    pub alt_speed_enabled: bool,
+    pub alt_speed_up: i64,
+    pub alt_speed_down: i64,
+    pub alt_speed_time_enabled: bool,
+    pub alt_speed_time_begin: i64,
+    pub alt_speed_time_end: i64,
+    pub alt_speed_time_day: i64,
+    pub download_dir: String,
+    pub download_queue_enabled: bool,
+    pub download_queue_size: i64,
+    pub queue_stalled_enabled: bool,
+    pub queue_stalled_minutes: i64,
+    pub start_added_torrents: bool,
+    pub trash_original_torrent_files: bool,
+    pub rename_partial_files: bool,
+    pub incomplete_dir_enabled: bool,
+    pub incomplete_dir: String,
+    pub script_torrent_done_enabled: bool,
+    pub script_torrent_done_filename: String,
+    pub script_torrent_done_seeding_enabled: bool,
+    pub script_torrent_done_seeding_filename: String,
+    pub seed_ratio_limited: bool,
+    pub seed_ratio_limit: f64,
+    pub idle_seeding_limit_enabled: bool,
+    pub idle_seeding_limit: i64,
+    pub peer_port: i64,
+    pub peer_port_random_on_start: bool,
+    pub port_forwarding_enabled: bool,
+    pub peer_limit_per_torrent: i64,
+    pub peer_limit_global: i64,
+    pub utp_enabled: bool,
+    pub pex_enabled: bool,
+    pub dht_enabled: bool,
+    pub lpd_enabled: bool,
+    pub default_trackers: String,
+    pub encryption: i64,
+    pub blocklist_enabled: bool,
+    pub blocklist_url: String,
+    pub watch_dir_enabled: bool,
+    pub watch_dir: String,
+    pub rpc_enabled: bool,
+    pub rpc_port: i64,
+    pub rpc_authentication_required: bool,
+    pub rpc_username: String,
+    pub rpc_password: String,
+    pub rpc_whitelist_enabled: bool,
+    pub rpc_whitelist: String,
+}
+
+impl TransmissionClient {
+    pub async fn session_get_settings(&self) -> Result<DaemonSettings> {
+        let val = self.call(&self.method_name("session-get"), json!({
+            "fields": [
+                "speed-limit-up-enabled","speed-limit-up",
+                "speed-limit-down-enabled","speed-limit-down",
+                "alt-speed-enabled","alt-speed-up","alt-speed-down",
+                "alt-speed-time-enabled","alt-speed-time-begin","alt-speed-time-end","alt-speed-time-day",
+                "download-dir",
+                "download-queue-enabled","download-queue-size",
+                "queue-stalled-enabled","queue-stalled-minutes",
+                "start-added-torrents","trash-original-torrent-files","rename-partial-files",
+                "incomplete-dir-enabled","incomplete-dir",
+                "script-torrent-done-enabled","script-torrent-done-filename",
+                "script-torrent-done-seeding-enabled","script-torrent-done-seeding-filename",
+                "seedRatioLimited","seedRatioLimit",
+                "idle-seeding-limit-enabled","idle-seeding-limit",
+                "peer-port","peer-port-random-on-start","port-forwarding-enabled",
+                "peer-limit-per-torrent","peer-limit-global",
+                "utp-enabled","pex-enabled","dht-enabled","lpd-enabled",
+                "default-trackers",
+                "encryption",
+                "blocklist-enabled","blocklist-url",
+                "watch-dir-enabled","watch-dir",
+                "rpc-enabled","rpc-port",
+                "rpc-authentication-required","rpc-username","rpc-password",
+                "rpc-whitelist-enabled","rpc-whitelist"
+            ]
+        })).await?;
+
+        Ok(DaemonSettings {
+            speed_limit_up_enabled: val["speed-limit-up-enabled"].as_bool().unwrap_or(false),
+            speed_limit_up: val["speed-limit-up"].as_i64().unwrap_or(0),
+            speed_limit_down_enabled: val["speed-limit-down-enabled"].as_bool().unwrap_or(true),
+            speed_limit_down: val["speed-limit-down"].as_i64().unwrap_or(500),
+            alt_speed_enabled: val["alt-speed-enabled"].as_bool().unwrap_or(false),
+            alt_speed_up: val["alt-speed-up"].as_i64().unwrap_or(50),
+            alt_speed_down: val["alt-speed-down"].as_i64().unwrap_or(50),
+            alt_speed_time_enabled: val["alt-speed-time-enabled"].as_bool().unwrap_or(false),
+            alt_speed_time_begin: val["alt-speed-time-begin"].as_i64().unwrap_or(540),
+            alt_speed_time_end: val["alt-speed-time-end"].as_i64().unwrap_or(1020),
+            alt_speed_time_day: val["alt-speed-time-day"].as_i64().unwrap_or(31),
+            download_dir: val["download-dir"].as_str().unwrap_or("").to_string(),
+            download_queue_enabled: val["download-queue-enabled"].as_bool().unwrap_or(true),
+            download_queue_size: val["download-queue-size"].as_i64().unwrap_or(5),
+            queue_stalled_enabled: val["queue-stalled-enabled"].as_bool().unwrap_or(true),
+            queue_stalled_minutes: val["queue-stalled-minutes"].as_i64().unwrap_or(30),
+            start_added_torrents: val["start-added-torrents"].as_bool().unwrap_or(true),
+            trash_original_torrent_files: val["trash-original-torrent-files"].as_bool().unwrap_or(true),
+            rename_partial_files: val["rename-partial-files"].as_bool().unwrap_or(true),
+            incomplete_dir_enabled: val["incomplete-dir-enabled"].as_bool().unwrap_or(false),
+            incomplete_dir: val["incomplete-dir"].as_str().unwrap_or("").to_string(),
+            script_torrent_done_enabled: val["script-torrent-done-enabled"].as_bool().unwrap_or(false),
+            script_torrent_done_filename: val["script-torrent-done-filename"].as_str().unwrap_or("").to_string(),
+            script_torrent_done_seeding_enabled: val["script-torrent-done-seeding-enabled"].as_bool().unwrap_or(false),
+            script_torrent_done_seeding_filename: val["script-torrent-done-seeding-filename"].as_str().unwrap_or("").to_string(),
+            seed_ratio_limited: val["seedRatioLimited"].as_bool().unwrap_or(false),
+            seed_ratio_limit: val["seedRatioLimit"].as_f64().unwrap_or(2.0),
+            idle_seeding_limit_enabled: val["idle-seeding-limit-enabled"].as_bool().unwrap_or(false),
+            idle_seeding_limit: val["idle-seeding-limit"].as_i64().unwrap_or(30),
+            peer_port: val["peer-port"].as_i64().unwrap_or(51413),
+            peer_port_random_on_start: val["peer-port-random-on-start"].as_bool().unwrap_or(true),
+            port_forwarding_enabled: val["port-forwarding-enabled"].as_bool().unwrap_or(true),
+            peer_limit_per_torrent: val["peer-limit-per-torrent"].as_i64().unwrap_or(50),
+            peer_limit_global: val["peer-limit-global"].as_i64().unwrap_or(200),
+            utp_enabled: val["utp-enabled"].as_bool().unwrap_or(true),
+            pex_enabled: val["pex-enabled"].as_bool().unwrap_or(true),
+            dht_enabled: val["dht-enabled"].as_bool().unwrap_or(true),
+            lpd_enabled: val["lpd-enabled"].as_bool().unwrap_or(true),
+            default_trackers: val["default-trackers"].as_str().unwrap_or("").to_string(),
+            encryption: val["encryption"].as_i64().unwrap_or(1),
+            blocklist_enabled: val["blocklist-enabled"].as_bool().unwrap_or(false),
+            blocklist_url: val["blocklist-url"].as_str().unwrap_or("").to_string(),
+            watch_dir_enabled: val["watch-dir-enabled"].as_bool().unwrap_or(false),
+            watch_dir: val["watch-dir"].as_str().unwrap_or("").to_string(),
+            rpc_enabled: val["rpc-enabled"].as_bool().unwrap_or(true),
+            rpc_port: val["rpc-port"].as_i64().unwrap_or(9091),
+            rpc_authentication_required: val["rpc-authentication-required"].as_bool().unwrap_or(false),
+            rpc_username: val["rpc-username"].as_str().unwrap_or("").to_string(),
+            rpc_password: val["rpc-password"].as_str().unwrap_or("").to_string(),
+            rpc_whitelist_enabled: val["rpc-whitelist-enabled"].as_bool().unwrap_or(true),
+            rpc_whitelist: val["rpc-whitelist"].as_str().unwrap_or("127.0.0.1").to_string(),
+        })
+    }
+
+    pub async fn session_set_settings(&self, s: &DaemonSettings) -> Result<()> {
+        let args = json!({
+            "speed-limit-up-enabled": s.speed_limit_up_enabled,
+            "speed-limit-up": s.speed_limit_up,
+            "speed-limit-down-enabled": s.speed_limit_down_enabled,
+            "speed-limit-down": s.speed_limit_down,
+            "alt-speed-enabled": s.alt_speed_enabled,
+            "alt-speed-up": s.alt_speed_up,
+            "alt-speed-down": s.alt_speed_down,
+            "alt-speed-time-enabled": s.alt_speed_time_enabled,
+            "alt-speed-time-begin": s.alt_speed_time_begin,
+            "alt-speed-time-end": s.alt_speed_time_end,
+            "alt-speed-time-day": s.alt_speed_time_day,
+            "download-dir": s.download_dir,
+            "download-queue-enabled": s.download_queue_enabled,
+            "download-queue-size": s.download_queue_size,
+            "queue-stalled-enabled": s.queue_stalled_enabled,
+            "queue-stalled-minutes": s.queue_stalled_minutes,
+            "start-added-torrents": s.start_added_torrents,
+            "trash-original-torrent-files": s.trash_original_torrent_files,
+            "rename-partial-files": s.rename_partial_files,
+            "incomplete-dir-enabled": s.incomplete_dir_enabled,
+            "incomplete-dir": s.incomplete_dir,
+            "script-torrent-done-enabled": s.script_torrent_done_enabled,
+            "script-torrent-done-filename": s.script_torrent_done_filename,
+            "script-torrent-done-seeding-enabled": s.script_torrent_done_seeding_enabled,
+            "script-torrent-done-seeding-filename": s.script_torrent_done_seeding_filename,
+            "seedRatioLimited": s.seed_ratio_limited,
+            "seedRatioLimit": s.seed_ratio_limit,
+            "idle-seeding-limit-enabled": s.idle_seeding_limit_enabled,
+            "idle-seeding-limit": s.idle_seeding_limit,
+            "peer-port": s.peer_port,
+            "peer-port-random-on-start": s.peer_port_random_on_start,
+            "port-forwarding-enabled": s.port_forwarding_enabled,
+            "peer-limit-per-torrent": s.peer_limit_per_torrent,
+            "peer-limit-global": s.peer_limit_global,
+            "utp-enabled": s.utp_enabled,
+            "pex-enabled": s.pex_enabled,
+            "dht-enabled": s.dht_enabled,
+            "lpd-enabled": s.lpd_enabled,
+            "default-trackers": s.default_trackers,
+            "encryption": s.encryption,
+            "blocklist-enabled": s.blocklist_enabled,
+            "blocklist-url": s.blocklist_url,
+            "watch-dir-enabled": s.watch_dir_enabled,
+            "watch-dir": s.watch_dir,
+            "rpc-enabled": s.rpc_enabled,
+            "rpc-port": s.rpc_port,
+            "rpc-authentication-required": s.rpc_authentication_required,
+            "rpc-username": s.rpc_username,
+            "rpc-password": s.rpc_password,
+            "rpc-whitelist-enabled": s.rpc_whitelist_enabled,
+            "rpc-whitelist": s.rpc_whitelist
+        });
+        let _ = self.call(&self.method_name("session-set"), args).await?;
+        Ok(())
+    }
+
+    /// Проверка открыт ли порт (RPC port-test) — демон стучится к своим серверам,
+    /// может занять 10-30 секунд.
+    pub async fn port_test(&self) -> Result<bool> {
+        let val = self.call(&self.method_name("port-test"), json!({})).await?;
+        Ok(val["port-is-open"].as_bool().unwrap_or(false))
+    }
+
+    /// Обновляет blocklist на демоне (RPC blocklist-update).
+    /// Возвращает число записей в обновлённом списке (blocklist-size).
+    /// Внимание: демон скачивает список — вызов может занять десятки секунд.
+    pub async fn blocklist_update(&self) -> Result<i64> {
+        let val = self.call(&self.method_name("blocklist-update"), json!({})).await?;
+        Ok(val["blocklist-size"].as_i64().unwrap_or(0))
+    }
+
+    /// Число трекеров, которым демон отправит `event=stopped` при завершении:
+    /// не-backup трекеры всех ЗАПУЩЕННЫХ торрентов (остановленные не анонсятся).
+    pub async fn count_active_trackers(&self) -> Result<i64> {
+        Ok(self.close_summary().await?.trackers)
+    }
+
+    /// Снимок для анимации закрытия: что именно уйдёт трекерам.
+    /// Раздачи/загрузки, сессионные итоги (↑/↓), трекеры и топ-торренты для тикера.
+    pub async fn close_summary(&self) -> Result<CloseSummary> {
+        let val = self.call(&self.method_name("torrent-get"), json!({
+            "fields": ["status", "percentDone", "rateUpload", "rateDownload", "name", "leftUntilComplete", "trackerStats"]
+        })).await?;
+        let mut s = CloseSummary::default();
+        if let Some(torrents) = val["torrents"].as_array() {
+            for t in torrents {
+                let status = t["status"].as_i64().unwrap_or(0);
+                if status == 0 { continue; } // stopped — не анонсируется
+                s.running += 1;
+                // Классификация как в сайдбаре: Раздаются = 6, Загружаются = 4
+                match status {
+                    6 => s.seeding += 1,
+                    4 => s.downloading += 1,
+                    _ => {} // 1..=3, 5 — промежуточные состояния, в сайдбаре не показываются
+                }
+                // left уходит в stopped-announce как есть (поле left=)
+                s.left_bytes += t["leftUntilComplete"].as_i64().unwrap_or(0).max(0);
+                if let Some(trackers) = t["trackerStats"].as_array() {
+                    for tr in trackers {
+                        if tr["isBackup"].as_bool().unwrap_or(false) { continue; }
+                        s.trackers += 1;
+                        if let Some(h) = tr["host"].as_str() {
+                            if !h.is_empty() { s.hosts.push(h.to_string()); }
+                        }
+                    }
+                }
+                s.items.push(CloseItem {
+                    name: t["name"].as_str().unwrap_or("").to_string(),
+                    percent: t["percentDone"].as_f64().unwrap_or(0.0) * 100.0,
+                    up: t["rateUpload"].as_i64().unwrap_or(0),
+                    down: t["rateDownload"].as_i64().unwrap_or(0),
+                });
+            }
+        }
+        // Уникальные хосты, по алфавиту — это адресаты stopped-announce
+        s.hosts.sort();
+        s.hosts.dedup();
+        // Для тикера — самые живые (по скорости) сверху
+        s.items.sort_by(|a, b| (b.up + b.down).cmp(&(a.up + a.down)));
+        s.items.truncate(40);
+        Ok(s)
+    }
+}
+
 // ── Session stats ─────────────────────────────────────────────────────────────
+
+/// Строка тикера закрытия: один активный торрент
+#[derive(Debug, Clone, Default)]
+pub struct CloseItem {
+    pub name: String,
+    pub percent: f64,
+    pub up: i64,
+    pub down: i64,
+}
+
+/// Снимок состояния на момент закрытия — показывается в анимации.
+/// ВАЖНО: stopped-announce несёт per-tier счётчики (up/down/corrupt с момента
+/// последнего успешного stop по ЭТОМУ трекеру) — RPC их НЕ отдаёт, поэтому
+/// объёмы ↑/↓ здесь не показываем. Честно показываем: статусы, `left`
+/// (поле leftUntilComplete — уходит в announce как есть) и хосты трекеров.
+#[derive(Debug, Clone, Default)]
+pub struct CloseSummary {
+    pub running: i64,
+    pub seeding: i64,
+    pub downloading: i64,
+    pub trackers: i64,
+    pub left_bytes: i64,
+    pub hosts: Vec<String>,
+    pub items: Vec<CloseItem>,
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct SessionStats {

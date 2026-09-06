@@ -58,3 +58,10 @@ git checkout main
 - **i18n**: EN/DE/RU/ZH/ES
 - **AUR**: transmission-remote-slint (source), transmission-remote-slint-bin (binary)
 - **Attribution**: `# Created with assistance from Qwen 3.6 Plus (Alibaba).`
+
+## 📸 Гит-снапшоты (обязательно)
+
+После КАЖДОГО завершённого блока работ (рабочая сборка / логическая правка):
+- `git add -A && git commit -m "<краткое описание>"` (локально, БЕЗ push)
+- Перед рискованными операциями (массовые правки, регенерация файлов) — отдельный коммит-точка отката
+- Причина: утеря несохранённых правок = многочасовое восстановление

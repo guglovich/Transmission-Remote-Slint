@@ -2,6 +2,63 @@
 
 use anyhow::{Result, anyhow};
 
+/// Открывает нативный диалог выбора произвольного файла.
+/// Порядок: zenity (GNOME/любой) → kdialog (KDE) → yad → qarma.
+pub fn pick_file(title: &str, filter_label: &str, filter_pattern: &str) -> Result<String> {
+    // zenity
+    if cmd_exists("zenity") {
+        let mut args: Vec<String> = vec![
+            "--file-selection".into(),
+            format!("--title={title}"),
+        ];
+        if !filter_pattern.is_empty() {
+            args.push(format!("--file-filter={filter_label} | {filter_pattern}"));
+            args.push("--file-filter=All files | *".into());
+        }
+        let refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+        let out = std::process::Command::new("zenity").args(refs).output()?;
+        if out.status.success() {
+            return parse_output(&out.stdout);
+        }
+        return Err(anyhow!("Cancelled"));
+    }
+
+    // kdialog
+    if cmd_exists("kdialog") {
+        let mime = if !filter_pattern.is_empty() {
+            format!("{filter_pattern}|{filter_label}\n*|All files")
+        } else {
+            "*|All files".to_string()
+        };
+        let out = std::process::Command::new("kdialog")
+            .args(["--getopenfilename", ".", &mime, "--title", title])
+            .output()?;
+        if out.status.success() {
+            return parse_output(&out.stdout);
+        }
+        return Err(anyhow!("Cancelled"));
+    }
+
+    // yad (Yet Another Dialog)
+    if cmd_exists("yad") {
+        let mut args: Vec<String> = vec![
+            "--file-selection".into(),
+            format!("--title={title}"),
+        ];
+        if !filter_pattern.is_empty() {
+            args.push(format!("--file-filter={filter_pattern}"));
+        }
+        let refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+        let out = std::process::Command::new("yad").args(refs).output()?;
+        if out.status.success() {
+            return parse_output(&out.stdout);
+        }
+        return Err(anyhow!("Cancelled"));
+    }
+
+    Err(anyhow!("No file dialog found (install zenity or kdialog)"))
+}
+
 /// Открывает нативный диалог выбора файла.
 /// Порядок: zenity (GNOME/любой) → kdialog (KDE) → yad → qarma.
 /// Возвращает путь к выбранному .torrent файлу или Err если отменено.

@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 // src/main.rs
 
 mod app_config;
@@ -13,7 +14,7 @@ mod suspend;
 mod tray;
 mod wm_icon;
 
-use rpc::{SessionStats as RpcStats, TransmissionClient};
+use rpc::{DaemonSettings, SessionStats as RpcStats, TransmissionClient};
 use slint::{Model, ModelRc, SharedString, VecModel};
 use std::rc::Rc;
 use std::time::Duration;
@@ -61,7 +62,93 @@ fn set_renderer(r: &str) {
 
 // ── Форматирование ────────────────────────────────────────────────────────────
 
+/// Текущий полный URL RPC — для active-флагов профилей
+static ACTIVE_RPC_URL: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+fn active_rpc_url() -> String {
+    ACTIVE_RPC_URL.lock().unwrap().clone().unwrap_or_default()
+}
+
+/// url → "host:port" для отображения
+fn url_endpoint(url: &str) -> String {
+    url.trim_start_matches("http://").trim_start_matches("https://")
+        .split('/').next().unwrap_or(url).to_string()
+}
+
+fn is_local_url(url: &str) -> bool {
+    let ep = url_endpoint(url);
+    ep.starts_with("127.") || ep.starts_with("localhost")
+}
+
+/// Перестраивает модель профилей (вкладка Remote) и кандидатов попапа.
+/// Local Host присутствует только если реально обнаружен локальный конфиг/демон.
+fn refresh_profiles(ui: &MainWindow) {
+    let cfg = config_lock().lock().unwrap().clone();
+    let active = active_rpc_url();
+    let mut items: Vec<ProfileItem> = Vec::new();
+    let mut displays: Vec<SharedString> = Vec::new();
+
+    let local_detected = {
+        let cands = config::detect_rpc_candidates();
+        let has_real = cands.iter().any(|c| is_local_url(&c.url) && c.source != "fallback");
+        let active_is_local = !active.is_empty() && is_local_url(&active);
+        has_real || active_is_local
+    };
+
+    if local_detected {
+        let (ep, url) = if !active.is_empty() && is_local_url(&active) {
+            (url_endpoint(&active), active.clone())
+        } else {
+            ("127.0.0.1:9091".to_string(), "http://127.0.0.1:9091/transmission/rpc".to_string())
+        };
+        items.push(ProfileItem {
+            name: "Local Host".into(),
+            host: ep.split(':').next().unwrap_or("").into(),
+            endpoint: ep.clone().into(),
+            url: url.into(),
+            active: !active.is_empty() && url_endpoint(&active) == ep,
+            is_custom: false,
+        });
+        displays.push(ep.into());
+    }
+
+    for h in &cfg.custom_hosts {
+        let ep = url_endpoint(&h.url);
+        if items.iter().any(|i| i.endpoint == ep) { continue; }
+        items.push(ProfileItem {
+            name: h.name.clone().into(),
+            host: ep.split(':').next().unwrap_or("").into(),
+            endpoint: ep.clone().into(),
+            url: h.url.clone().into(),
+            active: !active.is_empty() && url_endpoint(&active) == ep,
+            is_custom: true,
+        });
+        displays.push(ep.into());
+    }
+
+    ui.set_profiles(ModelRc::from(Rc::new(VecModel::from(items))));
+    ui.set_rpc_candidates(ModelRc::from(Rc::new(VecModel::from(displays))));
+    ui.set_is_local_config_detected(local_detected);
+    ui.set_local_host_active(
+        active.is_empty() || is_local_url(&active),
+    );
+}
+
+/// Единицы скорости: true = биты (kbit/s), false = байты (KB/s)
+static SPEED_IN_BITS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// Единицы трафика: true = показывать ТБ для больших объёмов
+static TRAFFIC_IN_TB: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 fn fmt_speed(bps: i64) -> SharedString {
+    if SPEED_IN_BITS.load(std::sync::atomic::Ordering::Relaxed) {
+        let bits = bps * 8;
+        return match bits {
+            b if b <= 0            => "—".into(),
+            b if b < 1_000         => format!("{b} bit/s").into(),
+            b if b < 1_000_000     => format!("{:.1} kbit/s", b as f64 / 1_000.0).into(),
+            b                      => format!("{:.1} Mbit/s", b as f64 / 1_000_000.0).into(),
+        };
+    }
     match bps {
         b if b <= 0        => "—".into(),
         b if b < 1_024     => format!("{b} B/s").into(),
@@ -71,6 +158,11 @@ fn fmt_speed(bps: i64) -> SharedString {
 }
 
 fn fmt_bytes(bytes: i64) -> SharedString {
+    if TRAFFIC_IN_TB.load(std::sync::atomic::Ordering::Relaxed) {
+        if bytes >= 1_099_511_627_776 {
+            return format!("{:.2} TB", bytes as f64 / 1_099_511_627_776.0).into();
+        }
+    }
     match bytes {
         b if b <= 0            => "0 B".into(),
         b if b < 1_048_576     => format!("{:.1} KB", b as f64 / 1_024.0).into(),
@@ -84,6 +176,118 @@ fn fmt_ratio(r: f64) -> SharedString {
 }
 
 // ── Commands ──────────────────────────────────────────────────────────────────
+
+/// Глобальный доступ к конфигу из любых потоков/хендлеров.
+/// Единственный источник истины: main() инициализирует из app_config::load().
+/// DaemonSettings из свойств UI (для автосохранения настроек)
+fn build_daemon_settings(ui: &MainWindow) -> DaemonSettings {
+    let mut day_mask: i64 = 0;
+    if ui.get_cfg_speed_day_mon() { day_mask |= 1; }
+    if ui.get_cfg_speed_day_tue() { day_mask |= 2; }
+    if ui.get_cfg_speed_day_wed() { day_mask |= 4; }
+    if ui.get_cfg_speed_day_thu() { day_mask |= 8; }
+    if ui.get_cfg_speed_day_fri() { day_mask |= 16; }
+    if ui.get_cfg_speed_day_sat() { day_mask |= 32; }
+    if ui.get_cfg_speed_day_sun() { day_mask |= 64; }
+
+    let s = DaemonSettings {
+        speed_limit_up_enabled: ui.get_cfg_speed_up_enabled(),
+        speed_limit_up: ui.get_cfg_speed_up_kbs() as i64 * 125, // Мбит/с → KB/s (×1000/8)
+        speed_limit_down_enabled: ui.get_cfg_speed_down_enabled(),
+        speed_limit_down: ui.get_cfg_speed_down_kbs() as i64 * 125,
+        alt_speed_enabled: ui.get_cfg_alt_speed_enabled(),
+        alt_speed_up: ui.get_cfg_alt_speed_up_kbs() as i64 * 125,
+        alt_speed_down: ui.get_cfg_alt_speed_down_kbs() as i64 * 125,
+        alt_speed_time_enabled: ui.get_cfg_alt_speed_schedule(),
+        alt_speed_time_begin: ui.get_cfg_alt_speed_time_begin() as i64,
+        alt_speed_time_end: ui.get_cfg_alt_speed_time_end() as i64,
+        alt_speed_time_day: day_mask,
+        download_dir: ui.get_cfg_dl_dir().to_string(),
+        download_queue_enabled: ui.get_cfg_dl_queue_enabled(),
+        download_queue_size: ui.get_cfg_dl_queue_max() as i64,
+        queue_stalled_enabled: ui.get_cfg_dl_seed_ratio_limit_min() > 0,
+        queue_stalled_minutes: ui.get_cfg_dl_seed_ratio_limit_min() as i64,
+        start_added_torrents: ui.get_cfg_dl_start_added(),
+        trash_original_torrent_files: ui.get_cfg_dl_trash_torrent(),
+        rename_partial_files: ui.get_cfg_dl_part_ext(),
+        incomplete_dir_enabled: ui.get_cfg_dl_incomplete_dir_enabled(),
+        incomplete_dir: ui.get_cfg_dl_incomplete_dir().to_string(),
+        script_torrent_done_enabled: ui.get_cfg_dl_done_script_enabled(),
+        script_torrent_done_filename: ui.get_cfg_dl_done_script().to_string(),
+        script_torrent_done_seeding_enabled: ui.get_cfg_seed_done_script_enabled(),
+        script_torrent_done_seeding_filename: ui.get_cfg_seed_done_script().to_string(),
+        seed_ratio_limited: ui.get_cfg_seed_ratio_enabled(),
+        seed_ratio_limit: ui.get_cfg_seed_ratio() as f64 / 100.0,
+        idle_seeding_limit_enabled: ui.get_cfg_seed_idle_enabled(),
+        idle_seeding_limit: ui.get_cfg_seed_idle_min() as i64,
+        peer_port: ui.get_cfg_net_port() as i64,
+        peer_port_random_on_start: ui.get_cfg_net_random_port(),
+        port_forwarding_enabled: ui.get_cfg_net_port_forward(),
+        peer_limit_per_torrent: ui.get_cfg_net_max_peers_torrent() as i64,
+        peer_limit_global: ui.get_cfg_net_max_peers_total() as i64,
+        utp_enabled: ui.get_cfg_net_utp(),
+        pex_enabled: ui.get_cfg_net_pex(),
+        dht_enabled: ui.get_cfg_net_dht(),
+        lpd_enabled: ui.get_cfg_net_lpd(),
+        default_trackers: ui.get_cfg_net_default_trackers().to_string(),
+        encryption: ui.get_cfg_priv_encryption() as i64,
+        blocklist_enabled: ui.get_cfg_priv_blocklist_enabled(),
+        blocklist_url: ui.get_cfg_priv_blocklist_url().to_string(),
+        watch_dir_enabled: ui.get_cfg_dl_watch_dir_enabled(),
+        watch_dir: ui.get_cfg_dl_watch_dir().to_string(),
+        rpc_enabled: ui.get_cfg_remote_enabled(),
+        rpc_port: ui.get_cfg_remote_port() as i64,
+        rpc_authentication_required: ui.get_cfg_remote_auth(),
+        rpc_username: ui.get_cfg_remote_username().to_string(),
+        rpc_password: ui.get_cfg_remote_password().to_string(),
+        rpc_whitelist_enabled: ui.get_cfg_remote_whitelist_enabled(),
+        rpc_whitelist: ui.get_cfg_remote_whitelist().to_string(),
+    };
+    s
+}
+
+
+/// AppConfig из свойств UI + сохранение (возвращает blocklist флаги)
+fn apply_app_config_from_ui(ui: &MainWindow) -> (bool, u64) {
+    let mut g = config_lock().lock().unwrap();
+    g.autostart = ui.get_cfg_autostart();
+    g.suspend_on_hide = ui.get_cfg_suspend();
+    g.start_minimized = ui.get_cfg_start_minimized();
+    g.delete_torrent_after_add = ui.get_cfg_delete_torrent();
+    g.refresh_interval_secs = ui.get_cfg_refresh_interval() as u64;
+    g.on_close_action = ui.get_cfg_on_close() as u32;
+    g.notify_on_add = ui.get_cfg_notify_add();
+    g.notify_on_complete = ui.get_cfg_notify_complete();
+    g.notify_sound = ui.get_cfg_notify_sound();
+    g.theme = ui.get_cfg_theme() as u32;
+    g.tb_add = ui.get_cfg_tb_add();
+    g.tb_magnet = ui.get_cfg_tb_magnet();
+    g.tb_create = ui.get_cfg_tb_create();
+    g.tb_rehash = ui.get_cfg_tb_rehash();
+    g.tb_start_sel = ui.get_cfg_tb_start_sel();
+    g.tb_pause_sel = ui.get_cfg_tb_pause_sel();
+    g.tb_start_all = ui.get_cfg_tb_start_all();
+    g.tb_pause_all = ui.get_cfg_tb_pause_all();
+    g.lp_status = ui.get_cfg_lp_status();
+    g.lp_disks = ui.get_cfg_lp_disks();
+    g.lp_trackers = ui.get_cfg_lp_trackers();
+    g.lp_webtorrents = ui.get_cfg_lp_webtorrents();
+    g.lp_tags = ui.get_cfg_lp_tags();
+    g.lp_created = ui.get_cfg_lp_created();
+    g.dl_show_dialog = ui.get_cfg_dl_show_dialog();
+    g.blocklist_auto_update = ui.get_cfg_priv_blocklist_auto_update();
+    g.speed_in_bits = ui.get_speed_in_bits();
+    g.traffic_in_tb = ui.get_traffic_in_tb();
+    let r = (g.blocklist_auto_update, g.blocklist_last_update);
+    app_config::save(&*g);
+    r
+}
+
+
+fn config_lock() -> &'static std::sync::Mutex<app_config::AppConfig> {
+    static LOCK: std::sync::OnceLock<std::sync::Mutex<app_config::AppConfig>> = std::sync::OnceLock::new();
+    LOCK.get_or_init(|| std::sync::Mutex::new(app_config::AppConfig::default()))
+}
 
 #[derive(Debug)]
 enum Command {
@@ -99,12 +303,22 @@ enum Command {
     RemoveTorrent(i64, bool),
     AddTorrentUrl(String, Option<String>),
     AddTorrentFile(String, Option<String>, bool), // path, download_dir, delete_after
-    SwitchRpc(String), // новый полный URL
+    SwitchRpc(String),
+    SaveDaemonSettings(DaemonSettings),
+    LoadDaemonSettings,
+    UpdateBlocklist,
+    PortTest,
 }
 
 struct Update {
     torrents: Vec<rpc::RawTorrent>,
-    stats:    RpcStats,
+    stats: RpcStats,
+}
+
+enum SettingsResult {
+    Loaded(DaemonSettings),
+    Saved,
+    Error(String),
 }
 
 // ── Async backend ─────────────────────────────────────────────────────────────
@@ -114,10 +328,14 @@ async fn backend_task(
     mut cmd_rx: mpsc::UnboundedReceiver<Command>,
     update_tx: std::sync::mpsc::SyncSender<Update>,
     status_tx: std::sync::mpsc::SyncSender<String>,
+    settings_tx: std::sync::mpsc::SyncSender<SettingsResult>,
+    ui_weak: slint::Weak<MainWindow>,
 ) {
     let mut interval = tokio::time::interval(Duration::from_secs(2));
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
     let mut fail_count = 0u32;
+    // Оверлей «переключение хоста» активен до первого успешного тика
+    let mut switching = false;
 
     // Определяем версию RPC (dash vs snake_case методы)
     client.detect_rpc_version().await;
@@ -201,17 +419,100 @@ async fn backend_task(
                         }
                         res
                     },
-                    Command::SwitchRpc(url) => {
-                        eprintln!("[rpc] Switching to {url}");
-                        client = TransmissionClient::with_auth(url, client.user.clone(), client.password.clone());
-                        cache.clear();
-                        initialized = false;
-                        fail_count = 0;
-                        let _ = status_tx.try_send("Connecting…".into());
-                        client.detect_rpc_version().await;
-                        interval.reset();
-                        continue;
-                    },
+                Command::SwitchRpc(url) => {
+                    eprintln!("[rpc] Switching to {url}");
+                    client = TransmissionClient::with_auth(url, client.user.clone(), client.password.clone());
+                    cache.clear(); initialized = false; fail_count = 0;
+                    switching = true;
+                    let _ = status_tx.try_send("Connecting…".into());
+                    client.detect_rpc_version().await;
+                    interval.reset();
+                    continue;
+                },
+                Command::SaveDaemonSettings(s) => {
+                    match client.session_set_settings(&s).await {
+                        Ok(()) => {
+                            eprintln!("[settings] Daemon settings saved OK");
+                            let _ = settings_tx.try_send(SettingsResult::Saved);
+                            let _ = status_tx.try_send("Settings saved".into());
+                        },
+                        Err(e) => {
+                            eprintln!("[settings] Save error: {e}");
+                            let _ = settings_tx.try_send(SettingsResult::Error(e.to_string()));
+                        },
+                    }
+                    interval.reset();
+                    continue;
+                },
+                Command::LoadDaemonSettings => {
+                    match client.session_get_settings().await {
+                        Ok(s) => {
+                            eprintln!("[settings] Daemon settings loaded OK");
+                            let _ = settings_tx.try_send(SettingsResult::Loaded(s));
+                        },
+                        Err(e) => {
+                            eprintln!("[settings] Load error: {e}");
+                            let _ = settings_tx.try_send(SettingsResult::Error(e.to_string()));
+                        },
+                    }
+                    continue;
+                },
+                Command::PortTest => {
+                    let cl = client.clone();
+                    let ui_w = ui_weak.clone();
+                    tokio::spawn(async move {
+                        match cl.port_test().await {
+                            Ok(open) => {
+                                eprintln!("[port-test] open={open}");
+                                let _ = slint::invoke_from_event_loop(move || {
+                                    if let Some(ui) = ui_w.upgrade() {
+                                        ui.set_port_test_state(if open { 2 } else { 3 });
+                                    }
+                                });
+                            },
+                            Err(e) => {
+                                eprintln!("[port-test] failed: {e}");
+                                let _ = slint::invoke_from_event_loop(move || {
+                                    if let Some(ui) = ui_w.upgrade() {
+                                        ui.set_port_test_state(0);
+                                    }
+                                });
+                            },
+                        }
+                    });
+                    continue;
+                },
+                Command::UpdateBlocklist => {
+                    // Может занять минуты (демон качает список) — не блокируем цикл
+                    let cl = client.clone();
+                    let st = status_tx.clone();
+                    let ui_w = ui_weak.clone();
+                    tokio::spawn(async move {
+                        let _ = st.try_send("Updating blocklist…".into());
+                        match cl.blocklist_update().await {
+                            Ok(n) => {
+                                let _ = st.try_send(format!("Blocklist updated: {n} entries"));
+                                let now = std::time::SystemTime::now()
+                                    .duration_since(std::time::UNIX_EPOCH)
+                                    .map(|d| d.as_secs()).unwrap_or(0);
+                                if let Ok(mut cfg) = config_lock().lock() {
+                                    cfg.blocklist_entries = n;
+                                    cfg.blocklist_last_update = now;
+                                    app_config::save(&cfg);
+                                }
+                                let _ = slint::invoke_from_event_loop(move || {
+                                    if let Some(ui) = ui_w.upgrade() {
+                                        ui.set_cfg_priv_blocklist_entries(n as i32);
+                                    }
+                                });
+                            },
+                            Err(e) => {
+                                let _ = st.try_send(format!("Blocklist update failed: {e}"));
+                            },
+                        }
+                    });
+                    continue;
+                },
                 };
                 if let Err(e) = res {
                     eprintln!("[cmd] Error: {e}");
@@ -244,6 +545,52 @@ async fn backend_task(
                             .count();
                         eprintln!("[rpc] OK: {n} torrents, {active} active");
                         let _ = status_tx.try_send(format!("Connected — {n} torrent(s)"));
+                        // Успешный тик после смены хоста — гасим оверлей «переключение»
+                        if switching {
+                            switching = false;
+                            let ui_w = ui_weak.clone();
+                            let _ = slint::invoke_from_event_loop(move || {
+                                if let Some(ui) = ui_w.upgrade() {
+                                    ui.set_is_switching_host(false);
+                                }
+                            });
+                        }
+                        // Ежедневный автоапдейт blocklist (если включён)
+                        if let Ok(cfg) = config_lock().lock() {
+                            if cfg.blocklist_auto_update {
+                                let now = std::time::SystemTime::now()
+                                    .duration_since(std::time::UNIX_EPOCH)
+                                    .map(|d| d.as_secs()).unwrap_or(0);
+                                if now.saturating_sub(cfg.blocklist_last_update) > 86_400 {
+                                    drop(cfg);
+                                    let cl = client.clone();
+                                    let st = status_tx.clone();
+                                    let ui_w = ui_weak.clone();
+                                    tokio::spawn(async move {
+                                        eprintln!("[blocklist] auto-update started");
+                                        match cl.blocklist_update().await {
+                                            Ok(cnt) => {
+                                                let _ = st.try_send(format!("Blocklist updated: {cnt} entries"));
+                                                let now = std::time::SystemTime::now()
+                                                    .duration_since(std::time::UNIX_EPOCH)
+                                                    .map(|d| d.as_secs()).unwrap_or(0);
+                                                if let Ok(mut cfg) = config_lock().lock() {
+                                                    cfg.blocklist_entries = cnt;
+                                                    cfg.blocklist_last_update = now;
+                                                    app_config::save(&*cfg);
+                                                }
+                                                let _ = slint::invoke_from_event_loop(move || {
+                                                    if let Some(ui) = ui_w.upgrade() {
+                                                        ui.set_cfg_priv_blocklist_entries(cnt as i32);
+                                                    }
+                                                });
+                                            },
+                                            Err(e) => eprintln!("[blocklist] auto-update failed: {e}"),
+                                        }
+                                    });
+                                }
+                            }
+                        }
                         let mut stats = stat_res.unwrap_or_default();
                         stats.active_count = active as i64;
                         let _ = update_tx.try_send(Update { torrents: list, stats });
@@ -391,10 +738,10 @@ fn main() -> anyhow::Result<()> {
         single_instance::InstanceRole::Secondary => return Ok(()),
         single_instance::InstanceRole::Primary(l) => l,
     };
-    // Пишем в ~/transmission-remote-slint.log чтобы видеть крэши при запуске без терминала
+    // Лог в /tmp (обычно tmpfs): запись в ОЗУ бережёт SSD, логи не копятся месяцами.
+    // Суффикс UID — защита от коллизий/симлинк-атак в world-writable /tmp.
     {
-        let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-        let log_path = format!("{home}/transmission-remote-slint.log");
+        let log_path = format!("/tmp/transmission-remote-slint-{}.log", unsafe { libc::getuid() });
         if let Ok(file) = std::fs::OpenOptions::new()
             .create(true).append(true).open(&log_path)
         {
@@ -429,6 +776,7 @@ fn main() -> anyhow::Result<()> {
 
     // Загружаем конфиг приложения (создаёт дефолт если нет)
     let app_cfg = app_config::load();
+    *config_lock().lock().unwrap() = app_cfg.clone();
     app_config::install_icon();
 
     // ── Инициализируем язык ────────────────────────────────────────────────────
@@ -440,12 +788,13 @@ fn main() -> anyhow::Result<()> {
         app_cfg.refresh_interval_secs, app_cfg.autostart);
     app_config::sync_autostart(app_cfg.autostart);
 
-    let rt = tokio::runtime::Builder::new_multi_thread()
+    let rt = std::sync::Arc::new(tokio::runtime::Builder::new_multi_thread()
         .enable_all()
-        .build()?;
+        .build()?);
 
     // Каналы создаём до UI — статус-сообщения от daemon нужны сразу
-    let (cmd_tx, cmd_rx)       = mpsc::unbounded_channel::<Command>();
+    let (cmd_tx, cmd_rx) = mpsc::unbounded_channel::<Command>();
+    let (settings_tx, settings_rx) = std::sync::mpsc::sync_channel::<SettingsResult>(8);
     // update: буфер 1 — UI всегда берёт последнее состояние, промежуточные не нужны
     // буфер 8 — backend не блокируется, UI дренирует все и берёт последнее
     let (update_tx, update_rx) = std::sync::mpsc::sync_channel::<Update>(8);
@@ -462,7 +811,8 @@ fn main() -> anyhow::Result<()> {
         active_cfg.user.clone(),
         active_cfg.password.clone(),
     );
-    rt.spawn(backend_task(client, cmd_rx, update_tx, status_tx.clone()));
+    // backend_task запускается после создания UI (нужен ui.as_weak() для оверлея переключения)
+    let client_for_task = client;
 
     // ── Трей ─────────────────────────────────────────────────────────────────
     let tray = if std::env::var("DBUS_SESSION_BUS_ADDRESS").is_ok() {
@@ -484,6 +834,18 @@ fn main() -> anyhow::Result<()> {
     ui.set_connected(probe_result.ok);
     ui.set_selected_language(app_cfg.language.as_str().into());
 
+    // Новые настройки UI из конфига
+    SPEED_IN_BITS.store(app_cfg.speed_in_bits, std::sync::atomic::Ordering::Relaxed);
+    TRAFFIC_IN_TB.store(app_cfg.traffic_in_tb, std::sync::atomic::Ordering::Relaxed);
+    ui.set_speed_in_bits(app_cfg.speed_in_bits);
+    ui.set_traffic_in_tb(app_cfg.traffic_in_tb);
+    ui.set_cfg_dl_show_dialog(app_cfg.dl_show_dialog);
+    ui.set_cfg_priv_blocklist_auto_update(app_cfg.blocklist_auto_update);
+    ui.set_cfg_priv_blocklist_entries(app_cfg.blocklist_entries as i32);
+
+    // Запускаем асинхронный бэкенд (после создания UI)
+    rt.spawn(backend_task(client_for_task, cmd_rx, update_tx, status_tx.clone(), settings_tx, ui.as_weak()));
+
     // RPC URL для отображения: "127.0.0.1:9091" → "localhost" если локальный
     fn rpc_display(url: &str) -> String {
         let host_port = url.trim_start_matches("http://").trim_start_matches("https://")
@@ -503,6 +865,12 @@ fn main() -> anyhow::Result<()> {
         .collect::<std::collections::HashSet<_>>()  // дедупликация
         .into_iter().collect();
     ui.set_rpc_candidates(std::rc::Rc::new(slint::VecModel::from(candidate_urls)).into());
+
+    // Активный URL для active-флагов профилей
+    {
+        *ACTIVE_RPC_URL.lock().unwrap() = Some(active_cfg.url.clone());
+    }
+    refresh_profiles(&ui);
     
     // Обновляем UI переводы
     ui.set_tr_toolbar_open(i18n::toolbar_open().into());
@@ -718,12 +1086,85 @@ fn main() -> anyhow::Result<()> {
             });
         });
     }
+    // Переключение единиц скорости (байты ↔ биты)
+    {
+        let ui_weak = ui.as_weak();
+        ui.on_toggle_speed_units(move || {
+            let new_val = {
+                let mut cfg = config_lock().lock().unwrap();
+                cfg.speed_in_bits = !cfg.speed_in_bits;
+                cfg.speed_in_bits
+            };
+            SPEED_IN_BITS.store(new_val, std::sync::atomic::Ordering::Relaxed);
+            app_config::save(&config_lock().lock().unwrap());
+            if let Some(ui) = ui_weak.upgrade() {
+                ui.set_speed_in_bits(new_val);
+            }
+        });
+    }
+
+    // Переключение единиц трафика (ГБ ↔ ТБ)
+    {
+        let ui_weak = ui.as_weak();
+        ui.on_toggle_traffic_units(move || {
+            let new_val = {
+                let mut cfg = config_lock().lock().unwrap();
+                cfg.traffic_in_tb = !cfg.traffic_in_tb;
+                cfg.traffic_in_tb
+            };
+            TRAFFIC_IN_TB.store(new_val, std::sync::atomic::Ordering::Relaxed);
+            app_config::save(&config_lock().lock().unwrap());
+            if let Some(ui) = ui_weak.upgrade() {
+                ui.set_traffic_in_tb(new_val);
+            }
+        });
+    }
+
+    // Выбор файла скрипта «после загрузки» (download done-script)
+    {
+        let ui_weak = ui.as_weak();
+        ui.on_pick_dl_script_path(move || {
+            let ui2 = ui_weak.clone();
+            std::thread::spawn(move || {
+                match filepicker::pick_file("Select done-script", "Scripts", "*.sh") {
+                    Ok(path) => {
+                        let _ = slint::invoke_from_event_loop(move || {
+                            if let Some(ui) = ui2.upgrade() {
+                                ui.set_cfg_dl_done_script(path.into());
+                            }
+                        });
+                    }
+                    Err(_) => {} // отмена выбора — ничего не делаем
+                }
+            });
+        });
+    }
+
+    // Выбор файла скрипта «после раздачи» (seed done-script)
+    {
+        let ui_weak = ui.as_weak();
+        ui.on_pick_seed_script_path(move || {
+            let ui2 = ui_weak.clone();
+            std::thread::spawn(move || {
+                match filepicker::pick_file("Select seeding done-script", "Scripts", "*.sh") {
+                    Ok(path) => {
+                        let _ = slint::invoke_from_event_loop(move || {
+                            if let Some(ui) = ui2.upgrade() {
+                                ui.set_cfg_seed_done_script(path.into());
+                            }
+                        });
+                    }
+                    Err(_) => {} // отмена выбора — ничего не делаем
+                }
+            });
+        });
+    }
+
     {
         let tx = cmd_tx.clone();
         ui.on_add_torrent_url(move |url| {
             let s = url.trim().to_string();
-            if !s.is_empty() { let _ = tx.send(Command::AddTorrentUrl(s, None)); }
-        });
+            if !s.is_empty() { let _ = tx.send(Command::AddTorrentUrl(s, None)); }        });
     }
     // Magnet кнопка
     {
@@ -737,15 +1178,17 @@ fn main() -> anyhow::Result<()> {
     }
     // Смена языка
     {
-        let mut app_cfg_mut = app_cfg.clone();
         let ui_weak = ui.as_weak();
         ui.on_language_changed(move |lang: slint::SharedString| {
             let lang = lang.to_string();
             eprintln!("[i18n] Language changed to: {}", lang);
             i18n::set_language(&lang);
             // Сохраняем в конфиг (применится после перезапуска)
-            app_cfg_mut.language = lang.clone();
-            app_config::save(&app_cfg_mut);
+            {
+                let mut cfg = config_lock().lock().unwrap();
+                cfg.language = lang.clone();
+                app_config::save(&*cfg);
+            }
             eprintln!("[i18n] Config saved. Locale set to: {}", i18n::get_language());
             
             // Обновляем UI переводы
@@ -848,37 +1291,111 @@ fn main() -> anyhow::Result<()> {
         });
     }
     // daemon_handle и cfg перемещаем в Arc для доступа из нескольких замыканий
-    let handle_arc = std::sync::Arc::new(std::sync::Mutex::new(Some(daemon_handle)));
+    let _handle_arc = std::sync::Arc::new(std::sync::Mutex::new(Some(daemon_handle)));
     let cfg_arc    = std::sync::Arc::new(active_cfg.clone());
 
-    // do_quit — останавливаем демон в отдельном треде, потом quit event loop
+    // do_quit: анимация закрытия → SIGTERM демону → GUI закрывается ПОСЛЕ смерти демона
+    let quitting = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
     let do_quit: std::sync::Arc<dyn Fn() + Send + Sync> = {
-        let ha = handle_arc.clone();
         let ca = cfg_arc.clone();
+        let rt_arc = rt.clone();
+        let ui_weak0 = ui.as_weak();
+        let quitting0 = quitting.clone();
         std::sync::Arc::new(move || {
-            let ha2 = ha.clone();
+            // one-shot: повторные вызовы (трей + диалог) игнорируем
+            if quitting0.swap(true, std::sync::atomic::Ordering::SeqCst) { return; }
             let ca2 = ca.clone();
+            let rt2 = rt_arc.clone();
+            let ui_w = ui_weak0.clone();
             std::thread::spawn(move || {
-                if let Ok(mut lock) = ha2.lock() {
-                    if let Some(h) = lock.take() {
-                        daemon::stop_daemon(h, &ca2);
+                // 1) Снимок статистики, пока RPC жив: что уйдёт трекерам.
+                //    stopped-announce несёт per-tier up/down с последнего stop —
+                //    RPC этого не отдаёт, поэтому показываем честное: статусы,
+                //    leftUntilComplete и хосты трекеров (адресаты announce).
+                let (summary, lines) = {
+                    let cfg = ca2.clone();
+                    rt2.block_on(async move {
+                        match TransmissionClient::with_auth(
+                            cfg.url.clone(), cfg.user.clone(), cfg.password.clone())
+                            .close_summary().await
+                        {
+                            Ok(s) => {
+                                let lines: Vec<SharedString> = s.hosts.iter().map(|h| {
+                                    SharedString::from(format!("→ {h}"))
+                                }).collect();
+                                (s, lines)
+                            }
+                            Err(e) => {
+                                eprintln!("[quit] close_summary failed: {e}");
+                                (rpc::CloseSummary::default(), Vec::new())
+                            }
+                        }
+                    })
+                };
+                eprintln!("[quit] torrents: {} (seed {} / leech {}), trackers: {}, left: {}",
+                    summary.running, summary.seeding, summary.downloading,
+                    summary.trackers, fmt_bytes(summary.left_bytes));
+                // 2) Показываем анимацию (окно НЕ прячем — GUI живёт до смерти демона)
+                let n_tr = summary.trackers as i32;
+                let s_left: SharedString = fmt_bytes(summary.left_bytes);
+                let ui_w1 = ui_w.clone();
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = ui_w1.upgrade() {
+                        ui.set_close_anim_trackers(n_tr);
+                        ui.set_close_anim_left(s_left);
+                        let model: slint::ModelRc<SharedString> =
+                            std::rc::Rc::new(slint::VecModel::from(lines)).into();
+                        ui.set_close_anim_ticker(model);
+                        ui.set_close_anim_visible(true);
                     }
+                });
+                std::thread::sleep(Duration::from_millis(350)); // даём диалогу отрисоваться
+                // 3) Просим демона завершиться: SIGTERM → stopped-announce трекерам
+                daemon::shutdown_initiate(&ca2);
+                // 4) Ждём завершения процесса демона (замер на 593 трекерах: ~16с)
+                let deadline = std::time::Instant::now() + Duration::from_secs(20);
+                let mut done = false;
+                while std::time::Instant::now() < deadline {
+                    if !daemon::daemon_alive(&ca2) { done = true; break; }
+                    std::thread::sleep(Duration::from_millis(200));
                 }
+                if done {
+                    eprintln!("[quit] daemon exited cleanly");
+                    let ui_w2 = ui_w.clone();
+                    let _ = slint::invoke_from_event_loop(move || {
+                        if let Some(ui) = ui_w2.upgrade() { ui.set_close_anim_phase(1); }
+                    });
+                    std::thread::sleep(Duration::from_millis(400));
+                } else {
+                    eprintln!("[quit] daemon did not exit in 10s — force killing");
+                    daemon::force_kill_local();
+                    std::thread::sleep(Duration::from_millis(300));
+                }
+                // 5) Только теперь прячем окно и выходим
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = ui_w.upgrade() { ui.window().hide().ok(); }
+                });
                 slint::quit_event_loop().ok();
             });
         })
     };
 
+    // Форс-выход из анимации: SIGKILL демону, мгновенное скрытие и выход
     {
-        let ui_weak  = ui.as_weak();
+        let ui_weak = ui.as_weak();
+        let quitting2 = quitting.clone();
+        ui.on_close_anim_force(move || {
+            quitting2.store(true, std::sync::atomic::Ordering::SeqCst);
+            daemon::force_kill_local();
+            if let Some(ui) = ui_weak.upgrade() { ui.window().hide().ok(); }
+            slint::quit_event_loop().ok();
+        });
+    }
+
+    {
         let dq = do_quit.clone();
         ui.on_do_quit(move || {
-            let ui2  = ui_weak.clone();
-            let dq2  = dq.clone();
-            slint::invoke_from_event_loop(move || {
-                if let Some(ui) = ui2.upgrade() { ui.window().hide().ok(); }
-                dq2();
-            }).ok();
+            dq();
         });
     }
     {
@@ -890,6 +1407,12 @@ fn main() -> anyhow::Result<()> {
             slint::CloseRequestResponse::KeepWindowShown
         });
     }
+
+    // ── Автосохранение настроек: пока открыт диалог, раз в 800мс сравниваем
+    // снапшот из UI с последним отправленным; отличие → session-set + конфиг
+    let last_settings: std::sync::Arc<std::sync::Mutex<Option<DaemonSettings>>> =
+        std::sync::Arc::new(std::sync::Mutex::new(None));
+    let last_app_auto = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
 
     // ── Насос: статус и трей 20Hz, данные торрентов 2Hz ─────────────────────
     let ui_h        = ui.as_weak();
@@ -912,14 +1435,91 @@ fn main() -> anyhow::Result<()> {
         let ui_h = ui_h.clone();
         let do_quit_tmr = do_quit_tmr.clone();
         let cmd_tx_fast = cmd_tx.clone();
+        let last_settings = last_settings.clone();
         move || {
-            while let Ok(msg) = status_rx.try_recv() {
-                if let Some(ui) = ui_h.upgrade() {
-                    let ok = msg.starts_with("Connected");
-                    ui.set_connected(ok);
-                    ui.set_status_bar_text(msg.into());
+        while let Ok(msg) = status_rx.try_recv() {
+            if let Some(ui) = ui_h.upgrade() {
+                let ok = msg.starts_with("Connected");
+                ui.set_connected(ok);
+                ui.set_status_bar_text(msg.into());
+            }
+        }
+        while let Ok(result) = settings_rx.try_recv() {
+            match result {
+                SettingsResult::Loaded(s) => {
+                    if let Some(ui) = ui_h.upgrade() {
+                    ui.set_cfg_speed_up_enabled(s.speed_limit_up_enabled);
+                    ui.set_cfg_speed_up_kbs((s.speed_limit_up * 8 / 1000) as i32); // KB/s → Мбит/с
+                    ui.set_cfg_speed_down_enabled(s.speed_limit_down_enabled);
+                    ui.set_cfg_speed_down_kbs((s.speed_limit_down * 8 / 1000) as i32);
+                    ui.set_cfg_alt_speed_enabled(s.alt_speed_enabled);
+                    ui.set_cfg_alt_speed_up_kbs((s.alt_speed_up * 8 / 1000) as i32);
+                    ui.set_cfg_alt_speed_down_kbs((s.alt_speed_down * 8 / 1000) as i32);
+                        ui.set_cfg_alt_speed_schedule(s.alt_speed_time_enabled);
+                        ui.set_cfg_alt_speed_time_begin(s.alt_speed_time_begin as i32);
+                        ui.set_cfg_alt_speed_time_end(s.alt_speed_time_end as i32);
+                        ui.set_cfg_speed_day_mon(s.alt_speed_time_day & 1 != 0);
+                        ui.set_cfg_speed_day_tue(s.alt_speed_time_day & 2 != 0);
+                        ui.set_cfg_speed_day_wed(s.alt_speed_time_day & 4 != 0);
+                        ui.set_cfg_speed_day_thu(s.alt_speed_time_day & 8 != 0);
+                        ui.set_cfg_speed_day_fri(s.alt_speed_time_day & 16 != 0);
+                        ui.set_cfg_speed_day_sat(s.alt_speed_time_day & 32 != 0);
+                        ui.set_cfg_speed_day_sun(s.alt_speed_time_day & 64 != 0);
+                        ui.set_cfg_dl_watch_dir_enabled(s.watch_dir_enabled);
+                        ui.set_cfg_dl_watch_dir(s.watch_dir.as_str().into());
+                        ui.set_cfg_dl_start_added(s.start_added_torrents);
+                        ui.set_cfg_dl_trash_torrent(s.trash_original_torrent_files);
+                        ui.set_cfg_dl_dir(s.download_dir.as_str().into());
+                        ui.set_cfg_dl_queue_max(s.download_queue_size as i32);
+                        ui.set_cfg_dl_queue_enabled(s.download_queue_enabled);
+                        ui.set_cfg_dl_seed_ratio_limit_min(s.queue_stalled_minutes as i32);
+                        ui.set_cfg_dl_part_ext(s.rename_partial_files);
+                        ui.set_cfg_dl_incomplete_dir_enabled(s.incomplete_dir_enabled);
+                        ui.set_cfg_dl_incomplete_dir(s.incomplete_dir.as_str().into());
+                        ui.set_cfg_dl_done_script_enabled(s.script_torrent_done_enabled);
+                        ui.set_cfg_dl_done_script(s.script_torrent_done_filename.as_str().into());
+                        ui.set_cfg_seed_done_script_enabled(s.script_torrent_done_seeding_enabled);
+                        ui.set_cfg_seed_done_script(s.script_torrent_done_seeding_filename.as_str().into());
+                        ui.set_cfg_seed_ratio_enabled(s.seed_ratio_limited);
+                        ui.set_cfg_seed_ratio((s.seed_ratio_limit * 100.0) as i32);
+                        ui.set_cfg_seed_idle_enabled(s.idle_seeding_limit_enabled);
+                        ui.set_cfg_seed_idle_min(s.idle_seeding_limit as i32);
+                        ui.set_cfg_net_port(s.peer_port as i32);
+                        ui.set_cfg_net_random_port(s.peer_port_random_on_start);
+                        ui.set_cfg_net_port_forward(s.port_forwarding_enabled);
+                        ui.set_cfg_net_max_peers_torrent(s.peer_limit_per_torrent as i32);
+                        ui.set_cfg_net_max_peers_total(s.peer_limit_global as i32);
+                        ui.set_cfg_net_utp(s.utp_enabled);
+                        ui.set_cfg_net_pex(s.pex_enabled);
+                        ui.set_cfg_net_dht(s.dht_enabled);
+                        ui.set_cfg_net_lpd(s.lpd_enabled);
+                        ui.set_cfg_net_default_trackers(s.default_trackers.as_str().into());
+                        ui.set_cfg_priv_encryption(s.encryption as i32);
+                        ui.set_cfg_priv_blocklist_enabled(s.blocklist_enabled);
+                        ui.set_cfg_priv_blocklist_url(s.blocklist_url.as_str().into());
+                        ui.set_cfg_remote_enabled(s.rpc_enabled);
+                        ui.set_cfg_remote_port(s.rpc_port as i32);
+                        ui.set_cfg_remote_auth(s.rpc_authentication_required);
+                        ui.set_cfg_remote_username(s.rpc_username.as_str().into());
+                        ui.set_cfg_remote_password(s.rpc_password.as_str().into());
+                        ui.set_cfg_remote_whitelist_enabled(s.rpc_whitelist_enabled);
+                        ui.set_cfg_remote_whitelist(s.rpc_whitelist.as_str().into());
+                        eprintln!("[settings] Daemon settings applied to UI");
+                        // Базовая калибровка автосейва: то, что пришло, считаем отправленным
+                        *last_settings.lock().unwrap() = Some(s.clone());
+                    }
+                }
+                SettingsResult::Saved => {
+                    // Автосохранение — без спама статус-бара
+                    eprintln!("[settings] Daemon settings saved (auto)");
+                }
+                SettingsResult::Error(e) => {
+                    if let Some(ui) = ui_h.upgrade() {
+                        ui.set_status_bar_text(format!("Settings error: {e}").into());
+                    }
                 }
             }
+        }
             if !tray_ready.load(std::sync::atomic::Ordering::Relaxed) {
                 // Дренируем события пока не готовы — игнорируем буферизованные клики
                 if let Some(ref tray) = tray { tray.poll_events(); }
@@ -1083,9 +1683,137 @@ fn main() -> anyhow::Result<()> {
             }).map(|c| c.url.clone()).unwrap_or(display_str.clone());
 
             eprintln!("[switch-rpc] {} → {}", display_str, full_url);
+            *ACTIVE_RPC_URL.lock().unwrap() = Some(full_url.clone());
             let _ = tx.send(Command::SwitchRpc(full_url));
             if let Some(ui) = ui_weak.upgrade() {
                 ui.set_rpc_url(display);
+                refresh_profiles(&ui);
+            }
+        });
+    }
+
+    // Проверка открытости порта (RPC port-test, долго — до 30с)
+    {
+        let tx = cmd_tx.clone();
+        ui.on_port_test_start(move || {
+            let _ = tx.send(Command::PortTest);
+        });
+    }
+
+    // Смена хоста из списка профилей (full URL напрямую)
+    {
+        let tx = cmd_tx.clone();
+        let ui_weak = ui.as_weak();
+        ui.on_switch_host(move |url: slint::SharedString| {
+            let full = url.to_string();
+            eprintln!("[switch-host] → {full}");
+            *ACTIVE_RPC_URL.lock().unwrap() = Some(full.clone());
+            let _ = tx.send(Command::SwitchRpc(full.clone()));
+            if let Some(ui) = ui_weak.upgrade() {
+                ui.set_is_switching_host(true);
+                ui.set_switching_host_name(url_endpoint(&full).into());
+                ui.set_rpc_url(url_endpoint(&full).into());
+                refresh_profiles(&ui);
+            }
+        });
+    }
+
+    // Сохранение хоста (добавление/редактирование) — persists в конфиг
+    {
+        let ui_weak = ui.as_weak();
+        ui.on_save_host(move |name: slint::SharedString, host: slint::SharedString,
+                             port: i32, user: slint::SharedString,
+                             pass: slint::SharedString, orig: slint::SharedString| {
+            eprintln!("[save-host] called: name={name:?} host={host:?} port={port} orig={orig:?}");
+            let name_s = name.trim().to_string();
+            let host_s = host.trim().to_string();
+            if name_s.is_empty() || host_s.is_empty() { return; }
+            let url = format!("http://{host_s}:{port}/transmission/rpc");
+            {
+                let mut cfg = config_lock().lock().unwrap();
+                let orig_s = orig.to_string();
+                if !orig_s.is_empty() {
+                    if let Some(h) = cfg.custom_hosts.iter_mut().find(|h| h.name == orig_s) {
+                        h.name = name_s.clone();
+                        h.url = url.clone();
+                        h.user = user.to_string();
+                        h.password = pass.to_string();
+                    }
+                } else if !cfg.custom_hosts.iter().any(|h| h.name == name_s) {
+                    cfg.custom_hosts.push(app_config::HostProfile {
+                        name: name_s, url, user: user.to_string(), password: pass.to_string(),
+                    });
+                }
+                app_config::save(&*cfg);
+            }
+            if let Some(ui) = ui_weak.upgrade() { refresh_profiles(&ui); }
+        });
+    }
+
+    // Удаление пользовательского хоста
+    {
+        let ui_weak = ui.as_weak();
+        ui.on_delete_host(move |name: slint::SharedString| {
+            eprintln!("[delete-host] called: {name:?}");
+            let name_s = name.to_string();
+            let mut removed = false;
+            {
+                let mut cfg = config_lock().lock().unwrap();
+                let before = cfg.custom_hosts.len();
+                cfg.custom_hosts.retain(|h| h.name != name_s);
+                removed = cfg.custom_hosts.len() != before;
+                if removed { app_config::save(&*cfg); }
+            }
+            if removed {
+                if let Some(ui) = ui_weak.upgrade() { refresh_profiles(&ui); }
+            }
+        });
+    }
+
+    // Settings dialog: Load daemon settings when opened
+    {
+        let tx = cmd_tx.clone();
+        ui.on_settings_open(move || {
+            let _ = tx.send(Command::LoadDaemonSettings);
+        });
+    }
+
+    let _tmr_auto = slint::Timer::default();
+    {
+        let ui_w = ui.as_weak();
+        let tx = cmd_tx.clone();
+        let ls = last_settings.clone();
+        let prev_auto = last_app_auto.clone();
+        let ls2 = last_settings.clone();
+    let pa2 = last_app_auto.clone();
+    let tx2 = cmd_tx.clone();
+    let ui_w2 = ui.as_weak();
+    _tmr_auto.start(slint::TimerMode::Repeated, Duration::from_millis(800), move || {
+            let Some(ui) = ui_w2.upgrade() else { return; };;
+            if !ui.get_settings_dialog_visible() { return; }
+            let s = build_daemon_settings(&ui);
+            let changed = match ls.lock().unwrap().as_ref() {
+                Some(prev) => *prev != s,
+                None => false, // ждём первый Loaded — базовая калибровка
+            };
+            if !changed { return; }
+            *ls.lock().unwrap() = Some(s.clone());
+            eprintln!("[settings] auto-save: change detected → session-set");
+            let _ = tx.send(Command::SaveDaemonSettings(s));
+
+            // AppConfig (не-демонские настройки) — онлайн в конфиг
+            let (auto_now, last_upd) = apply_app_config_from_ui(&ui);
+            app_config::sync_autostart(config_lock().lock().unwrap().autostart);
+
+            // Blocklist: включили автообновление и список устарел → обновить сейчас
+            let was = prev_auto.swap(auto_now, std::sync::atomic::Ordering::Relaxed);
+            if auto_now && !was {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs()).unwrap_or(0);
+                if now.saturating_sub(last_upd) > 86_400 {
+                    let _ = tx.send(Command::UpdateBlocklist);
+                }
             }
         });
     }
@@ -1265,12 +1993,18 @@ fn main() -> anyhow::Result<()> {
         wm_icon::set_wm_icon_by_pid();
     }
 
-    // Открытие .torrent из проводника — запускаем выбор папки сразу после старта UI
+    // Открытие .torrent из проводника — выбор папки (или сразу добавление при dl-show-dialog=false)
     if let Some(torrent_path) = pending_torrent {
         let tx = cmd_tx.clone();
         let delete_after = app_cfg.delete_torrent_after_add;
+        let show_dialog = app_cfg.dl_show_dialog;
         std::thread::spawn(move || {
             std::thread::sleep(Duration::from_millis(500));
+            if !show_dialog {
+                eprintln!("[open] Adding {torrent_path} → default dir (dialog disabled)");
+                let _ = tx.send(Command::AddTorrentFile(torrent_path, None, delete_after));
+                return;
+            }
             match filepicker::pick_directory("") {
                 Ok(dir) => {
                     eprintln!("[open] Adding {torrent_path} → {dir}");
@@ -1286,18 +2020,25 @@ fn main() -> anyhow::Result<()> {
         let tx = cmd_tx.clone();
         let ui_weak = ui.as_weak();
         let delete_after = app_cfg.delete_torrent_after_add;
+        let show_dialog = app_cfg.dl_show_dialog;
         single_instance::start_listener(listener, move |torrent_path| {
             let tx2 = tx.clone();
             let ui2 = ui_weak.clone();
             let delete_after2 = delete_after;
+            let show_dialog2 = show_dialog;
             // Поднимаем окно
             let _ = slint::invoke_from_event_loop(move || {
                 if let Some(ui) = ui2.upgrade() { ui.show().ok(); }
             });
             if torrent_path.is_empty() { return; }
-            // Выбор папки и добавление
+            // Выбор папки и добавление (или сразу при dl-show-dialog=false)
             std::thread::spawn(move || {
                 std::thread::sleep(Duration::from_millis(300));
+                if !show_dialog2 {
+                    eprintln!("[open] Adding {torrent_path} → default dir (dialog disabled)");
+                    let _ = tx2.send(Command::AddTorrentFile(torrent_path, None, delete_after2));
+                    return;
+                }
                 match filepicker::pick_directory("") {
                     Ok(dir) => {
                         eprintln!("[open] Adding {torrent_path} → {dir}");
@@ -1313,4 +2054,158 @@ fn main() -> anyhow::Result<()> {
 
     // daemon stopped in do_quit() before event loop exit
     Ok(())
+}
+
+/// Проталкивает все строки диалогов/вкладок в глобаль Tr (5 языков из i18n)
+fn push_dialog_tr() {
+    let g = Tr::get();
+    g.set_about_desc(i18n::d_about_desc().into());
+    g.set_about_title(i18n::d_about_title().into());
+    g.set_add_connection(i18n::d_add_connection().into());
+    g.set_alt_dl_lbl(i18n::d_alt_dl_lbl().into());
+    g.set_alt_override(i18n::d_alt_override().into());
+    g.set_alt_up_lbl(i18n::d_alt_up_lbl().into());
+    g.set_append_part(i18n::d_append_part().into());
+    g.set_at_add_url(i18n::d_at_add_url().into());
+    g.set_at_browse(i18n::d_at_browse().into());
+    g.set_at_title(i18n::d_at_title().into());
+    g.set_at_url_ph(i18n::d_at_url_ph().into());
+    g.set_auto_import(i18n::d_auto_import().into());
+    g.set_autostart_lbl(i18n::d_autostart_lbl().into());
+    g.set_blocklist_auto(i18n::d_blocklist_auto().into());
+    g.set_blocklist_enable(i18n::d_blocklist_enable().into());
+    g.set_blocklist_entries(i18n::d_blocklist_entries().into());
+    g.set_blocklist_entries2(i18n::d_blocklist_entries2().into());
+    g.set_blocklist_url(i18n::d_blocklist_url().into());
+    g.set_by_schedule(i18n::d_by_schedule().into());
+    g.set_ca_done(i18n::d_ca_done().into());
+    g.set_ca_done_closing(i18n::d_ca_done_closing().into());
+    g.set_ca_left(i18n::d_ca_left().into());
+    g.set_ca_notifying(i18n::d_ca_notifying().into());
+    g.set_ca_sending(i18n::d_ca_sending().into());
+    g.set_ca_shutting(i18n::d_ca_shutting().into());
+    g.set_ca_units(i18n::d_ca_units().into());
+    g.set_cancel_btn(i18n::d_cancel_btn().into());
+    g.set_cd_min_tray(i18n::d_cd_min_tray().into());
+    g.set_cd_quit(i18n::d_cd_quit().into());
+    g.set_cd_what(i18n::d_cd_what().into());
+    g.set_check_port(i18n::d_check_port().into());
+    g.set_config_found(i18n::d_config_found().into());
+    g.set_config_not_found(i18n::d_config_not_found().into());
+    g.set_conn_host(i18n::d_conn_host().into());
+    g.set_conn_profiles(i18n::d_conn_profiles().into());
+    g.set_ct_browse(i18n::d_ct_browse().into());
+    g.set_ct_create(i18n::d_ct_create().into());
+    g.set_ct_path_ph(i18n::d_ct_path_ph().into());
+    g.set_ct_title(i18n::d_ct_title().into());
+    g.set_ct_trackers(i18n::d_ct_trackers().into());
+    g.set_day_fr(i18n::d_day_fr().into());
+    g.set_day_mo(i18n::d_day_mo().into());
+    g.set_day_sa(i18n::d_day_sa().into());
+    g.set_day_su(i18n::d_day_su().into());
+    g.set_day_th(i18n::d_day_th().into());
+    g.set_day_tu(i18n::d_day_tu().into());
+    g.set_day_we(i18n::d_day_we().into());
+    g.set_default_dir_lbl(i18n::d_default_dir_lbl().into());
+    g.set_del_btn(i18n::d_del_btn().into());
+    g.set_del_confirm(i18n::d_del_confirm().into());
+    g.set_del_profile_q(i18n::d_del_profile_q().into());
+    g.set_del_secs(i18n::d_del_secs().into());
+    g.set_del_word(i18n::d_del_word().into());
+    g.set_dev_with(i18n::d_dev_with().into());
+    g.set_dht(i18n::d_dht().into());
+    g.set_dlimit_lbl(i18n::d_dlimit_lbl().into());
+    g.set_done_script_dl(i18n::d_done_script_dl().into());
+    g.set_done_script_seed(i18n::d_done_script_seed().into());
+    g.set_edit_btn(i18n::d_edit_btn().into());
+    g.set_enc_disabled(i18n::d_enc_disabled().into());
+    g.set_enc_prefer(i18n::d_enc_prefer().into());
+    g.set_enc_require(i18n::d_enc_require().into());
+    g.set_encryption_mode(i18n::d_encryption_mode().into());
+    g.set_enforce_auth(i18n::d_enforce_auth().into());
+    g.set_enforce_auth_short(i18n::d_enforce_auth_short().into());
+    g.set_exit_now(i18n::d_exit_now().into());
+    g.set_free_disk_note(i18n::d_free_disk_note().into());
+    g.set_host_lbl(i18n::d_host_lbl().into());
+    g.set_incomplete_dir_lbl(i18n::d_incomplete_dir_lbl().into());
+    g.set_lang_lbl(i18n::d_lang_lbl().into());
+    g.set_lang_section(i18n::d_lang_section().into());
+    g.set_license_lbl(i18n::d_license_lbl().into());
+    g.set_local_host(i18n::d_local_host().into());
+    g.set_login_ph(i18n::d_login_ph().into());
+    g.set_lpd(i18n::d_lpd().into());
+    g.set_manage_profiles(i18n::d_manage_profiles().into());
+    g.set_mg_title(i18n::d_mg_title().into());
+    g.set_no_profiles(i18n::d_no_profiles().into());
+    g.set_notify_add(i18n::d_notify_add().into());
+    g.set_notify_complete(i18n::d_notify_complete().into());
+    g.set_notify_sound(i18n::d_notify_sound().into());
+    g.set_on_close_ask(i18n::d_on_close_ask().into());
+    g.set_on_close_lbl(i18n::d_on_close_lbl().into());
+    g.set_on_close_quit(i18n::d_on_close_quit().into());
+    g.set_on_close_tray(i18n::d_on_close_tray().into());
+    g.set_password_ph(i18n::d_password_ph().into());
+    g.set_path_to_script(i18n::d_path_to_script().into());
+    g.set_peer_port_lbl(i18n::d_peer_port_lbl().into());
+    g.set_peers_max_global(i18n::d_peers_max_global().into());
+    g.set_peers_max_torrent(i18n::d_peers_max_torrent().into());
+    g.set_pex(i18n::d_pex().into());
+    g.set_port_checking(i18n::d_port_checking().into());
+    g.set_port_checking_cap(i18n::d_port_checking_cap().into());
+    g.set_port_closed(i18n::d_port_closed().into());
+    g.set_port_open(i18n::d_port_open().into());
+    g.set_port_unknown(i18n::d_port_unknown().into());
+    g.set_prevent_sleep(i18n::d_prevent_sleep().into());
+    g.set_profile_name(i18n::d_profile_name().into());
+    g.set_public_trackers_ph(i18n::d_public_trackers_ph().into());
+    g.set_queue_enable(i18n::d_queue_enable().into());
+    g.set_queue_max_lbl(i18n::d_queue_max_lbl().into());
+    g.set_random_port(i18n::d_random_port().into());
+    g.set_reload_note(i18n::d_reload_note().into());
+    g.set_renderer_lbl(i18n::d_renderer_lbl().into());
+    g.set_save_btn(i18n::d_save_btn().into());
+    g.set_sched_to(i18n::d_sched_to().into());
+    g.set_sec_additions(i18n::d_sec_additions().into());
+    g.set_sec_alt_limits(i18n::d_sec_alt_limits().into());
+    g.set_sec_blocklist_ip(i18n::d_sec_blocklist_ip().into());
+    g.set_sec_dl_process(i18n::d_sec_dl_process().into());
+    g.set_sec_encryption(i18n::d_sec_encryption().into());
+    g.set_sec_features(i18n::d_sec_features().into());
+    g.set_sec_iface_lang(i18n::d_sec_iface_lang().into());
+    g.set_sec_iface_visual(i18n::d_sec_iface_visual().into());
+    g.set_sec_lbl(i18n::d_sec_lbl().into());
+    g.set_sec_network(i18n::d_sec_network().into());
+    g.set_sec_notifications(i18n::d_sec_notifications().into());
+    g.set_sec_peers(i18n::d_sec_peers().into());
+    g.set_sec_privacy(i18n::d_sec_privacy().into());
+    g.set_sec_public_trackers(i18n::d_sec_public_trackers().into());
+    g.set_sec_queue(i18n::d_sec_queue().into());
+    g.set_sec_remote(i18n::d_sec_remote().into());
+    g.set_sec_seeding(i18n::d_sec_seeding().into());
+    g.set_sec_speed_limits(i18n::d_sec_speed_limits().into());
+    g.set_seed_idle_lbl(i18n::d_seed_idle_lbl().into());
+    g.set_seed_ratio_lbl(i18n::d_seed_ratio_lbl().into());
+    g.set_seed_ratio_min_lbl(i18n::d_seed_ratio_min_lbl().into());
+    g.set_settings_title(i18n::d_settings_title().into());
+    g.set_show_opts_dlg(i18n::d_show_opts_dlg().into());
+    g.set_sl_pick(i18n::d_sl_pick().into());
+    g.set_start_added(i18n::d_start_added().into());
+    g.set_start_min_tray(i18n::d_start_min_tray().into());
+    g.set_status_lbl(i18n::d_status_lbl().into());
+    g.set_sync_state(i18n::d_sync_state().into());
+    g.set_tab_downloading(i18n::d_tab_downloading().into());
+    g.set_tab_interface(i18n::d_tab_interface().into());
+    g.set_tab_network(i18n::d_tab_network().into());
+    g.set_tab_privacy(i18n::d_tab_privacy().into());
+    g.set_tab_remote(i18n::d_tab_remote().into());
+    g.set_tab_seeding(i18n::d_tab_seeding().into());
+    g.set_tab_speed(i18n::d_tab_speed().into());
+    g.set_tab_system(i18n::d_tab_system().into());
+    g.set_trash_torrents(i18n::d_trash_torrents().into());
+    g.set_tray_lbl(i18n::d_tray_lbl().into());
+    g.set_uifw_lbl(i18n::d_uifw_lbl().into());
+    g.set_ulimit_lbl(i18n::d_ulimit_lbl().into());
+    g.set_update_freq(i18n::d_update_freq().into());
+    g.set_upnp(i18n::d_upnp().into());
+    g.set_utp(i18n::d_utp().into());
 }

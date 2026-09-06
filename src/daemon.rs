@@ -159,3 +159,68 @@ fn find_bin(name: &str) -> Option<String> {
     }
     None
 }
+
+/// Запускает штатное завершение демона: SIGTERM локальным процессам
+/// (демон отправит `event=stopped` трекерам) либо `--exit` внешнему.
+pub fn shutdown_initiate(cfg: &RpcConfig) {
+    if let Ok(out) = Command::new("pidof").arg("transmission-daemon").output() {
+        let pids: Vec<libc::pid_t> = String::from_utf8_lossy(&out.stdout)
+            .split_whitespace()
+            .filter_map(|s| s.parse().ok())
+            .collect();
+        if !pids.is_empty() {
+            for pid in &pids {
+                eprintln!("[daemon] SIGTERM pid={pid}");
+                #[cfg(unix)]
+                unsafe { libc::kill(*pid, libc::SIGTERM); }
+            }
+            return;
+        }
+    }
+    // Локальных процессов нет — демон внешний, просим его завершиться
+    let host_port = cfg.url.trim_start_matches("http://")
+        .trim_start_matches("https://")
+        .split('/').next().unwrap_or("127.0.0.1:9091")
+        .to_string();
+    eprintln!("[daemon] Fallback: transmission-remote {host_port} --exit");
+    let _ = Command::new("transmission-remote")
+        .args([&host_port, "--exit"])
+        .output();
+}
+
+/// Жив ли демон: локальный процесс (pidof) или TCP-проба host:port (внешний).
+pub fn daemon_alive(cfg: &RpcConfig) -> bool {
+    if let Ok(out) = Command::new("pidof").arg("transmission-daemon").output() {
+        if !String::from_utf8_lossy(&out.stdout).trim().is_empty() {
+            return true;
+        }
+    }
+    // Проверяем TCP для внешнего демона (или локального без pidof)
+    let host_port = cfg.url.trim_start_matches("http://")
+        .trim_start_matches("https://")
+        .split('/').next().unwrap_or("");
+    if let Some((host, port)) = host_port.rsplit_once(':') {
+        if let (Ok(ip), Ok(p)) = (host.parse::<std::net::IpAddr>(), port.parse::<u16>()) {
+            use std::net::TcpStream;
+            let addr = std::net::SocketAddr::new(ip, p);
+            if let Ok(s) = TcpStream::connect_timeout(&addr, std::time::Duration::from_millis(400)) {
+                drop(s);
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// SIGKILL всем локальным процессам демона (форс-выход из GUI).
+pub fn force_kill_local() {
+    if let Ok(out) = Command::new("pidof").arg("transmission-daemon").output() {
+        for pid_str in String::from_utf8_lossy(&out.stdout).split_whitespace() {
+            if let Ok(pid) = pid_str.parse::<libc::pid_t>() {
+                eprintln!("[daemon] SIGKILL pid={pid}");
+                #[cfg(unix)]
+                unsafe { libc::kill(pid, libc::SIGKILL); }
+            }
+        }
+    }
+}

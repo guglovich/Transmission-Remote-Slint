@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Transmission Remote — Prototype v3</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#0d0f13;--bg1:#13151c;--bg2:#1a1d27;--bg3:#21253a;--bg4:#282d42;
+  --border:#252840;--border2:#343858;
+  --text0:#e4e7f2;--text1:#8f97b8;--text2:#4e556e;
+  --accent:#4a7cf7;--accent2:#3567e0;
+  --green:#3db87a;--amber:#e8a240;--red:#e05555;--cyan:#3ec9c9;--purple:#9b78f0;
+  --font:'IBM Plex Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --panel-w:224px;--tb-h:42px;--sb-h:26px;--detail-h:210px;
+}
+html,body{height:100%;background:var(--bg0);color:var(--text0);font-family:var(--font);font-size:13px;overflow:hidden}
+*{scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+*::-webkit-scrollbar{width:5px;height:5px}
+*::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── APP ── */
+#app{display:grid;grid-template-rows:var(--tb-h) 1fr var(--sb-h);grid-template-columns:var(--panel-w) 4px 1fr;height:100vh}
+
+/* ── TOOLBAR ── */
+#toolbar{grid-column:1/-1;background:var(--bg1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0;user-select:none;overflow:hidden}
+#tb-fixed{display:flex;align-items:center;gap:2px;padding:0 8px;border-right:1px solid var(--border);height:100%;flex-shrink:0}
+#tb-extras{display:flex;align-items:center;gap:2px;padding:0 6px;height:100%}
+.tb-sp{flex:1}
+#tb-search-wrap{display:flex;align-items:center;padding:0 6px}
+#tb-right{display:flex;align-items:center;gap:3px;padding:0 8px;border-left:1px solid var(--border);height:100%;flex-shrink:0}
+.tb-btn{display:flex;align-items:center;gap:5px;background:none;border:1px solid transparent;color:var(--text1);padding:4px 8px;border-radius:5px;cursor:pointer;font-size:12px;font-family:var(--font);white-space:nowrap;transition:background .1s,color .1s,border-color .1s;position:relative}
+.tb-btn:hover{background:var(--bg3);color:var(--text0);border-color:var(--border2)}
+.tb-btn:active{background:var(--bg4)}
+.tb-btn.warn{color:var(--amber)}
+.tb-btn svg{width:15px;height:15px;flex-shrink:0}
+.tb-btn.dov-l{border-left-color:var(--accent)}
+.tb-btn.dov-r{border-right-color:var(--accent)}
+.tb-btn.dragging-btn{opacity:.3;cursor:grabbing}
+.tb-ico{display:flex;align-items:center;justify-content:center;background:none;border:1px solid transparent;color:var(--text1);width:30px;height:28px;border-radius:5px;cursor:pointer;transition:background .1s,color .1s,border-color .1s}
+.tb-ico:hover{background:var(--bg3);color:var(--text0);border-color:var(--border2)}
+.tb-ico svg{width:16px;height:16px}
+.tb-sep{width:1px;height:20px;background:var(--border2);margin:0 2px;flex-shrink:0}
+.tb-search{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border2);border-radius:5px;padding:0 10px;height:28px;width:340px;transition:border-color .15s}
+.tb-search:focus-within{border-color:var(--accent)}
+.tb-search svg{width:13px;height:13px;color:var(--text2);flex-shrink:0}
+.tb-search input{background:none;border:none;outline:none;color:var(--text0);font-size:12px;font-family:var(--font);width:100%}
+.tb-search input::placeholder{color:var(--text2)}
+
+/* ── SPLITTERS ── */
+#vsplit{grid-row:2;grid-column:2;background:var(--border);cursor:col-resize;transition:background .15s;z-index:10}
+#vsplit:hover,#vsplit.drag{background:var(--accent)}
+#hsplit{background:var(--border);cursor:row-resize;transition:background .15s;z-index:5}
+#hsplit:hover,#hsplit.drag{background:var(--accent)}
+
+/* ── LEFT PANEL ── */
+#lpanel{grid-row:2;grid-column:1;background:var(--bg1);border-right:1px solid var(--border);overflow-y:auto;overflow-x:hidden;user-select:none}
+.sec-hdr{display:flex;align-items:center;gap:6px;padding:7px 10px 4px;color:var(--text2);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;cursor:pointer;border-top:1px solid var(--border)}
+.sec-hdr:hover{color:var(--text1)}
+.sec-arrow{margin-left:auto;font-size:9px;opacity:.5;transition:transform .15s}
+.section.col .sec-arrow{transform:rotate(-90deg)}
+.section.col .sec-body{display:none}
+.fi{position:relative;display:flex;align-items:center;gap:6px;padding:3px 8px 3px 16px;cursor:pointer;border-radius:4px;margin:1px 4px;color:var(--text1);transition:background .08s,color .08s;min-height:22px}
+.fi:hover{background:var(--bg3);color:var(--text0)}
+.fi.act{background:var(--bg3);color:var(--text0)}
+.fi.act::before{content:'';position:absolute;left:3px;width:2px;height:14px;background:var(--accent);border-radius:1px}
+.fi.l2{padding-left:22px}
+.fi.l3{padding-left:30px}
+.fi-lbl{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-sub{font-size:10px;color:var(--text2);font-family:var(--mono)}
+.fi-cnt{font-size:10px;color:var(--text2);font-family:var(--mono);background:var(--bg2);padding:1px 5px;border-radius:3px;flex-shrink:0}
+.fi.act .fi-cnt{background:var(--bg4);color:var(--text1)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.add-tag-fi{display:flex;align-items:center;gap:6px;padding:3px 8px 3px 16px;margin:1px 4px;color:var(--text2);font-size:11px;cursor:pointer;border-radius:4px;transition:color .1s,background .1s}
+.add-tag-fi:hover{color:var(--accent);background:var(--bg3)}
+
+/* ── MAIN ── */
+#main{grid-row:2;grid-column:3;display:grid;grid-template-rows:26px 1fr 4px var(--detail-h);overflow:hidden}
+
+/* ── COL HEADERS ── */
+#colhdrs{background:var(--bg1);border-bottom:1px solid var(--border);display:flex;align-items:center;overflow:hidden}
+.ch{display:flex;align-items:center;gap:4px;padding:0 8px;font-size:11px;color:var(--text1);cursor:pointer;border-right:1px solid var(--border);height:100%;white-space:nowrap;user-select:none;flex-shrink:0;transition:color .1s,background .1s;position:relative}
+.ch:hover{color:var(--text0);background:var(--bg2)}
+.ch.sorted{color:var(--accent)}
+.ch-sa{font-size:9px;opacity:.7}
+.rzh{position:absolute;right:-3px;top:0;bottom:0;width:7px;cursor:col-resize;z-index:3}
+.rzh:hover,.rzh.rzdrag{background:rgba(74,124,247,.55)}
+
+/* ── TORRENT LIST ── */
+#tlist{overflow-y:auto;overflow-x:hidden;background:var(--bg0)}
+.trow{display:flex;align-items:stretch;border-bottom:1px solid var(--border);cursor:pointer;transition:background .07s;min-height:46px}
+.trow:hover{background:var(--bg2)}
+.trow.sel{background:var(--bg3)}
+.trow.sel:hover{background:var(--bg4)}
+/* name cell */
+.tc-n{flex:1;min-width:100px;padding:5px 8px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.t-name{font-size:12px;color:var(--text0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+/* status line under name — plain text, no badges here */
+.t-sl{display:flex;align-items:center;gap:4px;min-height:15px;overflow:hidden;flex-wrap:nowrap}
+.st{font-size:10px;white-space:nowrap;line-height:1.3}
+.st-s{color:var(--green)}.st-d{color:#6b9af7}.st-p{color:var(--text2)}.st-c{color:var(--purple)}.st-e{color:var(--red)}.st-q{color:var(--amber)}
+.st-div{color:var(--text2);opacity:.35;font-size:9px}
+.t-pb{height:2px;background:var(--bg4);border-radius:1px;overflow:hidden;margin-top:2px}
+.t-pbf{height:100%;border-radius:1px}
+/* tags col */
+.tc-tags{display:flex;align-items:center;flex-wrap:wrap;gap:3px;padding:4px 8px;flex-shrink:0;overflow:hidden;align-content:center}
+.tpill{font-size:9px;padding:1px 6px;border-radius:3px;background:var(--bg3);color:var(--text2);border:1px solid var(--border2);white-space:nowrap}
+/* data cells */
+.tc{padding:0 8px;font-size:11px;color:var(--text1);white-space:nowrap;flex-shrink:0;font-family:var(--mono);display:flex;align-items:center}
+/* status column cell — vertical stack of badges */
+.tc-status{padding:4px 8px;font-size:11px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;gap:3px;overflow:hidden}
+.sbadge{font-size:10px;padding:1px 6px;border-radius:3px;font-family:var(--font);white-space:nowrap;display:inline-block;width:fit-content}
+.sb-s{background:rgba(61,184,122,.12);color:var(--green)}
+.sb-d{background:rgba(74,124,247,.12);color:var(--accent)}
+.sb-p{background:rgba(78,85,110,.2);color:var(--text2)}
+.sb-c{background:rgba(155,120,240,.12);color:var(--purple)}
+.sb-e{background:rgba(224,85,85,.12);color:var(--red)}
+.sb-q{background:rgba(232,162,64,.12);color:var(--amber)}
+
+/* ── DETAIL PANEL ── */
+#dpanel{background:var(--bg1);border-top:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column}
+.dtabs{display:flex;align-items:center;border-bottom:1px solid var(--border);padding:0 8px;flex-shrink:0;height:30px}
+.dtab{padding:0 12px;height:30px;font-size:11px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;transition:color .1s,border-color .1s;margin-bottom:-1px}
+.dtab:hover{color:var(--text1)}
+.dtab.act{color:var(--text0);border-bottom-color:var(--accent)}
+.dcon{flex:1;overflow-y:auto;padding:10px 14px}
+.dgrid{display:grid;grid-template-columns:110px 1fr 110px 1fr;gap:4px 12px}
+.dgl{color:var(--text2);font-size:11px;padding:2px 0}
+.dgv{color:var(--text0);font-size:11px;font-family:var(--mono);padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pieces-g{display:flex;flex-wrap:wrap;gap:1px;margin-top:6px}
+.piece{width:6px;height:6px;border-radius:1px;background:var(--bg3)}
+.piece.done{background:var(--accent)}
+.piece.partial{background:var(--cyan);opacity:.5}
+
+/* ── STATUS BAR ── */
+#sbar{grid-column:1/-1;background:var(--bg1);border-top:1px solid var(--border);display:flex;align-items:center;font-size:11px}
+.sbi{display:flex;align-items:center;gap:5px;padding:0 10px;color:var(--text1);border-right:1px solid var(--border);height:100%;white-space:nowrap}
+.sbi svg{width:11px;height:11px;opacity:.6;flex-shrink:0}
+.sbv{color:var(--text0);font-family:var(--mono)}
+.sb-dl .sbv{color:var(--accent)}
+.sb-ul .sbv{color:var(--green)}
+.sbsp{flex:1}
+.sbratio{display:flex;align-items:center;gap:4px;padding:0 10px;cursor:pointer;color:var(--text1);height:100%;transition:color .1s}
+.sbratio:hover{color:var(--text0)}
+
+/* ── CONTEXT MENUS ── */
+.ctxm{position:fixed;z-index:4000;background:var(--bg2);border:1px solid var(--border2);border-radius:7px;padding:4px 0;min-width:200px;box-shadow:0 10px 32px rgba(0,0,0,.78);display:none;font-size:12px}
+.ctxm.vis{display:block}
+.cxi{display:flex;align-items:center;gap:9px;padding:5px 14px;cursor:pointer;color:var(--text1);transition:background .07s,color .07s}
+.cxi:hover{background:var(--bg3);color:var(--text0)}
+.cxi.danger:hover{color:var(--red)}
+.cxi svg{width:13px;height:13px;flex-shrink:0;opacity:.6}
+.cxs{height:1px;background:var(--border);margin:3px 0}
+.cxhdr{padding:5px 14px 3px;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em}
+
+/* ── MODALS ── */
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:5000;display:flex;align-items:center;justify-content:center}
+.ovl.hid{display:none}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:9px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.85)}
+.mhdr{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.mttl{font-size:13px;font-weight:600;color:var(--text0);flex:1}
+.mcls{background:none;border:none;color:var(--text2);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:15px;line-height:1;transition:color .1s,background .1s}
+.mcls:hover{color:var(--text0);background:var(--bg3)}
+.mbdy{padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:13px}
+.mftr{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0}
+/* form */
+.frow{display:flex;align-items:flex-start;gap:12px}
+.flbl{width:108px;font-size:11px;color:var(--text2);padding-top:6px;flex-shrink:0;text-align:right}
+.fctl{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text0);font-size:12px;font-family:var(--font);padding:5px 9px;outline:none;transition:border-color .15s}
+.fctl:focus{border-color:var(--accent)}
+select.fctl{cursor:pointer}
+.btn-p{background:var(--accent);border:none;color:#fff;padding:6px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-family:var(--font);font-weight:500;transition:background .1s}
+.btn-p:hover{background:var(--accent2)}
+.btn-s{background:var(--bg3);border:1px solid var(--border2);color:var(--text1);padding:6px 16px;border-radius:5px;cursor:pointer;font-size:12px;font-family:var(--font);transition:background .1s,color .1s}
+.btn-s:hover{background:var(--bg4);color:var(--text0)}
+.btn-brw{background:var(--bg4);border:1px solid var(--border2);color:var(--text1);padding:5px 10px;border-radius:5px;cursor:pointer;font-size:11px;white-space:nowrap;transition:background .1s,color .1s}
+.btn-brw:hover{background:var(--bg3);color:var(--text0)}
+.chk{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text1);cursor:pointer;user-select:none}
+.chk input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+/* path row */
+.path-row{display:flex;gap:6px;align-items:center}
+.path-row .fctl{flex:1}
+.recent-paths{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.rp{font-size:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--text1);padding:2px 8px;border-radius:3px;cursor:pointer;font-family:var(--font);border:none;background:var(--bg3);transition:background .1s}
+.rp:hover{background:var(--bg4);color:var(--text0)}
+/* disk free */
+.dfreebar{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text2);margin-top:3px}
+.dfbar{width:60px;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.dffill{height:100%;background:var(--green);border-radius:2px}
+/* tag selector */
+.tagsel{display:flex;flex-wrap:wrap;gap:5px;padding:2px 0}
+.tagopt{padding:2px 10px;border-radius:12px;border:1px solid var(--border2);font-size:11px;color:var(--text1);cursor:pointer;transition:background .1s,border-color .1s;user-select:none}
+.tagopt:hover{border-color:var(--accent);color:var(--text0)}
+.tagopt.on{background:rgba(74,124,247,.15);border-color:var(--accent);color:var(--accent)}
+/* tracker badge */
+.trkbadge{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;font-size:11px;color:var(--text0)}
+.trkico{width:14px;height:14px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;color:#fff}
+/* file preview table */
+.fptbl{width:100%;border-collapse:collapse;font-size:11px}
+.fptbl th{color:var(--text2);font-weight:400;text-align:left;padding:3px 6px;border-bottom:1px solid var(--border)}
+.fptbl td{padding:4px 6px;border-bottom:1px solid rgba(37,40,64,.8);color:var(--text1);vertical-align:middle}
+.fptbl tr:hover td{background:var(--bg3)}
+.avbar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;width:72px}
+.avfill{height:100%;background:var(--green);border-radius:3px}
+.vbox{background:var(--bg0);border:1px solid var(--border2);border-radius:5px;padding:9px 12px;display:flex;align-items:center;gap:10px;font-size:11px}
+
+/* ── MULTI-TORRENT LIST (добавление нескольких) ── */
+.mt-item{border:1px solid var(--border2);border-radius:6px;overflow:hidden;margin-bottom:6px}
+.mt-hdr{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);cursor:pointer;transition:background .1s;user-select:none}
+.mt-hdr:hover{background:var(--bg4)}
+.mt-arrow{font-size:9px;color:var(--text2);transition:transform .15s;flex-shrink:0}
+.mt-item.open .mt-arrow{transform:rotate(90deg)}
+.mt-item.open .mt-body{display:block}
+.mt-body{display:none;padding:8px 10px;background:var(--bg0);border-top:1px solid var(--border)}
+.mt-name{flex:1;font-size:11px;color:var(--text0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt-size{font-size:10px;color:var(--text2);font-family:var(--mono);flex-shrink:0}
+.mt-tags{display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0}
+.mt-tagopt{padding:1px 7px;border-radius:10px;border:1px solid var(--border2);font-size:10px;color:var(--text2);cursor:pointer;transition:background .1s,border-color .1s;user-select:none}
+.mt-tagopt:hover{border-color:var(--accent);color:var(--text0)}
+.mt-tagopt.on{background:rgba(74,124,247,.15);border-color:var(--accent);color:var(--accent)}
+.bulk-tags-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:5px;margin-bottom:8px}
+.bulk-lbl{font-size:11px;color:var(--text2);white-space:nowrap}
+
+/* ── MAGNET FETCH STATE ── */
+.magnet-idle{display:none}
+.magnet-loading{display:none}
+.magnet-done{display:none}
+.magnet-idle.show,.magnet-loading.show,.magnet-done.show{display:block}
+.mag-spinner{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── QUIT DIALOG ── */
+.quit-icon{width:48px;height:48px;border-radius:50%;background:rgba(155,120,240,.1);border:1px solid rgba(155,120,240,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qspinner{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.qpbar{height:3px;background:var(--border2);border-radius:2px;overflow:hidden;margin-top:8px}
+.qpfill{height:100%;background:var(--accent);border-radius:2px;animation:qp 3s ease-out forwards}
+@keyframes qp{from{width:5%}to{width:76%}}
+
+/* ── SETTINGS MODAL TABS ── */
+.stabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:14px}
+.stab{padding:6px 14px;font-size:12px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:color .1s,border-color .1s;margin-bottom:-1px}
+.stab:hover{color:var(--text1)}
+.stab.act{color:var(--text0);border-bottom-color:var(--accent)}
+.stab-pane{display:none}
+.stab-pane.act{display:block}
+
+/* ── SETTINGS VERTICAL TABS ── */
+.vstab{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 14px;margin:0 6px;border-radius:5px;
+  font-size:12px;color:var(--text1);cursor:pointer;
+  transition:background .08s,color .08s;user-select:none;
+}
+.vstab svg{width:14px;height:14px;flex-shrink:0;opacity:.7}
+.vstab:hover{background:var(--bg3);color:var(--text0)}
+.vstab.act{background:var(--bg3);color:var(--text0)}
+.vstab.act svg{opacity:1}
+.vpane{display:none;flex-direction:column;gap:0}
+.vpane.act{display:flex}
+.sgroup{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;padding:4px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.srow{display:flex;align-items:center;gap:8px;padding:4px 0;min-height:30px}
+.slbl{font-size:12px;color:var(--text1);white-space:nowrap;min-width:200px;flex-shrink:0}
+.spin-btns{display:flex;gap:2px;flex-shrink:0}
+.spin-btns button{background:var(--bg3);border:1px solid var(--border2);color:var(--text1);width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .1s}
+.spin-btns button:hover{background:var(--bg4);color:var(--text0)}
+
+/* ── DAY BUTTONS ── */
+.day-btn{
+  padding:3px 9px;font-size:11px;font-family:var(--font);
+  background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text2);border-radius:4px;cursor:pointer;
+  transition:background .1s,color .1s,border-color .1s;
+}
+.day-btn:hover{background:var(--bg4);color:var(--text1)}
+.day-btn.on{background:rgba(74,124,247,.15);border-color:var(--accent);color:var(--accent)}
+
+/* ── CHIP CHECKBOXES ── */
+.chip-chk{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:4px;
+  border:1px solid var(--border2);background:var(--bg3);
+  font-size:11px;color:var(--text2);cursor:pointer;
+  transition:background .1s,color .1s,border-color .1s;
+  user-select:none;
+}
+.chip-chk:hover{border-color:var(--border2);color:var(--text1);background:var(--bg4)}
+.chip-chk input[type=checkbox]{accent-color:var(--accent);width:12px;height:12px;cursor:pointer;flex-shrink:0}
+.chip-chk:has(input:checked){background:rgba(74,124,247,.12);border-color:var(--accent);color:var(--text0)}
+.tb-btn.disabled{color:var(--text2)!important;cursor:default!important}
+.tb-btn.disabled:hover{background:none!important;border-color:transparent!important;color:var(--text2)!important}
+.tb-btn.disabled svg{opacity:.4}
+/* tooltip wrapper */
+.tb-tip-wrap{position:relative;display:inline-flex}
+.tb-tip-wrap .tb-tooltip{
+  position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);
+  background:var(--bg4);border:1px solid var(--border2);border-radius:5px;
+  padding:5px 10px;font-size:11px;color:var(--text1);white-space:nowrap;
+  pointer-events:none;opacity:0;transition:opacity .12s;z-index:200;
+}
+.tb-tip-wrap:hover .tb-tooltip{opacity:1}
+
+/* ── STORAGE ICONS (monochrome SVG) ── */
+.fi-sico{width:14px;height:14px;flex-shrink:0;color:var(--text2);display:flex;align-items:center;justify-content:center}
+.fi-sico svg{width:14px;height:14px}
+/* indent levels for storage */
+.fi.si-l1{padding-left:14px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══════════════════════ TOOLBAR ══════════════════════ -->
+<div id="toolbar">
+  <!-- Fixed left: main action buttons, always visible -->
+  <div id="tb-fixed">
+    <button class="tb-btn" onclick="openAdd()" title="Добавить торрент-файл">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2.5v11M2.5 8h11" stroke-linecap="round"/></svg>
+      Добавить
+    </button>
+    <button class="tb-btn" onclick="openM('modal-magnet')" title="Добавить по magnet-ссылке">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M5.5 10.5a3.5 3.5 0 004.95 0l2.12-2.12a3.5 3.5 0 00-4.95-4.95L6.5 4.56" stroke-linecap="round"/>
+        <path d="M10.5 5.5a3.5 3.5 0 00-4.95 0L3.43 7.62a3.5 3.5 0 004.95 4.95L9.5 11.44" stroke-linecap="round"/>
+      </svg>
+      magnet
+    </button>
+    <button class="tb-btn" onclick="alert('Диалог создания .torrent')" title="Создать раздачу">
+      Создать
+    </button>
+    <div class="tb-sep"></div>
+    <div class="tb-tip-wrap" id="rehash-wrap">
+      <button class="tb-btn warn disabled" id="btn-rehash" onclick="rehashErrors()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.5 8.5A4.5 4.5 0 108 3.5" stroke-linecap="round"/><path d="M3.5 4.5v4h4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Рехэш ошибок
+      </button>
+      <div class="tb-tooltip" id="rehash-tip">Нет зафиксированных ошибок</div>
+    </div>
+  </div>
+
+  <!-- Draggable extras (user-configured) -->
+  <div id="tb-extras"></div>
+
+  <div class="tb-sp"></div>
+  <div id="tb-search-wrap">
+    <div class="tb-search">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l2.5 2.5" stroke-linecap="round"/></svg>
+      <input type="text" id="srch" placeholder="Поиск раздач…" oninput="doSearch(this.value)">
+    </div>
+  </div>
+  <div class="tb-sp"></div>
+
+  <!-- Right: settings -->
+  <div id="tb-right">
+    <button class="tb-ico" onclick="openM('modal-settings')" title="Настройки приложения">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+        <path d="M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/>
+        <path d="M8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.4 3.4l.85.85M11.75 11.75l.85.85M3.4 12.6l.85-.85M11.75 4.25l.85-.85" stroke-linecap="round"/>
+        <path d="M6.3 2.1L5.5 3.5M10.5 12.5l-.8 1.4M2.1 9.7L3.5 10.5M12.5 5.5l1.4.8M2.1 6.3L3.5 5.5M12.5 10.5l1.4-.8M6.3 13.9l-.8-1.4M10.5 3.5l-.8-1.4" stroke-linecap="round" stroke-width="1.2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════ LEFT PANEL ══════════════════════ -->
+<div id="lpanel">
+
+  <div class="section" id="s-state">
+    <div class="sec-hdr" onclick="toggleSec('s-state')">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5" stroke-linecap="round"/></svg>
+      Состояние<span class="sec-arrow">▾</span>
+    </div>
+    <div class="sec-body">
+      <div class="fi act" onclick="setFlt('all',this)"><div class="dot" style="background:var(--text2)"></div><span class="fi-lbl">Все</span><span class="fi-cnt">4 651</span></div>
+      <div class="fi" onclick="setFlt('dl',this)"><div class="dot" style="background:var(--accent)"></div><span class="fi-lbl">Загружаются</span><span class="fi-cnt">12</span></div>
+      <div class="fi" onclick="setFlt('seed',this)"><div class="dot" style="background:var(--green)"></div><span class="fi-lbl">Раздаются</span><span class="fi-cnt">3 892</span></div>
+      <div class="fi" onclick="setFlt('done',this)"><div class="dot" style="background:var(--cyan)"></div><span class="fi-lbl">Завершены</span><span class="fi-cnt">642</span></div>
+      <div class="fi" onclick="setFlt('stopped',this)"><div class="dot" style="background:var(--text2)"></div><span class="fi-lbl">Остановлены</span><span class="fi-cnt">87</span></div>
+      <div class="fi" onclick="setFlt('active',this)"><div class="dot" style="background:var(--amber)"></div><span class="fi-lbl">Активные</span><span class="fi-cnt">127</span></div>
+      <div class="fi" onclick="setFlt('inactive',this)"><div class="dot" style="background:var(--text2);opacity:.4"></div><span class="fi-lbl">Неактивные</span><span class="fi-cnt">4 524</span></div>
+      <div class="fi" onclick="setFlt('checking',this)"><div class="dot" style="background:var(--purple)"></div><span class="fi-lbl">Проверяются</span><span class="fi-cnt">3</span></div>
+      <div class="fi" onclick="setFlt('qdl',this)"><div class="dot" style="background:var(--accent);opacity:.4"></div><span class="fi-lbl">Очередь загрузки</span><span class="fi-cnt">5</span></div>
+      <div class="fi" onclick="setFlt('qseed',this)"><div class="dot" style="background:var(--green);opacity:.4"></div><span class="fi-lbl">Очередь раздачи</span><span class="fi-cnt">18</span></div>
+      <div class="fi" onclick="setFlt('err',this)"><div class="dot" style="background:var(--red)"></div><span class="fi-lbl">Ошибка</span><span class="fi-cnt">3</span></div>
+      <div class="fi" onclick="setFlt('missing',this)"><div class="dot" style="background:var(--red);opacity:.5"></div><span class="fi-lbl">Нет данных</span><span class="fi-cnt">1</span></div>
+      <div class="fi" onclick="setFlt('trerr',this)" style="color:var(--amber)"><div class="dot" style="background:var(--amber)"></div><span class="fi-lbl">⚠ Ошибка трекера</span><span class="fi-cnt">4</span></div>
+    </div>
+  </div>
+
+  <!-- ДИСКИ: /dev/sdX отдельно, метка отдельно, монтирование вложено. Только SVG-иконки, без эмодзи -->
+  <div class="section" id="s-disks">
+    <div class="sec-hdr" onclick="toggleSec('s-disks')">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="5" rx="5.5" ry="2.5"/><path d="M2.5 5v6c0 1.38 2.46 2.5 5.5 2.5s5.5-1.12 5.5-2.5V5"/></svg>
+      Диски / Хранилище<span class="sec-arrow">▾</span>
+    </div>
+    <div class="sec-body">
+
+      <!-- Диски -->
+      <div class="fi si-l1" onclick="setFlt('media',this)">
+        <div class="fi-sico"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 13V5l5-3 7 3v8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 13V9h4v4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="fi-lbl">/Media</span><span class="fi-sub" style="visibility:hidden">—</span>
+        <span class="fi-cnt">2 341</span>
+      </div>
+      <div class="fi si-l1" onclick="setFlt('hdd',this)">
+        <div class="fi-sico"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="4" width="12" height="8" rx="1.5"/><path d="M5 8h.5M7 8h3" stroke-linecap="round" opacity=".6"/><circle cx="11.5" cy="8" r="1" fill="currentColor" stroke="none"/></svg></div>
+        <span class="fi-lbl">TOSHIBA DT01ACA</span><span class="fi-sub" style="visibility:hidden">—</span>
+        <span class="fi-cnt">2 341</span>
+      </div>
+
+      <!-- RAID -->
+      <div class="fi si-l1" onclick="setFlt('md0',this)">
+        <div class="fi-sico"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2.5" width="5" height="4.5" rx="1"/><rect x="9" y="2.5" width="5" height="4.5" rx="1"/><rect x="2" y="9" width="5" height="4.5" rx="1"/><rect x="9" y="9" width="5" height="4.5" rx="1"/><path d="M4.5 7v2M11.5 7v2" stroke-linecap="round" opacity=".5"/></svg></div>
+        <span class="fi-lbl">md0 — RAID-1</span><span class="fi-sub" style="visibility:hidden">—</span>
+        <span class="fi-cnt">418</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s-trackers">
+    <div class="sec-hdr" onclick="toggleSec('s-trackers')">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2.5 8h11M8 2c-2 2-3 4-3 6s1 4 3 6M8 2c2 2 3 4 3 6s-1 4-3 6" stroke-linecap="round"/></svg>
+      Трекеры<span class="sec-arrow">▾</span>
+    </div>
+    <div class="sec-body">
+      <div class="fi" onclick="setFlt('tr-all',this)"><div class="dot" style="background:var(--text2)"></div><span class="fi-lbl">Все</span><span class="fi-cnt">4 573</span></div>
+      <div class="fi" onclick="setFlt('no-trk',this)"><div class="dot" style="background:var(--text2);opacity:.4"></div><span class="fi-lbl">Без трекера</span><span class="fi-cnt">78</span></div>
+      <div class="fi" onclick="setFlt('tr1',this)"><div class="dot" style="background:var(--text1);opacity:.7"></div><span class="fi-lbl">rutracker.org</span><span class="fi-cnt">1 204</span></div>
+      <div class="fi" onclick="setFlt('tr2',this)"><div class="dot" style="background:var(--text1);opacity:.7"></div><span class="fi-lbl">kinozal.tv</span><span class="fi-cnt">873</span></div>
+      <div class="fi" onclick="setFlt('tr3',this)"><div class="dot" style="background:var(--text1);opacity:.7"></div><span class="fi-lbl">nnmclub.to</span><span class="fi-cnt">614</span></div>
+    </div>
+  </div>
+
+  <!-- ВЕБ-ТОРРЕНТЫ: без трекера, через WebRTC/HTTP -->
+  <div class="section" id="s-web">
+    <div class="sec-hdr" onclick="toggleSec('s-web')">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a6 6 0 100 12A6 6 0 008 2z"/><path d="M2 8h12M5.5 4.5C4.5 5.5 4 6.7 4 8s.5 2.5 1.5 3.5M10.5 4.5c1 1 1.5 2.2 1.5 3.5s-.5 2.5-1.5 3.5" stroke-linecap="round"/><path d="M8 2v12" stroke-linecap="round"/></svg>
+      Веб-торренты<span class="sec-arrow">▾</span>
+    </div>
+    <div class="sec-body">
+      <div class="fi" onclick="setFlt('web-all',this)"><div class="dot" style="background:var(--text2)"></div><span class="fi-lbl">Все</span><span class="fi-cnt">78</span></div>
+      <div class="fi" onclick="setFlt('web-dht',this)"><div class="dot" style="background:var(--text2);opacity:.5"></div><span class="fi-lbl">Только DHT</span><span class="fi-cnt">54</span></div>
+      <div class="fi" onclick="setFlt('web-http',this)"><div class="dot" style="background:var(--text2);opacity:.5"></div><span class="fi-lbl">HTTP Seeds</span><span class="fi-cnt">24</span></div>
+    </div>
+  </div>
+
+  <div class="section" id="s-tags">
+    <div class="sec-hdr" onclick="toggleSec('s-tags')">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8.5L7.5 3H13v5.5L7.5 14 2 8.5z" stroke-linejoin="round"/><circle cx="11" cy="5.5" r="1" fill="currentColor" stroke="none"/></svg>
+      Теги<span class="sec-arrow">▾</span>
+    </div>
+    <div class="sec-body">
+      <div class="fi" onclick="setFlt('tag-all',this)"><div class="dot" style="background:var(--text2)"></div><span class="fi-lbl">Все</span><span class="fi-cnt">4 651</span></div>
+      <div class="fi" onclick="setFlt('tag-none',this)"><div class="dot" style="background:var(--text2);opacity:.4"></div><span class="fi-lbl">Без тега</span><span class="fi-cnt">3 120</span></div>
+      <div class="fi" onclick="setFlt('tag-films',this)"><div class="dot" style="background:var(--purple)"></div><span class="fi-lbl">фильмы</span><span class="fi-cnt">892</span></div>
+      <div class="fi" onclick="setFlt('tag-series',this)"><div class="dot" style="background:var(--cyan)"></div><span class="fi-lbl">сериалы</span><span class="fi-cnt">437</span></div>
+      <div class="fi" onclick="setFlt('tag-music',this)"><div class="dot" style="background:var(--amber)"></div><span class="fi-lbl">музыка</span><span class="fi-cnt">202</span></div>
+      <div class="add-tag-fi"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>добавить тег</div>
+    </div>
+  </div>
+
+  <div class="section" id="s-mine">
+    <div class="sec-hdr" onclick="toggleSec('s-mine')">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M6 6h4M6 9h3" stroke-linecap="round"/></svg>
+      Созданные мной<span class="sec-arrow">▾</span>
+    </div>
+    <div class="sec-body">
+      <div class="fi" onclick="setFlt('own',this)"><div class="dot" style="background:var(--text2)"></div><span class="fi-lbl">Все</span><span class="fi-cnt">7</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="vsplit"></div>
+
+<!-- ══════════════════════ MAIN ══════════════════════ -->
+<div id="main">
+  <!-- Column headers -->
+  <div id="colhdrs">
+    <div class="ch" style="width:32px;padding:0 8px;justify-content:center;flex-shrink:0">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+    </div>
+    <div class="ch sorted" id="ch-name" onclick="sortBy('name',this)" style="flex:1;min-width:100px">
+      Имя <span class="ch-sa">▲</span><div class="rzh" onmousedown="startRz(event,'ch-name')"></div>
+    </div>
+    <div class="ch" id="ch-tags" style="width:110px">
+      Теги<div class="rzh" onmousedown="startRz(event,'ch-tags')"></div>
+    </div>
+    <div class="ch" id="ch-size" onclick="sortBy('size',this)" style="width:78px">Размер<div class="rzh" onmousedown="startRz(event,'ch-size')"></div></div>
+    <div class="ch" id="ch-pct" onclick="sortBy('pct',this)" style="width:50px">%<div class="rzh" onmousedown="startRz(event,'ch-pct')"></div></div>
+    <div class="ch" id="ch-status" onclick="sortBy('status',this)" style="width:116px">Статус<div class="rzh" onmousedown="startRz(event,'ch-status')"></div></div>
+    <div class="ch" id="ch-dl" onclick="sortBy('dl',this)" style="width:80px">↓ Скор.<div class="rzh" onmousedown="startRz(event,'ch-dl')"></div></div>
+    <div class="ch" id="ch-ul" onclick="sortBy('ul',this)" style="width:80px">↑ Скор.<div class="rzh" onmousedown="startRz(event,'ch-ul')"></div></div>
+    <div class="ch" id="ch-eta" onclick="sortBy('eta',this)" style="width:70px">ETA<div class="rzh" onmousedown="startRz(event,'ch-eta')"></div></div>
+    <div class="ch" style="width:22px;padding:0 4px;justify-content:center;cursor:default" oncontextmenu="showColCtx(event)" title="ПКМ — настройка колонок">
+      <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3.5" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="12.5" r="1.5"/></svg>
+    </div>
+  </div>
+
+  <div id="tlist"></div>
+  <div id="hsplit"></div>
+
+  <div id="dpanel">
+    <div class="dtabs">
+      <div class="dtab act" onclick="switchDTab('gen',this)">Общее</div>
+      <div class="dtab" onclick="switchDTab('files',this)">Файлы</div>
+      <div class="dtab" onclick="switchDTab('peers',this)">Пиры</div>
+      <div class="dtab" onclick="switchDTab('trackers',this)">Трекеры</div>
+      <div class="dtab" onclick="switchDTab('blocks',this)">Блоки</div>
+      <div class="dtab" onclick="switchDTab('speed',this)">Скорость</div>
+    </div>
+    <div class="dcon" id="dcon">
+      <div id="d-nosel" style="color:var(--text2);font-size:12px;padding:16px 0">Выберите раздачу для просмотра деталей</div>
+      <div id="d-gen" style="display:none"><div class="dgrid" id="d-grid"></div></div>
+      <div id="d-files" style="display:none"><div id="d-flist"></div></div>
+      <div id="d-peers" style="display:none"><table style="width:100%;font-size:11px;border-collapse:collapse"><thead><tr style="color:var(--text2)"><td style="padding:2px 6px">IP</td><td style="padding:2px 6px">Клиент</td><td style="padding:2px 6px;color:var(--accent)">↓</td><td style="padding:2px 6px;color:var(--green)">↑</td><td style="padding:2px 6px">Прогресс</td></tr></thead><tbody id="d-pbody"></tbody></table></div>
+      <div id="d-trackers" style="display:none"><div id="d-tlist" style="font-size:11px"></div></div>
+      <div id="d-blocks" style="display:none"><div style="font-size:11px;color:var(--text2);margin-bottom:8px">Блоки: <span id="d-binfo" style="color:var(--text0)"></span></div><div class="pieces-g" id="d-pgrid"></div></div>
+      <div id="d-speed" style="display:none;font-size:11px;color:var(--text2)">График скорости — следующий этап</div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div id="sbar">
+  <div class="sbi"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M3.5 8c0-1.5.6-2.8 1.5-3.8M12.5 8c0 1.5-.6 2.8-1.5 3.8" stroke-linecap="round"/></svg><span>Соед:</span><span class="sbv">184</span></div>
+  <div class="sbi sb-dl"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v8M4.5 7.5L8 11l3.5-3.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sbv">3.4 МБ/с</span></div>
+  <div class="sbi sb-ul"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 13V5M4.5 8.5L8 5l3.5 3.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sbv">1.2 МБ/с</span></div>
+  <div class="sbi"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 11l3.5-4L8 9.5l2.5-3L14 11"/></svg><span>Трафик:</span><span class="sbv">2.14 ТБ</span></div>
+  <div class="sbi"><span>DHT:</span><span class="sbv">117</span></div>
+  <div class="sbsp"></div>
+  <div class="sbratio"><span style="color:var(--text2)">Ratio:</span><span class="sbv">12.47</span><span style="font-size:9px;opacity:.5">▾</span></div>
+</div>
+</div><!-- #app -->
+
+<!-- ══ TORRENT CTX MENU ══ -->
+<div class="ctxm" id="ctx-t">
+  <div class="cxi"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.5l8 4.5-8 4.5V3.5z"/></svg>Запустить</div>
+  <div class="cxi"><svg viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="3" width="3" height="10" rx="1"/><rect x="9" y="3" width="3" height="10" rx="1"/></svg>Остановить</div>
+  <div class="cxi"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.5 8.5A4.5 4.5 0 108 3.5" stroke-linecap="round"/><path d="M3.5 4.5v4h4" stroke-linecap="round" stroke-linejoin="round"/></svg>Перепроверить</div>
+  <div class="cxs"></div>
+  <div class="cxi"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12.5h12M4 9.5l4 3 4-3M8 2v9" stroke-linecap="round"/></svg>Открыть папку</div>
+  <div class="cxi"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4H4a2 2 0 000 4h3M10 12h2a2 2 0 000-4H9M6 8h4" stroke-linecap="round"/></svg>Скопировать magnet</div>
+  <div class="cxs"></div>
+  <div class="cxi"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v6M8 3l-3 3M8 3l3 3M3 13h10" stroke-linecap="round" stroke-linejoin="round"/></svg>Вверх в очереди</div>
+  <div class="cxi"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 13V7M8 13l-3-3M8 13l3-3M3 3h10" stroke-linecap="round" stroke-linejoin="round"/></svg>Вниз в очереди</div>
+  <div class="cxs"></div>
+  <div class="cxi"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8.5L7.5 3H13v5.5L7.5 14 2 8.5z" stroke-linejoin="round"/><circle cx="11" cy="5.5" r="1" fill="currentColor" stroke="none"/></svg>Теги…</div>
+  <div class="cxs"></div>
+  <div class="cxi danger"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5h8M6 5V3.5h4V5M5 5l.7 7.5h4.6L11 5" stroke-linecap="round" stroke-linejoin="round"/></svg>Удалить (оставить файлы)</div>
+  <div class="cxi danger"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5h8M6 5V3.5h4V5M5 5l.7 7.5h4.6L11 5M7 7.5v3M9 7.5v3" stroke-linecap="round" stroke-linejoin="round"/></svg>Удалить с файлами</div>
+  <div class="cxs"></div>
+  <div class="cxi"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.22 3.22l1.42 1.42M11.36 11.36l1.42 1.42M3.22 12.78l1.42-1.42M11.36 4.64l1.42-1.42" stroke-linecap="round"/></svg>Свойства…</div>
+</div>
+
+<!-- ══ COL CTX ══ -->
+<div class="ctxm" id="ctx-col" style="min-width:190px">
+  <div class="cxhdr">Видимость колонок</div>
+  <div class="cxs"></div>
+  <div id="ctx-col-items"></div>
+</div>
+
+<!-- ════════════════ ADD TORRENT (single) ════════════════ -->
+<div class="ovl hid" id="modal-add-single">
+  <div class="modal" style="width:660px">
+    <div class="mhdr">
+      <span class="mttl">Добавить торрент</span>
+      <button class="mcls" onclick="closeM('modal-add-single')">✕</button>
+    </div>
+    <div class="mbdy">
+      <!-- File info + tracker -->
+      <div class="frow">
+        <span class="flbl">Торрент-файл</span>
+        <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.5" style="flex-shrink:0"><rect x="3" y="1" width="10" height="14" rx="1.5"/><path d="M6 5h4M6 8h4M6 11h2" stroke-linecap="round"/></svg>
+            <span style="font-size:11px;color:var(--text0);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Вкус плоти Сырое Grave Raw (2016) [BDRemux 1080p] [rutracker].torrent</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="trkbadge">
+              <div class="trkico" style="background:#c0392b">R</div>
+              rutracker.org
+              <span style="color:var(--green);font-size:10px">● онлайн</span>
+            </div>
+            <span style="font-size:10px;color:var(--text2)">favicon кешируется</span>
+          </div>
+        </div>
+      </div>
+      <!-- Папка -->
+      <div class="frow">
+        <span class="flbl">Папка</span>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <div class="path-row">
+            <input class="fctl" id="s-path" value="/Media/Films" style="flex:1">
+            <button class="btn-brw">📁 Обзор…</button>
+          </div>
+          <div class="recent-paths">
+            <span style="font-size:10px;color:var(--text2);align-self:center">Недавние:</span>
+            <button class="rp" onclick="document.getElementById('s-path').value=this.textContent">/Media/Films</button>
+            <button class="rp" onclick="document.getElementById('s-path').value=this.textContent">/Media/Series</button>
+            <button class="rp" onclick="document.getElementById('s-path').value=this.textContent">/Downloads</button>
+          </div>
+          <div class="dfreebar">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="5" rx="5.5" ry="2.5"/><path d="M2.5 5v6c0 1.38 2.46 2.5 5.5 2.5s5.5-1.12 5.5-2.5V5"/></svg>
+            /dev/sda — <b style="color:var(--text1)">1.76 ТБ свободно</b>
+            <div class="dfbar"><div class="dffill" style="width:28%"></div></div>28% занято
+          </div>
+        </div>
+      </div>
+      <!-- Теги -->
+      <div class="frow">
+        <span class="flbl">Теги</span>
+        <div class="tagsel">
+          <span class="tagopt on" onclick="this.classList.toggle('on')">фильмы</span>
+          <span class="tagopt" onclick="this.classList.toggle('on')">сериалы</span>
+          <span class="tagopt" onclick="this.classList.toggle('on')">музыка</span>
+          <span class="tagopt" style="border-style:dashed" onclick="this.classList.toggle('on')">+ новый тег</span>
+        </div>
+      </div>
+      <!-- Приоритет -->
+      <div class="frow">
+        <span class="flbl">Приоритет</span>
+        <select class="fctl"><option>Обычный</option><option>Высокий</option><option>Низкий</option></select>
+      </div>
+      <!-- Файлы -->
+      <div class="frow" style="align-items:flex-start">
+        <span class="flbl" style="padding-top:4px">Файлы</span>
+        <div style="flex:1;background:var(--bg0);border:1px solid var(--border2);border-radius:5px;overflow:hidden">
+          <table class="fptbl">
+            <thead><tr><th style="width:40%">Имя</th><th>Размер</th><th>В наличии</th><th>Скачать</th><th>Приоритет</th></tr></thead>
+            <tbody>
+              <tr><td>🎬 Raw.2016.bdremux.mkv</td><td style="font-family:var(--mono)">25.99 ГБ</td><td><div style="display:flex;align-items:center;gap:5px"><div class="avbar"><div class="avfill" style="width:0%"></div></div><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">0%</span></div></td><td><input type="checkbox" checked style="accent-color:var(--accent)"></td><td><select style="background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:10px;border-radius:3px;padding:1px 4px"><option>Обычный</option><option>Высокий</option><option>Не качать</option></select></td></tr>
+              <tr><td>📄 Raw.2016.nfo</td><td style="font-family:var(--mono)">3.2 КБ</td><td><div style="display:flex;align-items:center;gap:5px"><div class="avbar"><div class="avfill" style="width:0%"></div></div><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">0%</span></div></td><td><input type="checkbox" checked style="accent-color:var(--accent)"></td><td><select style="background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:10px;border-radius:3px;padding:1px 4px"><option>Обычный</option><option>Высокий</option><option>Не качать</option></select></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Опции -->
+      <div class="frow"><span class="flbl"></span>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label class="chk"><input type="checkbox" checked> Запустить после добавления</label>
+          <label class="chk"><input type="checkbox" checked> Удалить .torrent файл</label>
+          <label class="chk"><input type="checkbox"> Sequential download <span style="font-size:10px;color:var(--text2);margin-left:4px">(Transmission 4.1+)</span></label>
+        </div>
+      </div>
+      <!-- Статус: новая или уже есть -->
+      <div class="vbox">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--amber)" stroke-width="1.5" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v4M8 11v.5" stroke-linecap="round"/></svg>
+        <div><span style="color:var(--text0)">Новая раздача</span><span style="color:var(--text2);margin-left:6px">— файлы по пути не найдены, загрузка начнётся с 0%</span></div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn-s" onclick="closeM('modal-add-single')">Отмена</button>
+      <button class="btn-p">Открыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ ADD TORRENT (multi) ════════════════ -->
+<div class="ovl hid" id="modal-add-multi">
+  <div class="modal" style="width:680px">
+    <div class="mhdr">
+      <span class="mttl">Добавить торренты <span style="color:var(--text2);font-weight:400;font-size:11px">(3 файла)</span></span>
+      <button class="mcls" onclick="closeM('modal-add-multi')">✕</button>
+    </div>
+    <div class="mbdy">
+      <!-- Общая папка для всех -->
+      <div class="frow">
+        <span class="flbl">Папка для всех</span>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <div class="path-row">
+            <input class="fctl" id="m-path" value="/Media/Films" style="flex:1">
+            <button class="btn-brw">📁 Обзор…</button>
+          </div>
+          <div class="recent-paths">
+            <span style="font-size:10px;color:var(--text2);align-self:center">Недавние:</span>
+            <button class="rp" onclick="document.getElementById('m-path').value=this.textContent">/Media/Films</button>
+            <button class="rp" onclick="document.getElementById('m-path').value=this.textContent">/Media/Series</button>
+            <button class="rp" onclick="document.getElementById('m-path').value=this.textContent">/Downloads</button>
+          </div>
+          <div class="dfreebar">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="5" rx="5.5" ry="2.5"/><path d="M2.5 5v6c0 1.38 2.46 2.5 5.5 2.5s5.5-1.12 5.5-2.5V5"/></svg>
+            /dev/sda — <b style="color:var(--text1)">1.76 ТБ свободно</b>
+            <div class="dfbar"><div class="dffill" style="width:28%"></div></div>28% занято
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulk теги на все сразу -->
+      <div class="bulk-tags-row">
+        <span class="bulk-lbl">Тег на все:</span>
+        <span class="tagopt on" onclick="this.classList.toggle('on');setBulkTag(this)">фильмы</span>
+        <span class="tagopt" onclick="this.classList.toggle('on');setBulkTag(this)">сериалы</span>
+        <span class="tagopt" onclick="this.classList.toggle('on');setBulkTag(this)">музыка</span>
+        <span class="tagopt" style="border-style:dashed">+ новый тег</span>
+      </div>
+
+      <!-- Список торрентов -->
+      <div id="mt-list">
+        <!-- item 1 -->
+        <div class="mt-item open" id="mti-1">
+          <div class="mt-hdr" onclick="toggleMtItem('mti-1')">
+            <span class="mt-arrow">▶</span>
+            <span style="font-size:13px;flex-shrink:0">💿</span>
+            <span class="mt-name">Dune.Part.Two.2024.2160p.UHD.BluRay.Atmos.x265.torrent</span>
+            <span class="mt-size">58.4 ГБ</span>
+            <div class="mt-tags" onclick="event.stopPropagation()">
+              <span class="mt-tagopt on" onclick="this.classList.toggle('on')">фильмы</span>
+              <span class="mt-tagopt" onclick="this.classList.toggle('on')">сериалы</span>
+            </div>
+          </div>
+          <div class="mt-body">
+            <table class="fptbl">
+              <thead><tr><th style="width:50%">Имя</th><th>Размер</th><th>В наличии</th><th>Скачать</th><th>Приоритет</th></tr></thead>
+              <tbody>
+                <tr><td>🎬 Dune.Part.Two.2024.mkv</td><td style="font-family:var(--mono)">58.1 ГБ</td><td><div style="display:flex;align-items:center;gap:5px"><div class="avbar"><div class="avfill" style="width:0%"></div></div><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">0%</span></div></td><td><input type="checkbox" checked style="accent-color:var(--accent)"></td><td><select style="background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:10px;border-radius:3px;padding:1px 4px"><option>Обычный</option><option>Высокий</option><option>Не качать</option></select></td></tr>
+                <tr><td>📄 Dune.Part.Two.2024.nfo</td><td style="font-family:var(--mono)">2.1 КБ</td><td><div style="display:flex;align-items:center;gap:5px"><div class="avbar"><div class="avfill" style="width:0%"></div></div><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">0%</span></div></td><td><input type="checkbox" checked style="accent-color:var(--accent)"></td><td><select style="background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:10px;border-radius:3px;padding:1px 4px"><option>Обычный</option><option>Высокий</option><option>Не качать</option></select></td></tr>
+              </tbody>
+            </table>
+            <div class="vbox" style="margin-top:8px">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--amber)" stroke-width="1.5" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v4M8 11v.5" stroke-linecap="round"/></svg>
+              <span style="font-size:10px;color:var(--text2)">Новая раздача — файлы не найдены по пути</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- item 2 -->
+        <div class="mt-item" id="mti-2">
+          <div class="mt-hdr" onclick="toggleMtItem('mti-2')">
+            <span class="mt-arrow">▶</span>
+            <span style="font-size:13px;flex-shrink:0">📁</span>
+            <span class="mt-name">The.Bear.S03.2024.1080p.WEB-DL.H264.torrent</span>
+            <span class="mt-size">22.1 ГБ</span>
+            <div class="mt-tags" onclick="event.stopPropagation()">
+              <span class="mt-tagopt" onclick="this.classList.toggle('on')">фильмы</span>
+              <span class="mt-tagopt on" onclick="this.classList.toggle('on')">сериалы</span>
+            </div>
+          </div>
+          <div class="mt-body">
+            <table class="fptbl">
+              <thead><tr><th style="width:50%">Имя</th><th>Размер</th><th>В наличии</th><th>Скачать</th><th>Приоритет</th></tr></thead>
+              <tbody>
+                <tr><td>📁 The.Bear.S03.E01.mkv</td><td style="font-family:var(--mono)">3.7 ГБ</td><td><div style="display:flex;align-items:center;gap:5px"><div class="avbar"><div class="avfill" style="width:0%"></div></div><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">0%</span></div></td><td><input type="checkbox" checked style="accent-color:var(--accent)"></td><td><select style="background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:10px;border-radius:3px;padding:1px 4px"><option>Обычный</option></select></td></tr>
+                <tr><td>📁 The.Bear.S03.E02.mkv</td><td style="font-family:var(--mono)">3.5 ГБ</td><td><div style="display:flex;align-items:center;gap:5px"><div class="avbar"><div class="avfill" style="width:0%"></div></div><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">0%</span></div></td><td><input type="checkbox" checked style="accent-color:var(--accent)"></td><td><select style="background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:10px;border-radius:3px;padding:1px 4px"><option>Обычный</option></select></td></tr>
+                <tr><td style="color:var(--text2)">… ещё 4 файла</td><td></td><td></td><td></td><td></td></tr>
+              </tbody>
+            </table>
+            <div class="vbox" style="margin-top:8px">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="1.5" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M5 8l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span style="font-size:10px;color:var(--text2)">Файлы найдены по пути — будет проверка (22.1 ГБ)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- item 3 -->
+        <div class="mt-item" id="mti-3">
+          <div class="mt-hdr" onclick="toggleMtItem('mti-3')">
+            <span class="mt-arrow">▶</span>
+            <span style="font-size:13px;flex-shrink:0">💿</span>
+            <span class="mt-name">Arch.Linux.2024.11.01.x86_64.iso.torrent</span>
+            <span class="mt-size">1.1 ГБ</span>
+            <div class="mt-tags" onclick="event.stopPropagation()">
+              <span class="mt-tagopt" onclick="this.classList.toggle('on')">фильмы</span>
+              <span class="mt-tagopt" onclick="this.classList.toggle('on')">сериалы</span>
+              <span class="mt-tagopt" onclick="this.classList.toggle('on')">музыка</span>
+            </div>
+          </div>
+          <div class="mt-body">
+            <table class="fptbl">
+              <thead><tr><th>Имя</th><th>Размер</th><th>В наличии</th><th>Скачать</th><th>Приоритет</th></tr></thead>
+              <tbody>
+                <tr><td>💿 archlinux-2024.11.01-x86_64.iso</td><td style="font-family:var(--mono)">1.1 ГБ</td><td><div style="display:flex;align-items:center;gap:5px"><div class="avbar"><div class="avfill" style="width:100%;background:var(--green)"></div></div><span style="font-family:var(--mono);font-size:10px;color:var(--green)">100%</span></div></td><td><input type="checkbox" checked style="accent-color:var(--accent)"></td><td><select style="background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:10px;border-radius:3px;padding:1px 4px"><option>Обычный</option></select></td></tr>
+              </tbody>
+            </table>
+            <div class="vbox" style="margin-top:8px">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="1.5" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M5 8l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span style="font-size:10px;color:var(--text2)">Файлы найдены полностью — раздача добавится как 100%, начнёт раздачу</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Общие опции -->
+      <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px;border-top:1px solid var(--border)">
+        <label class="chk"><input type="checkbox" checked> Запустить после добавления</label>
+        <label class="chk"><input type="checkbox" checked> Удалить .torrent файлы</label>
+        <label class="chk"><input type="checkbox"> Sequential download</label>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn-s" onclick="closeM('modal-add-multi')">Отмена</button>
+      <button class="btn-p">Добавить все (3)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ MAGNET ════════════════ -->
+<div class="ovl hid" id="modal-magnet">
+  <div class="modal" style="width:660px">
+    <div class="mhdr">
+      <span class="mttl">Добавить по magnet-ссылке</span>
+      <button class="mcls" onclick="closeM('modal-magnet')">✕</button>
+    </div>
+    <div class="mbdy">
+      <!-- Ввод ссылки -->
+      <div class="frow">
+        <span class="flbl">Magnet URI</span>
+        <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+          <textarea class="fctl" id="mag-uri" rows="2" placeholder="magnet:?xt=urn:btih:…" style="resize:none;font-family:var(--mono);font-size:11px" oninput="onMagnetInput(this.value)"></textarea>
+          <!-- Состояние: idle -->
+          <div class="magnet-idle show" id="mag-idle">
+            <span style="font-size:10px;color:var(--text2)">Вставьте ссылку — домен и список файлов определятся автоматически</span>
+          </div>
+          <!-- Состояние: загрузка -->
+          <div class="magnet-loading" id="mag-loading">
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text1)">
+              <span class="mag-spinner"></span>
+              Получение метаданных от трекера…
+            </div>
+          </div>
+          <!-- Состояние: загружено — трекер -->
+          <div class="magnet-done" id="mag-done">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="trkbadge">
+                <div class="trkico" style="background:#1565c0">K</div>
+                kinozal.tv
+                <span style="color:var(--green);font-size:10px">● онлайн</span>
+              </div>
+              <span style="font-size:11px;color:var(--text0)">The.Bear.S03.2024.1080p.WEB-DL.H264</span>
+              <span style="font-size:10px;color:var(--text2);font-family:var(--mono)">22.1 ГБ</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Папка (те же поля что у торрент-файла) -->
+      <div class="frow">
+        <span class="flbl">Папка</span>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <div class="path-row">
+            <input class="fctl" id="mag-path" value="/Media/Series" style="flex:1">
+            <button class="btn-brw">📁 Обзор…</button>
+          </div>
+          <div class="recent-paths">
+            <span style="font-size:10px;color:var(--text2);align-self:center">Недавние:</span>
+            <button class="rp" onclick="document.getElementById('mag-path').value=this.textContent">/Media/Films</button>
+            <button class="rp" onclick="document.getElementById('mag-path').value=this.textContent">/Media/Series</button>
+            <button class="rp" onclick="document.getElementById('mag-path').value=this.textContent">/Downloads</button>
+          </div>
+          <div class="dfreebar">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="5" rx="5.5" ry="2.5"/><path d="M2.5 5v6c0 1.38 2.46 2.5 5.5 2.5s5.5-1.12 5.5-2.5V5"/></svg>
+            /dev/sda — <b style="color:var(--text1)">1.76 ТБ свободно</b>
+            <div class="dfbar"><div class="dffill" style="width:28%"></div></div>28% занято
+          </div>
+        </div>
+      </div>
+
+      <!-- Теги -->
+      <div class="frow">
+        <span class="flbl">Теги</span>
+        <div class="tagsel">
+          <span class="tagopt" onclick="this.classList.toggle('on')">фильмы</span>
+          <span class="tagopt on" onclick="this.classList.toggle('on')">сериалы</span>
+          <span class="tagopt" onclick="this.classList.toggle('on')">музыка</span>
+          <span class="tagopt" style="border-style:dashed">+ новый тег</span>
+        </div>
+      </div>
+
+      <!-- Список файлов (появляется после загрузки метаданных) -->
+      <div id="mag-files-wrap" style="display:none">
+        <div class="frow" style="align-items:flex-start">
+          <span class="flbl" style="padding-top:4px">Файлы</span>
+          <div style="flex:1;background:var(--bg0);border:1px solid var(--border2);border-radius:5px;overflow:hidden">
+            <table class="fptbl">
+              <thead><tr><th style="width:44%">Имя</th><th>Размер</th><th>Скачать</th><th>Приоритет</th></tr></thead>
+              <tbody>
+                <tr><td>📁 The.Bear.S03.E01.mkv</td><td style="font-family:var(--mono)">3.7 ГБ</td><td><input type="checkbox" checked style="accent-color:var(--accent)"></td><td><select style="background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:10px;border-radius:3px;padding:1px 4px"><option>Обычный</option><option>Высокий</option><option>Не качать</option></select></td></tr>
+                <tr><td>📁 The.Bear.S03.E02.mkv</td><td style="font-family:var(--mono)">3.5 ГБ</td><td><input type="checkbox" checked style="accent-color:var(--accent)"></td><td><select style="background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:10px;border-radius:3px;padding:1px 4px"><option>Обычный</option><option>Высокий</option><option>Не качать</option></select></td></tr>
+                <tr><td style="color:var(--text2)">… ещё 4 файла</td><td></td><td></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Опции -->
+      <div class="frow"><span class="flbl"></span>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label class="chk"><input type="checkbox" checked> Запустить после добавления</label>
+          <label class="chk"><input type="checkbox" checked> Sequential download</label>
+        </div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn-s" onclick="closeM('modal-magnet')">Отмена</button>
+      <button class="btn-p" id="mag-add-btn">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ QUIT DIALOG ════════════════ -->
+<div class="ovl hid" id="modal-quit">
+  <div class="modal" style="width:360px">
+    <div class="mhdr" style="border-bottom:none;padding-bottom:8px">
+      <div class="quit-icon">
+        <svg width="26" height="26" viewBox="0 0 16 16" fill="none" stroke="var(--purple)" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M4 8a4 4 0 014-4M8 4a4 4 0 010 8" stroke-linecap="round"/><circle cx="8" cy="8" r="1.5" fill="var(--purple)" stroke="none"/></svg>
+      </div>
+      <div style="margin-left:12px">
+        <div class="mttl" style="font-size:14px">Отключение соединений…</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">Отправляется сводка отдачи/загрузки на трекеры</div>
+      </div>
+    </div>
+    <div class="mbdy" style="padding-top:0;gap:10px">
+      <div class="qpbar"><div class="qpfill"></div></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text1)">
+        <div class="qspinner"></div>
+        <span id="quit-status">Уведомление rutracker.org… (1/8)</span>
+      </div>
+      <div style="font-size:11px;color:var(--text2);padding:8px 10px;background:var(--bg0);border-radius:5px;border:1px solid var(--border)">
+        Дождитесь завершения — трекеры обновят ваш статус сидера.<br>
+        <span style="color:var(--text1)">Обычно занимает 2–5 секунд.</span>
+      </div>
+    </div>
+    <div class="mftr" style="border-top:1px solid var(--border)">
+      <button class="btn-s" onclick="closeM('modal-quit')">Отмена</button>
+      <button class="btn-p" style="background:var(--red);border:none" onclick="closeM('modal-quit')">Выйти сейчас</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ SETTINGS ════════════════ -->
+<div class="ovl hid" id="modal-settings">
+  <div class="modal" style="width:640px">
+    <div class="mhdr"><span class="mttl">Настройки</span><button class="mcls" onclick="closeM('modal-settings')">✕</button></div>
+    <div class="mbdy" style="padding:0;gap:0;flex-direction:row;min-height:460px">
+
+      <!-- Vertical tab list -->
+      <div style="width:140px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:8px 0;gap:1px;background:var(--bg1);border-radius:0 0 0 9px">
+        <div class="vstab act" id="vstab-speed"    onclick="switchVTab('speed',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 11c0-3.31 2.69-6 6-6s6 2.69 6 6"/><path d="M8 11l-2.5-2.5" stroke-linecap="round"/></svg>
+          Скорость
+        </div>
+        <div class="vstab" id="vstab-download"   onclick="switchVTab('download',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 3v8M5 8l3 3 3-3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13h10" stroke-linecap="round"/></svg>
+          Загрузка
+        </div>
+        <div class="vstab" id="vstab-seeding"    onclick="switchVTab('seeding',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 13V5M5 8l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 3h10" stroke-linecap="round"/></svg>
+          Раздача
+        </div>
+        <div class="vstab" id="vstab-network"    onclick="switchVTab('network',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5.5"/><path d="M2.5 8h11M8 2.5c-2 1.8-3 3.5-3 5.5s1 3.7 3 5.5M8 2.5c2 1.8 3 3.5 3 5.5s-1 3.7-3 5.5" stroke-linecap="round"/></svg>
+          Сеть
+        </div>
+        <div class="vstab" id="vstab-privacy"    onclick="switchVTab('privacy',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2L3 4v4c0 3 2.5 5.5 5 6 2.5-.5 5-3 5-6V4L8 2z" stroke-linejoin="round"/><path d="M6 8l1.5 1.5L10 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Приватность
+        </div>
+        <div class="vstab" id="vstab-system"     onclick="switchVTab('system',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="8" rx="1.5"/><path d="M5 13h6M8 11v2" stroke-linecap="round"/></svg>
+          Система
+        </div>
+        <div class="vstab" id="vstab-remote"     onclick="switchVTab('remote',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="8" y="2" width="6" height="6" rx="1"/><rect x="2" y="8" width="6" height="6" rx="1"/><path d="M11 8v2m0 2v2M8 11h2m2 0h2" stroke-linecap="round"/></svg>
+          Remote
+        </div>
+        <div class="vstab" id="vstab-ui"         onclick="switchVTab('ui',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12" stroke-linecap="round"/><circle cx="5" cy="4" r="1.3" fill="currentColor" stroke="none"/><path d="M2 8h12" stroke-linecap="round"/><circle cx="11" cy="8" r="1.3" fill="currentColor" stroke="none"/><path d="M2 12h12" stroke-linecap="round"/><circle cx="7" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
+          Интерфейс
+        </div>
+        <div style="flex:1"></div>
+        <div class="vstab" id="vstab-about"      onclick="switchVTab('about',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5.5"/><path d="M8 7v5M8 5.5v.5" stroke-linecap="round"/></svg>
+          О программе
+        </div>
+      </div>
+
+      <!-- Pane content -->
+      <div style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:0" id="vstab-content">
+
+        <!-- СКОРОСТЬ -->
+        <div class="vpane act" id="vpane-speed">
+          <div class="sgroup">Ограничения скорости</div>
+          <div class="srow"><label class="chk" style="width:160px"><input type="checkbox"> Отдача (МБ/с):</label><input class="fctl" value="0" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div></div>
+          <div class="srow"><label class="chk" style="width:160px"><input type="checkbox" checked> Загрузка (МБ/с):</label><input class="fctl" value="500" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div></div>
+
+          <div class="sgroup" style="margin-top:16px">Особые ограничения скорости</div>
+          <div class="srow"><label class="chk"><input type="checkbox"> Замещение обычных ограничений по расписанию или вручную</label></div>
+          <div class="srow"><span class="slbl">Отдача (МБ/с):</span><input class="fctl" value="0" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div></div>
+          <div class="srow"><span class="slbl">Загрузка (МБ/с):</span><input class="fctl" value="0" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div></div>
+          <div class="srow"><label class="chk" style="width:140px"><input type="checkbox" id="sched-chk" onchange="toggleSched(this)"> По расписанию:</label>
+            <select class="fctl" style="width:90px" id="sched-from"><option>09:00</option><option>08:00</option><option>12:00</option><option>18:00</option></select>
+            <span style="font-size:12px;color:var(--text2);padding:0 6px">до</span>
+            <select class="fctl" style="width:90px" id="sched-to"><option>17:00</option><option>19:00</option><option>21:00</option><option>23:00</option></select>
+          </div>
+          <div class="srow" id="sched-days-row" style="padding-left:148px;gap:4px">
+            <button class="day-btn on" onclick="toggleDay(this)">Пн</button>
+            <button class="day-btn on" onclick="toggleDay(this)">Вт</button>
+            <button class="day-btn on" onclick="toggleDay(this)">Ср</button>
+            <button class="day-btn on" onclick="toggleDay(this)">Чт</button>
+            <button class="day-btn on" onclick="toggleDay(this)">Пт</button>
+            <button class="day-btn" onclick="toggleDay(this)">Сб</button>
+            <button class="day-btn" onclick="toggleDay(this)">Вс</button>
+          </div>
+        </div>
+
+        <!-- ЗАГРУЗКА -->
+        <div class="vpane" id="vpane-download">
+          <div class="sgroup">Добавление</div>
+          <div class="srow"><label class="chk"><input type="checkbox"> Автоматически добавлять торрент-файлы из:</label><input class="fctl" value="Desktop" style="width:120px"></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Показывать диалог параметров торрента</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Запускать добавленные торренты</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Убрать торрент-файл в корзину</label></div>
+          <div class="srow"><span class="slbl">Папка по умолчанию:</span>
+            <div style="display:flex;align-items:center;gap:6px;flex:1">
+              <input class="fctl" value="/Media" style="flex:1">
+              <button class="btn-brw" style="padding:4px 8px">📁</button>
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--text2);padding-left:120px;margin-top:-6px">1.76 ТБ свободно на /dev/sda</div>
+
+          <div class="sgroup" style="margin-top:16px">Очередь загрузки</div>
+          <div class="srow"><span class="slbl">Максимум активных загрузок:</span><input class="fctl" value="1000" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div></div>
+          <div class="srow"><span class="slbl">Данные раздачи за N мин активности:</span><input class="fctl" value="10" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div></div>
+
+          <div class="sgroup" style="margin-top:16px">Процесс загрузки</div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Добавлять «.part» к именам незавершённых файлов</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox"> Сохранять незавершённые торренты в:</label><input class="fctl" value="/Media" style="width:120px"></div>
+          <div class="srow"><label class="chk"><input type="checkbox"> Выполнять сценарий по окончании загрузки:</label><input class="fctl" placeholder="путь к скрипту" style="width:120px"></div>
+        </div>
+
+        <!-- РАЗДАЧА -->
+        <div class="vpane" id="vpane-seeding">
+          <div class="sgroup">Ограничения</div>
+          <div class="srow"><label class="chk" style="width:240px"><input type="checkbox"> Прекратить раздачу при рейтинге:</label><input class="fctl" value="2.00" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-0.1)">−</button><button onclick="spin(this,0.1)">+</button></div></div>
+          <div class="srow"><label class="chk" style="width:240px"><input type="checkbox"> Прекратить раздачу при простое N мин:</label><input class="fctl" value="30" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div></div>
+          <div class="srow"><label class="chk"><input type="checkbox"> Выполнять сценарий по окончании раздачи:</label><input class="fctl" placeholder="путь к скрипту" style="width:120px"></div>
+        </div>
+
+        <!-- СЕТЬ -->
+        <div class="vpane" id="vpane-network">
+          <div class="sgroup">Прослушивание порта</div>
+          <div class="srow"><span class="slbl">Порт входящих подключений:</span><input class="fctl" value="54192" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div><button class="btn-brw" style="margin-left:8px;padding:4px 12px">Проверить порт</button></div>
+          <div style="font-size:10px;color:var(--text2);padding-left:120px;margin:-4px 0 6px">Состояние: <b style="color:var(--amber)">неизвестно</b></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Устанавливать случайный порт при каждом запуске</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Использовать UPnP или NAT-PMP</label></div>
+
+          <div class="sgroup" style="margin-top:16px">Ограничения участников</div>
+          <div class="srow"><span class="slbl">Макс. участников на торрент:</span><input class="fctl" value="5000" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div></div>
+          <div class="srow"><span class="slbl">Общий максимум участников:</span><input class="fctl" value="34464" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div></div>
+
+          <div class="sgroup" style="margin-top:16px">Параметры</div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Использовать µTP для связи с участниками</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Использовать PEX для обмена списками участников</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Использовать DHT для обнаружения участников</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Использовать локальное обнаружение участников</label></div>
+
+          <div class="sgroup" style="margin-top:16px">Стандартные публичные трекеры</div>
+          <textarea class="fctl" rows="3" placeholder="Добавьте трекеры, по одному на строку…" style="resize:vertical;font-family:var(--mono);font-size:11px;width:100%"></textarea>
+        </div>
+
+        <!-- ПРИВАТНОСТЬ (отдельная вкладка) -->
+        <div class="vpane" id="vpane-privacy">
+          <div class="sgroup">Шифрование</div>
+          <div class="srow"><span class="slbl">Режим:</span>
+            <select class="fctl"><option>Предпочитать шифрование</option><option>Требовать шифрование</option><option>Не шифровать</option></select>
+          </div>
+
+          <div class="sgroup" style="margin-top:16px">Чёрный список IP</div>
+          <div class="srow"><label class="chk"><input type="checkbox"> Включить чёрный список:</label><input class="fctl" placeholder="URL списка" style="flex:1"></div>
+          <div style="font-size:10px;color:var(--text2);padding-left:4px;margin:-4px 0 6px">В чёрном списке 0 записей</div>
+          <div class="srow"><label class="chk"><input type="checkbox"> Разрешить автоматическое обновление</label></div>
+        </div>
+
+        <!-- СИСТЕМА -->
+        <div class="vpane" id="vpane-system">
+          <div class="sgroup">Система</div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Запрещать переход в спящий режим при активных торрентах</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox"> Автозапуск при входе в систему</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox"> Запускать свёрнутым в трей</label></div>
+          <div class="srow"><span class="slbl">При закрытии окна:</span>
+            <select class="fctl"><option>Спрашивать + ждать трекеры</option><option>Сворачивать в трей</option><option>Закрывать сразу</option></select>
+          </div>
+          <div class="srow"><span class="flbl" style="width:auto;text-align:left"></span>
+            <button class="btn-s" style="font-size:11px;padding:4px 12px;margin-left:0" onclick="closeM('modal-settings');openM('modal-quit')">↗ Предпросмотр диалога закрытия</button>
+          </div>
+
+          <div class="sgroup" style="margin-top:16px">Уведомления</div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Показывать уведомление после добавления торрентов</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Показывать уведомление после завершения загрузки</label></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Воспроизводить звуковое уведомление при завершении</label></div>
+        </div>
+
+        <!-- REMOTE -->
+        <div class="vpane" id="vpane-remote">
+          <div class="sgroup">Удалённое управление</div>
+          <div class="srow">
+            <label class="chk" style="flex:1"><input type="checkbox"> Разрешить удалённый доступ</label>
+            <button class="btn-brw" style="padding:4px 12px;font-size:11px">Открыть веб-клиент</button>
+          </div>
+          <div class="srow"><span class="slbl">Порт HTTP:</span><input class="fctl" value="9091" style="width:80px"><div class="spin-btns"><button onclick="spin(this,-1)">−</button><button onclick="spin(this,1)">+</button></div></div>
+          <div class="srow"><label class="chk"><input type="checkbox"> Использовать аутентификацию</label></div>
+          <div class="srow"><span class="slbl">Имя пользователя:</span><input class="fctl" value="" placeholder="login"></div>
+          <div class="srow"><span class="slbl">Пароль:</span><input class="fctl" type="password" value="" placeholder="••••••••"></div>
+          <div class="srow"><label class="chk"><input type="checkbox" checked> Разрешить доступ только данным IP-адресам:</label></div>
+          <div class="srow"><span class="slbl">Адреса:</span><input class="fctl" value="127.0.0.1" style="flex:1"></div>
+          <div class="srow"><span class="slbl"></span>
+            <button class="btn-s" style="font-size:11px;padding:3px 12px">Добавить</button>
+            <button class="btn-s" style="font-size:11px;padding:3px 12px;margin-left:6px">Удалить</button>
+          </div>
+        </div>
+
+        <!-- ИНТЕРФЕЙС -->
+        <div class="vpane" id="vpane-ui">
+          <div class="sgroup">Общий вид</div>
+          <div class="srow"><span class="slbl">Язык:</span><select class="fctl" id="lang-select" style="width:160px" onchange="setLanguage(this.value)"><option value="ru">Русский</option><option value="en">English</option></select></div>
+          <div class="srow"><span class="slbl">Тема:</span><select class="fctl" style="width:160px"><option>Тёмная (по умолчанию)</option><option>Светлая</option><option>Системная</option></select></div>
+          <div class="srow"><span class="slbl">Обновление списка:</span><select class="fctl" style="width:160px"><option>2 сек</option><option>5 сек</option><option>10 сек</option></select></div>
+
+          <div class="sgroup" style="margin-top:16px">Кнопки панели инструментов</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Отметьте нужные. Зажмите кнопку для смены порядка.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <label class="chip-chk"><input type="checkbox" checked>Добавить</label>
+            <label class="chip-chk"><input type="checkbox" checked>magnet</label>
+            <label class="chip-chk"><input type="checkbox" checked>Создать</label>
+            <label class="chip-chk"><input type="checkbox" checked>Рехэш ошибок</label>
+            <label class="chip-chk"><input type="checkbox">Старт выбранных</label>
+            <label class="chip-chk"><input type="checkbox">Пауза выбранных</label>
+            <label class="chip-chk"><input type="checkbox">Старт всех</label>
+            <label class="chip-chk"><input type="checkbox">Пауза всех</label>
+          </div>
+
+          <div class="sgroup" style="margin-top:16px">Секции левой панели</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <label class="chip-chk"><input type="checkbox" checked>Состояние</label>
+            <label class="chip-chk"><input type="checkbox" checked>Диски</label>
+            <label class="chip-chk"><input type="checkbox" checked>Трекеры</label>
+            <label class="chip-chk"><input type="checkbox" checked>Веб-торренты</label>
+            <label class="chip-chk"><input type="checkbox" checked>Теги</label>
+            <label class="chip-chk"><input type="checkbox" checked>Созданные мной</label>
+          </div>
+        </div>
+
+        <!-- О ПРОГРАММЕ -->
+        <div class="vpane" id="vpane-about">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px 0 10px">
+            <!-- App icon placeholder -->
+            <div style="width:64px;height:64px;border-radius:14px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center">
+              <svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--accent)" stroke-width="1.8">
+                <circle cx="16" cy="16" r="6"/>
+                <path d="M16 2v4M16 26v4M2 16h4M26 16h4M6.34 6.34l2.83 2.83M22.83 22.83l2.83 2.83M6.34 25.66l2.83-2.83M22.83 9.17l2.83-2.83" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:16px;font-weight:600;color:var(--text0)">Transmission Remote Slint</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:3px">v0.4.0 — Rust + Slint 1.7</div>
+            </div>
+            <div style="font-size:12px;color:var(--text1);text-align:center;max-width:340px;line-height:1.6">
+              Лёгкий нативный GUI для Transmission daemon.<br>
+              Без GTK, без Qt — рендеринг через Skia/OpenGL и Vulkan.
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:360px">
+              <a href="https://github.com/guglovich/Transmission-Remote-Slint" target="_blank"
+                 style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;text-decoration:none;color:var(--text0);transition:background .1s"
+                 onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background='var(--bg3)'">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="color:var(--text1);flex-shrink:0">
+                  <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                </svg>
+                <div>
+                  <div style="font-size:12px;font-weight:500">guglovich/Transmission-Remote-Slint</div>
+                  <div style="font-size:10px;color:var(--text2)">github.com</div>
+                </div>
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text2);margin-left:auto">
+                  <path d="M4 12L12 4M5 4h7v7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+            </div>
+            <div style="border-top:1px solid var(--border);width:100%;padding-top:12px;margin-top:4px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
+                <div style="color:var(--text2)">Лицензия</div><div style="color:var(--text1)">GPL-2.0-or-later</div>
+                <div style="color:var(--text2)">Язык</div><div style="color:var(--text1)">Rust 2021 edition</div>
+                <div style="color:var(--text2)">UI-фреймворк</div><div style="color:var(--text1)">Slint 1.7 (GPLv3)</div>
+                <div style="color:var(--text2)">Рендерер</div><div style="color:var(--text1)">Skia / OpenGL / Vulkan</div>
+                <div style="color:var(--text2)">Трей</div><div style="color:var(--text1)">zbus 4 (SNI/D-Bus)</div>
+                <div style="color:var(--text2)">Разработано с</div><div style="color:var(--text1)">Claude (Anthropic)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- vstab-content -->
+    </div><!-- mbdy -->
+    <div class="mftr">
+      <button class="btn-s" onclick="closeM('modal-settings')">Закрыть</button>
+      <button class="btn-p" onclick="closeM('modal-settings')">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══ DATA ═══ */
+const TR=[
+  {id:1,name:"Dune.Part.Two.2024.2160p.UHD.BluRay.Atmos.x265",type:"💿",size:"58.4 ГБ",pct:100,statuses:["seeding"],dl:"0 Б/с",ul:"4.2 МБ/с",eta:"—",ratio:4.12,tags:["фильмы"],tracker:"rutracker.org",hash:"a1b2c3d4e5f6",added:"2024-03-15",done:"2024-03-16",path:"/Media/Films",peers:12,err:null},
+  {id:2,name:"The.Bear.S03.2024.1080p.WEB-DL.H264",type:"📁",size:"22.1 ГБ",pct:73,statuses:["downloading","seeding"],dl:"8.3 МБ/с",ul:"0.4 МБ/с",eta:"28 мин",ratio:0.31,tags:["сериалы"],tracker:"kinozal.tv",hash:"b2c3d4e5f6a1",added:"2024-11-10",done:"—",path:"/Media/Series",peers:47,err:null},
+  {id:3,name:"Ubuntu.24.04.LTS.Desktop.amd64",type:"💿",size:"5.7 ГБ",pct:100,statuses:["seeding"],dl:"0 Б/с",ul:"120 КБ/с",eta:"—",ratio:22.4,tags:[],tracker:"tracker.ubuntu.com",hash:"c3d4e5f6a1b2",added:"2024-04-25",done:"2024-04-25",path:"/Downloads",peers:203,err:null},
+  {id:4,name:"Boards.of.Canada.Music.Has.The.Right.To.Children.FLAC",type:"📁",size:"312 МБ",pct:100,statuses:["stopped"],dl:"0 Б/с",ul:"0 Б/с",eta:"—",ratio:1.02,tags:["музыка"],tracker:"rutracker.org",hash:"d4e5f6a1b2c3",added:"2023-08-12",done:"2023-08-12",path:"/Media/Music",peers:0,err:null},
+  {id:5,name:"Shogun.2024.S01.2160p.DSNP.WEB-DL.DDP5.1.Atmos.HDR.HEVC",type:"📁",size:"89.2 ГБ",pct:100,statuses:["seeding"],dl:"0 Б/с",ul:"2.1 МБ/с",eta:"—",ratio:6.73,tags:["сериалы"],tracker:"nnmclub.to",hash:"e5f6a1b2c3d4",added:"2024-05-01",done:"2024-05-04",path:"/Media/Series",peers:8,err:null},
+  {id:6,name:"Arch.Linux.2024.11.01.x86_64.iso",type:"💿",size:"1.1 ГБ",pct:100,statuses:["seeding"],dl:"0 Б/с",ul:"55 КБ/с",eta:"—",ratio:3.21,tags:[],tracker:"archlinux.org",hash:"f6a1b2c3d4e5",added:"2024-11-01",done:"2024-11-01",path:"/Downloads",peers:91,err:null},
+  {id:7,name:"3_Body_Problem.S01.1080p.NFLX.WEB-DL",type:"📁",size:"18.4 ГБ",pct:34,statuses:["downloading"],dl:"2.1 МБ/с",ul:"0.1 МБ/с",eta:"1 ч 42 мин",ratio:0.08,tags:["сериалы"],tracker:"kinozal.tv",hash:"a2b3c4d5e6f7",added:"2024-11-12",done:"—",path:"/Media/Series",peers:23,err:null},
+  {id:8,name:"Some.Corrupt.Torrent.Data.Pack.v2",type:"📁",size:"4.2 ГБ",pct:10,statuses:["seeding","error"],dl:"0 Б/с",ul:"12 КБ/с",eta:"—",ratio:0,tags:[],tracker:"dead.tracker.io",hash:"b3c4d5e6f7a2",added:"2024-10-30",done:"—",path:"/Downloads",peers:2,err:"Требуется рехэш — файлы изменены"},
+  {id:9,name:"Massive.Attack.Mezzanine.Super.Deluxe.FLAC.24bit",type:"📁",size:"2.8 ГБ",pct:100,statuses:["stopped"],dl:"0 Б/с",ul:"0 Б/с",eta:"—",ratio:0.7,tags:["музыка"],tracker:"rutracker.org",hash:"c4d5e6f7a2b3",added:"2023-06-20",done:"2023-06-20",path:"/Media/Music",peers:0,err:null},
+  {id:10,name:"Blade.Runner.2049.2017.4K.REMASTERED.UHD.BluRay.REMUX.HEVC",type:"💿",size:"71.8 ГБ",pct:100,statuses:["seeding"],dl:"0 Б/с",ul:"0.9 МБ/с",eta:"—",ratio:9.14,tags:["фильмы"],tracker:"rutracker.org",hash:"d5e6f7a2b3c4",added:"2023-12-01",done:"2023-12-02",path:"/Media/Films",peers:5,err:null},
+  {id:11,name:"Neon.Genesis.Evangelion.BD.1080p.FLAC.x264",type:"📁",size:"43.5 ГБ",pct:61,statuses:["checking"],dl:"—",ul:"—",eta:"—",ratio:0,tags:["сериалы"],tracker:"nnmclub.to",hash:"e6f7a2b3c4d5",added:"2024-11-11",done:"—",path:"/Media/Series",peers:0,err:null},
+  {id:12,name:"Portishead.Dummy.1994.24bit.FLAC",type:"📁",size:"478 МБ",pct:100,statuses:["seeding"],dl:"0 Б/с",ul:"0 Б/с",eta:"—",ratio:0.95,tags:["музыка"],tracker:"rutracker.org",hash:"f7a2b3c4d5e6",added:"2023-04-10",done:"2023-04-10",path:"/Media/Music",peers:1,err:null},
+];
+
+
+/* ═══ LANGUAGE ═══ */
+const LANG={
+  ru:{
+    settings:'Настройки',speed:'Скорость',download:'Загрузка',seeding:'Раздача',network:'Сеть',privacy:'Приватность',system:'Система',remote:'Remote',ui:'Интерфейс',about:'О программе',
+    speedLimits:'Ограничения скорости',upload:'Отдача',download2:'Загрузка',specialLimits:'Особые ограничения скорости',substitute:'Замещение обычных ограничений по расписанию или вручную',schedule:'По расписанию',to:'до',
+    mon:'Пн',tue:'Вт',wed:'Ср',thu:'Чт',fri:'Пт',sat:'Сб',sun:'Вс',
+    add:'Добавить',magnet:'magnet',create:'Создать',rehash:'Рехэш ошибок',startSelected:'Старт выбранных',pauseSelected:'Пауза выбранных',startAll:'Старт всех',pauseAll:'Пауза всех',
+    sections:'Секции левой панели',state:'Состояние',disks:'Диски',trackers:'Трекеры',webTorrents:'Веб-торренты',tags:'Теги',created:'Созданные мной',
+    commonView:'Общий вид',language:'Язык',theme:'Тема',dark:'Тёмная (по умолчанию)',light:'Светлая',system:'Системная',update:'Обновление списка',toolbar:'Кнопки панели инструментов',
+    all:'Все',noTracker:'Без трекера',downloading:'Загружаются',seeding2:'Раздаются',completed:'Завершены',stopped:'Остановлены',active:'Активные',inactive:'Неактивные',checking:'Проверяются',queueDl:'Очередь загрузки',queueSeed:'Очередь раздачи',error:'Ошибка',noData:'Нет данных',trError:'⚠ Ошибка трекера',
+    name:'Имя',size:'Размер',status:'Статус',dl:'↓ Скорость',ul:'↑ Скорость',eta:'ETA',ratio:'Ratio',peers:'Пиры',added:'Добавлен',done:'Завершён',path:'Путь',hash:'Хэш',
+    general:'Общие',files:'Файлы',peers2:'Пиры',blocks:'Блоки',speed2:'Скорость',
+    quit:'Выход',cancel:'Отмена',save:'Сохранить',close:'Закрыть',
+    disksStorage:'Диски / Хранилище',md0:'md0 — RAID-1',
+    daysOfWeek:'Дни недели',allDays:'Все дни',
+    ratio2:'Ratio',peers2:'Пиры',tracker:'Трекер',
+    addTorrent:'Добавление',autoAdd:'Автоматически добавлять торрент-файлы из:',showDialog:'Показывать диалог параметров торрента',startAdded:'Запускать добавленные торренты',removeTorrent:'Убрать торрент-файл в корзину',defaultFolder:'Папка по умолчанию',incomplete:'Папка для неполных файлов',watchFolder:'Папка для отслеживания',
+    seeding2:'Раздача',ratioLimit:'Остановить на ratio:',idleLimit:'Остановить если нет активности (мин):',maxPeers:'Максимум пиров на торрент:',maxAll:'Максимум пиров всего:',queue:'Очередь',maxDl:'Максимум загрузок:',maxSeed:'Максимум раздач:',queueDelay:'Задержка очереди (мин):',
+    network2:'Сеть',listeningPort:'Порт для входящих:',randomPort:'Случайный порт при запуске',forwardPort:'Пробрасывать порт',encryption:'Шифрование:',preferred:'Предпочтительно',required:'Требуется',allowIncoming:'Разрешить входящие с пиров без шифрования',dht:'DHT',lpd:'LPD',utp:'uTP',
+    privacy2:'Приватность',blocklist:'Блокировщик:',updateBlocklist:'Обновить',blocklistUrl:'URL:',peerSources:'Источники пиров:',trackerTips:'Советы трекерам:',scrape:'Scrape при остановке',announce:'Announce при старте',
+    system2:'Система',startup:'Запускать при входе в систему',tray:'Сворачивать в трей',notifications:'Уведомления:',notifyOnComplete:'Уведомлять о завершении',notifyOnAdd:'Уведомлять о добавлении',sounds:'Звуки',script:'Скрипт при завершении:',
+    remote2:'Remote',enable:'Включить удалённый доступ',port2:'Порт:',auth:'Требуется авторизация',username:'Имя пользователя:',password:'Пароль:',allowTop:'Разрешить доступ из локальной сети',
+    appDesc:'Лёгкий нативный GUI для Transmission daemon.<br>Без GTK, без Qt — рендеринг через Skia/OpenGL и Vulkan.',
+    rehashTip:'Рехэш ',rehashTip2:' раздач с ошибками',noErrors:'Нет зафиксированных ошибок',
+    search:'Поиск...',
+    status:'Статус',
+    version:'Версия'
+  },
+  en:{
+    settings:'Settings',speed:'Speed',download:'Download',seeding:'Seeding',network:'Network',privacy:'Privacy',system:'System',remote:'Remote',ui:'Interface',about:'About',
+    speedLimits:'Speed Limits',upload:'Upload',download2:'Download',specialLimits:'Special Speed Limits',substitute:'Override normal limits by schedule or manually',schedule:'Schedule',to:'to',
+    mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun',
+    add:'Add',magnet:'magnet',create:'Create',rehash:'Rehash Errors',startSelected:'Start Selected',pauseSelected:'Pause Selected',startAll:'Start All',pauseAll:'Pause All',
+    sections:'Left Panel Sections',state:'State',disks:'Disks',trackers:'Trackers',webTorrents:'Web Torrents',tags:'Tags',created:'Created by Me',
+    commonView:'General View',language:'Language',theme:'Theme',dark:'Dark (default)',light:'Light',system:'System',update:'List Update',toolbar:'Toolbar Buttons',
+    all:'All',noTracker:'No Tracker',downloading:'Downloading',seeding2:'Seeding',completed:'Completed',stopped:'Stopped',active:'Active',inactive:'Inactive',checking:'Checking',queueDl:'Download Queue',queueSeed:'Seed Queue',error:'Error',noData:'No Data',trError:'⚠ Tracker Error',
+    name:'Name',size:'Size',status:'Status',dl:'↓ Speed',ul:'↑ Speed',eta:'ETA',ratio:'Ratio',peers:'Peers',added:'Added',done:'Done',path:'Path',hash:'Hash',
+    general:'General',files:'Files',peers2:'Peers',blocks:'Blocks',speed2:'Speed',
+    quit:'Quit',cancel:'Cancel',save:'Save',close:'Close',
+    disksStorage:'Disks / Storage',md0:'md0 — RAID-1',
+    daysOfWeek:'Days of Week',allDays:'All Days',
+    ratio2:'Ratio',peers2:'Peers',tracker:'Tracker',
+    addTorrent:'Adding',autoAdd:'Automatically add torrent files from:',showDialog:'Show torrent options dialog',startAdded:'Start added torrents',removeTorrent:'Move torrent file to trash',defaultFolder:'Default folder',incomplete:'Incomplete files folder',watchFolder:'Watch folder',
+    seeding2:'Seeding',ratioLimit:'Stop at ratio:',idleLimit:'Stop if idle (min):',maxPeers:'Max peers per torrent:',maxAll:'Max peers total:',queue:'Queue',maxDl:'Max downloads:',maxSeed:'Max seeds:',queueDelay:'Queue delay (min):',
+    network2:'Network',listeningPort:'Listening port:',randomPort:'Random port on startup',forwardPort:'Forward port',encryption:'Encryption:',preferred:'Preferred',required:'Required',allowIncoming:'Allow incoming from unencrypted peers',dht:'DHT',lpd:'LPD',utp:'uTP',
+    privacy2:'Privacy',blocklist:'Blocklist:',updateBlocklist:'Update',blocklistUrl:'URL:',peerSources:'Peer sources:',trackerTips:'Tracker tips:',scrape:'Scrape on stop',announce:'Announce on start',
+    system2:'System',startup:'Launch on system startup',tray:'Minimize to tray',notifications:'Notifications:',notifyOnComplete:'Notify on completion',notifyOnAdd:'Notify on add',sounds:'Sounds',script:'Script on completion:',
+    remote2:'Remote',enable:'Enable remote access',port2:'Port:',auth:'Require authentication',username:'Username:',password:'Password:',allowTop:'Allow access from local network',
+    appDesc:'Lightweight native GUI for Transmission daemon.<br>No GTK, no Qt — rendering via Skia/OpenGL and Vulkan.',
+    rehashTip:'Rehash ',rehashTip2:' torrents with errors',noErrors:'No recorded errors',
+    search:'Search...',
+    status:'Status',
+    version:'Version'
+  }
+};
+let curLang='ru';
+function setLanguage(lang){
+  curLang=lang;
+  localStorage.setItem('lang',lang);
+  document.getElementById('lang-select').value=lang;
+}
+
+let curFlt='all', selId=null, curDTab='gen', srchQ='';
+
+/* ═══ STATUS helpers ═══ */
+const SL={seeding:'Раздаётся',downloading:'Загрузка',stopped:'Остановлен',checking:'Проверка',error:'Ошибка',qdl:'Очередь ↓',qseed:'Очередь ↑'};
+const SC={seeding:'sb-s',downloading:'sb-d',stopped:'sb-p',checking:'sb-c',error:'sb-e',qdl:'sb-q',qseed:'sb-q'};
+const STC={seeding:'st-s',downloading:'st-d',stopped:'st-p',checking:'st-c',error:'st-e',qdl:'st-q',qseed:'st-q'};
+
+function pbColor(t){
+  if(t.statuses.includes('error')&&!t.statuses.includes('seeding')) return 'var(--red)';
+  if(t.statuses.includes('checking')) return 'var(--purple)';
+  if(t.statuses.includes('seeding')) return 'var(--green)';
+  if(t.statuses.includes('downloading')) return 'var(--accent)';
+  return 'var(--text2)';
+}
+
+/* Build status line: multiple statuses separated by · */
+function buildStatusLine(t){
+  const parts=[];
+  t.statuses.forEach(s=>{
+    const pct=s==='downloading'?` · ${t.pct}%`:'';
+    parts.push(`<span class="st ${STC[s]||'st-p'}">${SL[s]||s}${pct}</span>`);
+  });
+  let html=parts.join('<span class="st-div"> · </span>');
+  if(t.err) html+=`<span class="st-div"> · </span><span class="st st-e">⚠ ${t.err}</span>`;
+  return html;
+}
+
+/* ═══ RENDER ═══ */
+const COLS={tags:{w:'110px',vis:true},size:{w:'78px',vis:true},pct:{w:'50px',vis:true},status:{w:'106px',vis:true},dl:{w:'80px',vis:true},ul:{w:'80px',vis:true},eta:{w:'70px',vis:true}};
+
+function renderList(list){
+  const el=document.getElementById('tlist');
+  const cw=k=>document.getElementById('ch-'+k)?document.getElementById('ch-'+k).style.width||COLS[k]?.w:'80px';
+  el.innerHTML=list.map(t=>`
+    <div class="trow${selId===t.id?' sel':''}" onclick="selT(${t.id},this)" oncontextmenu="showTCtx(event,${t.id})">
+      <div class="tc" style="width:32px;justify-content:center;font-size:14px;flex-shrink:0">${t.type}</div>
+      <div class="tc-n">
+        <div class="t-name">${t.name}</div>
+        <div class="t-sl">${buildStatusLine(t)}</div>
+        <div class="t-pb"><div class="t-pbf" style="width:${t.pct}%;background:${pbColor(t)}"></div></div>
+      </div>
+      ${COLS.tags.vis?`<div class="tc-tags" style="width:${cw('tags')}">${t.tags.map(g=>`<span class="tpill">${g}</span>`).join('')}</div>`:''}
+      ${COLS.size.vis?`<div class="tc" style="width:${cw('size')}">${t.size}</div>`:''}
+      ${COLS.pct.vis?`<div class="tc" style="width:${cw('pct')};color:${t.pct===100?'var(--text2)':'var(--text0)'}">${t.pct}%</div>`:''}
+      ${COLS.status.vis?`<div class="tc-status" style="width:${cw('status')}">${t.statuses.map(s=>`<span class="sbadge ${SC[s]||'sb-p'}">${SL[s]||s}</span>`).join('')}</div>`:''}
+      ${COLS.dl.vis?`<div class="tc" style="width:${cw('dl')};color:var(--accent)">${t.dl}</div>`:''}
+      ${COLS.ul.vis?`<div class="tc" style="width:${cw('ul')};color:var(--green)">${t.ul}</div>`:''}
+      ${COLS.eta.vis?`<div class="tc" style="width:${cw('eta')}">${t.eta}</div>`:''}
+    </div>`).join('');
+}
+
+function doSearch(q){srchQ=q.toLowerCase();applyFlt();
+applyFlt();}
+function applyFlt(){
+  let list=TR;
+  if(srchQ) list=list.filter(t=>t.name.toLowerCase().includes(srchQ));
+  const MAP={
+    dl:t=>t.statuses.includes('downloading'),
+    seed:t=>t.statuses.includes('seeding'),
+    done:t=>t.pct===100,
+    stopped:t=>t.statuses.includes('stopped'),
+    active:t=>t.dl!=='0 Б/с'&&t.dl!=='—',
+    inactive:t=>t.dl==='0 Б/с'&&t.ul==='0 Б/с',
+    checking:t=>t.statuses.includes('checking'),
+    err:t=>t.statuses.includes('error'),
+    missing:t=>t.err&&t.err.includes('файл'),
+    'tag-films':t=>t.tags.includes('фильмы'),
+    'tag-series':t=>t.tags.includes('сериалы'),
+    'tag-music':t=>t.tags.includes('музыка'),
+    'tag-none':t=>t.tags.length===0,
+    tr1:t=>t.tracker==='rutracker.org',
+    tr2:t=>t.tracker==='kinozal.tv',
+    tr3:t=>t.tracker==='nnmclub.to',
+  };
+  if(curFlt!=='all'&&MAP[curFlt]) list=list.filter(MAP[curFlt]);
+  renderList(list);
+}
+function setFlt(f,el){curFlt=f;document.querySelectorAll('.fi').forEach(x=>x.classList.remove('act'));el.classList.add('act');applyFlt();
+applyFlt();}
+function toggleSec(id){const s=document.getElementById(id);s.classList.toggle('col');}
+
+/* ═══ DETAIL ═══ */
+function selT(id,row){selId=id;document.querySelectorAll('.trow').forEach(r=>r.classList.remove('sel'));row.classList.add('sel');showDetail(id);}
+function showDetail(id){
+  const t=TR.find(x=>x.id===id);if(!t)return;
+  ['d-nosel','d-gen','d-files','d-peers','d-trackers','d-blocks','d-speed'].forEach(k=>document.getElementById(k).style.display='none');
+  if(curDTab==='gen'){
+    document.getElementById('d-gen').style.display='block';
+    document.getElementById('d-grid').innerHTML=`
+      <span class="dgl">Имя</span><span class="dgv" style="grid-column:span 3">${t.name}</span>
+      <span class="dgl">Хэш</span><span class="dgv" style="grid-column:span 3;color:var(--text2)">${t.hash}…</span>
+      <span class="dgl">Размер</span><span class="dgv">${t.size}</span><span class="dgl">Прогресс</span><span class="dgv">${t.pct}%</span>
+      <span class="dgl">Статус</span><span class="dgv" style="grid-column:span 3">${t.statuses.map(s=>SL[s]||s).join(' + ')}</span>
+      <span class="dgl">Ratio</span><span class="dgv">${t.ratio}</span><span class="dgl">Пиры</span><span class="dgv">${t.peers}</span>
+      <span class="dgl">Трекер</span><span class="dgv">${t.tracker}</span><span class="dgl">ETA</span><span class="dgv">${t.eta}</span>
+      <span class="dgl">Добавлен</span><span class="dgv">${t.added}</span><span class="dgl">Завершён</span><span class="dgv">${t.done}</span>
+      <span class="dgl">Путь</span><span class="dgv" style="grid-column:span 3">${t.path}</span>
+      <span class="dgl">Теги</span><span class="dgv" style="grid-column:span 3">${t.tags.join(', ')||'—'}</span>
+      ${t.err?`<span class="dgl" style="color:var(--red)">Ошибка</span><span class="dgv" style="grid-column:span 3;color:var(--red)">${t.err}</span>`:''}
+    `;
+  } else if(curDTab==='files'){
+    document.getElementById('d-files').style.display='block';
+    document.getElementById('d-flist').innerHTML=[{n:t.name+'.mkv',sz:t.size,p:t.pct},{n:t.name+'.nfo',sz:'2 КБ',p:100}].map(f=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px">📄</span>
+        <span style="flex:1;color:var(--text0);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.n}</span>
+        <span style="color:var(--text2);font-size:10px;font-family:var(--mono);min-width:60px;text-align:right">${f.sz}</span>
+        <span style="color:var(--text2);font-size:10px;min-width:28px;text-align:right">${f.p}%</span>
+        <select style="background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:10px;border-radius:3px;padding:1px 4px"><option>Нормальный</option><option>Высокий</option><option>Не качать</option></select>
+      </div>`).join('');
+  } else if(curDTab==='peers'){
+    document.getElementById('d-peers').style.display='block';
+    document.getElementById('d-pbody').innerHTML=[{ip:'185.220.101.45',cl:'qBittorrent 4.6',dl:'0 Б/с',ul:'1.2 МБ/с',p:100},{ip:'94.45.12.88',cl:'Transmission 4.0',dl:'0 Б/с',ul:'450 КБ/с',p:87},{ip:'213.7.4.201',cl:'uTorrent 3.5',dl:'120 КБ/с',ul:'0 Б/с',p:54}].map(p=>`
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:3px 6px;font-family:var(--mono);color:var(--text1)">${p.ip}</td>
+        <td style="padding:3px 6px;color:var(--text2)">${p.cl}</td>
+        <td style="padding:3px 6px;color:var(--accent);font-family:var(--mono)">${p.dl}</td>
+        <td style="padding:3px 6px;color:var(--green);font-family:var(--mono)">${p.ul}</td>
+        <td style="padding:3px 6px"><div style="width:60px;height:4px;background:var(--bg4);border-radius:2px"><div style="width:${p.p}%;height:100%;background:var(--accent);border-radius:2px"></div></div></td>
+      </tr>`).join('');
+  } else if(curDTab==='trackers'){
+    document.getElementById('d-trackers').style.display='block';
+    document.getElementById('d-tlist').innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)"><div style="width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0"></div><span style="flex:1;color:var(--text0)">${t.tracker}</span><span style="color:var(--green);font-size:10px">OK — 842 seeds</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0"><div style="width:7px;height:7px;border-radius:50%;background:var(--text2);flex-shrink:0"></div><span style="flex:1;color:var(--text2)">DHT</span><span style="color:var(--text2);font-size:10px">117 нод</span></div>`;
+  } else if(curDTab==='blocks'){
+    document.getElementById('d-blocks').style.display='block';
+    const total=320,done=Math.floor(t.pct/100*total);
+    document.getElementById('d-binfo').textContent=`${done} / ${total} (${t.pct}%)`;
+    document.getElementById('d-pgrid').innerHTML=Array.from({length:total},(_,i)=>{let c='piece';if(i<done)c+=' done';else if(i<done+4&&t.statuses.includes('downloading'))c+=' partial';return`<div class="${c}"></div>`;}).join('');
+  } else document.getElementById('d-speed').style.display='block';
+}
+function switchDTab(tab,el){curDTab=tab;document.querySelectorAll('.dtab').forEach(x=>x.classList.remove('act'));el.classList.add('act');if(selId)showDetail(selId);}
+
+/* ═══ CTX MENUS ═══ */
+function showCtxAt(m,x,y){
+  document.querySelectorAll('.ctxm').forEach(c=>c.classList.remove('vis'));
+  m.classList.add('vis');
+  const mw=Math.max(m.offsetWidth||0,200),mh=Math.max(m.scrollHeight||0,100);
+  if(x+mw>window.innerWidth)x=window.innerWidth-mw-4;
+  if(y+mh>window.innerHeight)y=window.innerHeight-mh-4;
+  m.style.left=x+'px';m.style.top=y+'px';
+}
+function showTCtx(e,id){e.preventDefault();e.stopPropagation();selId=id;showCtxAt(document.getElementById('ctx-t'),e.clientX,e.clientY);}
+document.addEventListener('click',()=>document.querySelectorAll('.ctxm').forEach(m=>m.classList.remove('vis')));
+document.addEventListener('contextmenu',e=>{if(!e.target.closest('.ctxm,.ch,#tb-fixed,#tb-extras'))document.querySelectorAll('.ctxm').forEach(m=>m.classList.remove('vis'));});
+
+/* COL CTX */
+const COL_LABELS={tags:'Теги',size:'Размер',pct:'%',status:'Статус',dl:'↓ Скорость',ul:'↑ Скорость',eta:'ETA'};
+function showColCtx(e){
+  e.preventDefault();
+  const m=document.getElementById('ctx-col');
+  document.getElementById('ctx-col-items').innerHTML=Object.entries(COL_LABELS).map(([k,v])=>`
+    <div class="cxi" onclick="toggleCol('${k}')">
+      <input type="checkbox" style="accent-color:var(--accent);width:13px;height:13px" ${COLS[k]?.vis?'checked':''} onclick="event.stopPropagation();toggleCol('${k}')">
+      ${v}
+    </div>`).join('');
+  showCtxAt(m,e.clientX,e.clientY);
+}
+function toggleCol(k){
+  if(COLS[k])COLS[k].vis=!COLS[k].vis;
+  const h=document.getElementById('ch-'+k);if(h)h.style.display=COLS[k].vis?'':'none';
+  applyFlt();
+applyFlt();document.getElementById('ctx-col').classList.remove('vis');
+}
+
+/* ═══ COL RESIZE ═══ */
+function startRz(e,id){
+  e.stopPropagation();e.preventDefault();
+  const col=document.getElementById(id),sx=e.clientX,sw=col.offsetWidth,h=e.target;
+  h.classList.add('rzdrag');document.body.style.cursor='col-resize';document.body.style.userSelect='none';
+  const mv=ev=>{col.style.width=Math.max(40,sw+(ev.clientX-sx))+'px';applyFlt();
+applyFlt();};
+  const up=()=>{h.classList.remove('rzdrag');document.body.style.cursor='';document.body.style.userSelect='';document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
+  document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+}
+
+/* ═══ SPLITTERS ═══ */
+function mkSplit(id,prop,axis,mn,mx,inv){
+  const s=document.getElementById(id);let drag=false,s0,v0;
+  s.addEventListener('mousedown',e=>{drag=true;s0=axis==='x'?e.clientX:e.clientY;v0=parseFloat(getComputedStyle(document.documentElement).getPropertyValue(prop));s.classList.add('drag');document.body.style.cursor=axis==='x'?'col-resize':'row-resize';document.body.style.userSelect='none';});
+  document.addEventListener('mousemove',e=>{if(!drag)return;const d=(axis==='x'?e.clientX:e.clientY)-s0;document.documentElement.style.setProperty(prop,Math.max(mn,Math.min(mx,v0+(inv?-d:d)))+'px');});
+  document.addEventListener('mouseup',()=>{if(drag){drag=false;s.classList.remove('drag');document.body.style.cursor='';document.body.style.userSelect='';}});
+}
+mkSplit('vsplit','--panel-w','x',140,360,false);
+mkSplit('hsplit','--detail-h','y',70,500,true);
+
+/* ═══ SORT ═══ */
+function sortBy(col,el){
+  document.querySelectorAll('.ch').forEach(h=>{h.classList.remove('sorted');const a=h.querySelector('.ch-sa');if(a)a.remove();});
+  el.classList.add('sorted');
+  const s=document.createElement('span');s.className='ch-sa';s.textContent=' ▲';el.appendChild(s);
+}
+
+/* ═══ MODALS ═══ */
+function openM(id){document.getElementById(id).classList.remove('hid');}
+function closeM(id){document.getElementById(id).classList.add('hid');}
+document.querySelectorAll('.ovl').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.add('hid');}));
+
+/* Choose single vs multi based on fake "files selected" */
+let _multiMode=false;
+function openAdd(){_multiMode=!_multiMode;openM(_multiMode?'modal-add-multi':'modal-add-single');}
+
+/* Multi torrent item expand */
+function toggleMtItem(id){document.getElementById(id).classList.toggle('open');}
+function setBulkTag(el){
+  const on=el.classList.contains('on');
+  document.querySelectorAll('#mt-list .mt-tagopt').forEach(t=>{if(t.textContent===el.textContent){if(on)t.classList.add('on');else t.classList.remove('on');}});
+}
+
+/* ═══ MAGNET INPUT SIMULATION ═══ */
+let _magTimer=null;
+function onMagnetInput(val){
+  clearTimeout(_magTimer);
+  const idle=document.getElementById('mag-idle');
+  const loading=document.getElementById('mag-loading');
+  const done=document.getElementById('mag-done');
+  const fwrap=document.getElementById('mag-files-wrap');
+  [idle,loading,done].forEach(x=>{x.classList.remove('show');});
+  fwrap.style.display='none';
+  if(!val.trim()){idle.classList.add('show');return;}
+  if(val.length<20){idle.classList.add('show');return;}
+  loading.classList.add('show');
+  _magTimer=setTimeout(()=>{
+    loading.classList.remove('show');
+    done.classList.add('show');
+    fwrap.style.display='block';
+  },1400);
+}
+
+/* ═══ SCHEDULE / DAYS ═══ */
+function toggleDay(btn){btn.classList.toggle('on');}
+function toggleSched(chk){
+  const row=document.getElementById('sched-days-row');
+  const from=document.getElementById('sched-from');
+  const to=document.getElementById('sched-to');
+  [from,to,row].forEach(el=>{if(el)el.style.opacity=chk.checked?'1':'0.4';});
+  document.querySelectorAll('.day-btn').forEach(b=>b.style.pointerEvents=chk.checked?'auto':'none');
+}
+
+/* ═══ REHASH BUTTON STATE ═══ */
+function updateRehashBtn(){
+  const errCount=TR.filter(t=>t.statuses.includes('error')).length;
+  const btn=document.getElementById('btn-rehash');
+  const tip=document.getElementById('rehash-tip');
+  if(errCount>0){
+    btn.classList.remove('disabled');
+    btn.style.pointerEvents='auto';
+    tip.textContent=`Рехэш ${errCount} раздач${errCount===1?'и':''} с ошибками`;
+  } else {
+    btn.classList.add('disabled');
+    btn.style.pointerEvents='none';
+    tip.textContent='Нет зафиксированных ошибок';
+  }
+}
+function rehashErrors(){
+  const errs=TR.filter(t=>t.statuses.includes('error'));
+  if(!errs.length) return;
+  alert(`Запускаем рехэш ${errs.length} раздач: ${errs.map(t=>t.name.slice(0,40)).join('\n')}`);
+}
+
+/* ═══ SETTINGS VERTICAL TABS ═══ */
+function switchVTab(pane,el){
+  document.querySelectorAll('.vstab').forEach(t=>t.classList.remove('act'));
+  document.querySelectorAll('.vpane').forEach(p=>p.classList.remove('act'));
+  el.classList.add('act');
+  document.getElementById('vpane-'+pane).classList.add('act');
+}
+function spin(btn,delta){
+  const inp=btn.closest('.srow').querySelector('input[type="text"],input:not([type])');
+  if(!inp) return;
+  const v=parseFloat(inp.value)||0;
+  inp.value=Math.max(0,v+delta).toFixed(Math.abs(delta)<1?2:0);
+}
+
+/* ═══ SETTINGS TABS (legacy - kept for compatibility) ═══ */
+function switchStab(pane,el){
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('act'));
+  document.querySelectorAll('.stab-pane').forEach(p=>p.classList.remove('act'));
+  el.classList.add('act');
+  document.getElementById(pane).classList.add('act');
+}
+
+/* ═══ QUIT STATUS SIMULATION ═══ */
+const trackers=['rutracker.org','kinozal.tv','nnmclub.to','archlinux.org','tracker.ubuntu.com','dead.tracker.io','nnm-club.me','opentracker.net'];
+let _quitIdx=0,_quitTimer=null;
+const origOpenM=openM;
+window.openM=function(id){
+  origOpenM(id);
+  if(id==='modal-quit'){
+    _quitIdx=0;
+    const s=document.getElementById('quit-status');
+    clearInterval(_quitTimer);
+    _quitTimer=setInterval(()=>{
+      _quitIdx++;
+      if(_quitIdx>=trackers.length){clearInterval(_quitTimer);s.textContent='Готово — можно закрывать';return;}
+      s.textContent=`Уведомление ${trackers[_quitIdx]}… (${_quitIdx+1}/${trackers.length})`;
+    },600);
+  }
+};
+
+setLanguage(localStorage.getItem('lang')||'ru');
+applyFlt();
+updateRehashBtn();
+</script>
+</body>
+</html>

@@ -440,95 +440,571 @@ component MagnetDialog inherits Rectangle {
 component SettingsDialog inherits Rectangle {
     in property <bool> visible-dialog;
     in-out property <string> selected-language: "en";
+    in-out property <int> settings-tab: 0;
     callback language-changed(string);
+    callback saved();
     callback cancelled();
-
+    in-out property <bool> cfg-speed-up-enabled: false;
+    in-out property <int> cfg-speed-up-kbs: 0;
+    in-out property <bool> cfg-speed-down-enabled: false;
+    in-out property <int> cfg-speed-down-kbs: 0;
+    in-out property <bool> cfg-alt-speed-enabled: false;
+    in-out property <int> cfg-alt-speed-up-kbs: 0;
+    in-out property <int> cfg-alt-speed-down-kbs: 0;
+    in-out property <bool> cfg-alt-speed-schedule: false;
+    in-out property <int> cfg-alt-speed-time-begin: 540;
+    in-out property <int> cfg-alt-speed-time-end: 1020;
+    in-out property <bool> cfg-speed-day-mon: true;
+    in-out property <bool> cfg-speed-day-tue: true;
+    in-out property <bool> cfg-speed-day-wed: true;
+    in-out property <bool> cfg-speed-day-thu: true;
+    in-out property <bool> cfg-speed-day-fri: true;
+    in-out property <bool> cfg-speed-day-sat: false;
+    in-out property <bool> cfg-speed-day-sun: false;
+    in-out property <bool> cfg-dl-watch-dir-enabled: false;
+    in-out property <string> cfg-dl-watch-dir: "";
+    in-out property <bool> cfg-dl-start-added: true;
+    in-out property <bool> cfg-dl-trash-torrent: false;
+    in-out property <string> cfg-dl-dir: "";
+    in-out property <int> cfg-dl-queue-max: 5;
+    in-out property <int> cfg-dl-seed-ratio-limit-min: 30;
+    in-out property <bool> cfg-dl-part-ext: true;
+    in-out property <bool> cfg-dl-incomplete-dir-enabled: false;
+    in-out property <string> cfg-dl-incomplete-dir: "";
+    in-out property <bool> cfg-dl-done-script-enabled: false;
+    in-out property <string> cfg-dl-done-script: "";
+    in-out property <bool> cfg-seed-ratio-enabled: false;
+    in-out property <int> cfg-seed-ratio: 200;
+    in-out property <bool> cfg-seed-idle-enabled: false;
+    in-out property <int> cfg-seed-idle-min: 30;
+    in-out property <int> cfg-net-port: 51413;
+    in-out property <bool> cfg-net-random-port: true;
+    in-out property <bool> cfg-net-port-forward: true;
+    in-out property <int> cfg-net-max-peers-torrent: 50;
+    in-out property <int> cfg-net-max-peers-total: 200;
+    in-out property <bool> cfg-net-utp: true;
+    in-out property <bool> cfg-net-pex: true;
+    in-out property <bool> cfg-net-dht: true;
+    in-out property <bool> cfg-net-lpd: true;
+    in-out property <string> cfg-net-default-trackers: "";
+    in-out property <int> cfg-priv-encryption: 1;
+    in-out property <bool> cfg-priv-blocklist-enabled: false;
+    in-out property <string> cfg-priv-blocklist-url: "";
+    in-out property <bool> cfg-remote-enabled: true;
+    in-out property <int> cfg-remote-port: 9091;
+    in-out property <bool> cfg-remote-auth: false;
+    in-out property <string> cfg-remote-username: "";
+    in-out property <string> cfg-remote-password: "";
+    in-out property <bool> cfg-remote-whitelist-enabled: true;
+    in-out property <string> cfg-remote-whitelist: "";
+    in-out property <bool> cfg-autostart: false;
+    in-out property <bool> cfg-suspend: false;
+    in-out property <bool> cfg-start-minimized: false;
+    in-out property <bool> cfg-delete-torrent: false;
+    in-out property <int> cfg-refresh-interval: 5;
+    in-out property <int> cfg-on-close: 0;
+    in-out property <bool> cfg-notify-add: true;
+    in-out property <bool> cfg-notify-complete: true;
+    in-out property <bool> cfg-notify-sound: true;
+    in-out property <int> cfg-theme: 0;
+    in-out property <bool> cfg-tb-add: true;
+    in-out property <bool> cfg-tb-magnet: true;
+    in-out property <bool> cfg-tb-create: true;
+    in-out property <bool> cfg-tb-rehash: true;
+    in-out property <bool> cfg-tb-start-sel: true;
+    in-out property <bool> cfg-tb-pause-sel: true;
+    in-out property <bool> cfg-tb-start-all: true;
+    in-out property <bool> cfg-tb-pause-all: true;
+    in-out property <bool> cfg-lp-status: true;
+    in-out property <bool> cfg-lp-disks: true;
+    in-out property <bool> cfg-lp-trackers: false;
+    in-out property <bool> cfg-lp-webtorrents: false;
+    in-out property <bool> cfg-lp-tags: false;
+    in-out property <bool> cfg-lp-created: false;
+    property <int> priv-encryption-expanded: -1;
     visible: visible-dialog;
     z: 100;
     background: #00000099;
-
     Rectangle {
-        width: 380px; height: 320px;
-        x: (parent.width  - self.width)  / 2;
+        width: 800px; height: 600px;
+        x: (parent.width - self.width) / 2;
         y: (parent.height - self.height) / 2;
-        background: #1e2430;
-        border-radius: 12px;
-        border-width: 1px; border-color: #3a4560;
-        drop-shadow-blur: 24px;
-        drop-shadow-color: #00000088;
-
-        VerticalLayout {
-            padding: 22px; spacing: 14px;
-
-            // ── Header ──────────────────────────────────────────────────────
-            VerticalLayout {
-                spacing: 5px;
-                Text {
-                    text: "🌐 Язык интерфейса";
-                    color: #dce4f5; font-size: 15px; font-weight: 700;
-                    horizontal-alignment: center;
-                }
-                Text {
-                    text: "⚠ Требуется перезапуск";
-                    color: #c08030; font-size: 11px;
-                    horizontal-alignment: center;
-                }
+        background: #13151c; border-radius: 12px;
+        border-width: 1px; border-color: #252840;
+        drop-shadow-blur: 24px; drop-shadow-color: #00000088;
+        VerticalLayout { padding: 0px; spacing: 0px;
+            HorizontalLayout { height: 44px; padding-left: 20px;
+                Text { text: "Settings"; color: #e4e7f2; font-size: 15px; font-weight: 600; vertical-alignment: center; horizontal-stretch: 1; }
             }
-
-            // ── Language list ────────────────────────────────────────────────
-            for lang-item in [
-                {code: "en", label: "🇬🇧  English"},
-                {code: "de", label: "🇩🇪  Deutsch"},
-                {code: "ru", label: "🇷🇺  Русский"},
-                {code: "zh", label: "🇨🇳  中文"},
-                {code: "es", label: "🇪🇸  Español"},
-            ]: Rectangle {
-                height: 34px;
-                border-radius: 7px;
-                border-width: 1px;
-                background: selected-language == lang-item.code ? #1e3a5a
-                          : (lang-ta.has-hover ? #232d40 : #181f2e);
-                border-color: selected-language == lang-item.code ? #4a8aba : transparent;
-                animate background { duration: 120ms; }
-
-                HorizontalLayout {
-                    padding-left: 14px; padding-right: 14px;
-                    spacing: 0px;
-                    Text {
-                        text: lang-item.label;
-                        color: selected-language == lang-item.code ? #a8d4f8 : #8090b0;
-                        font-size: 13px;
-                        vertical-alignment: center;
-                        animate color { duration: 120ms; }
+            Rectangle { height: 1px; background: #252840; }
+            HorizontalLayout { vertical-stretch: 1; spacing: 0px;
+                Rectangle { width: 160px; background: #13151c;
+                    VerticalLayout { width: 160px; spacing: 2px; padding: 8px; alignment: start;
+                    for tab-info in [
+                        {ico: "⚙", n: 0, label: "General"},
+                        {ico: "◎", n: 1, label: "Speed"},
+                        {ico: "▾", n: 2, label: "Downloading"},
+                        {ico: "▴", n: 3, label: "Seeding"},
+                        {ico: "🌐", n: 4, label: "Network"},
+                        {ico: "🛡", n: 5, label: "Privacy"},
+                        {ico: "💻", n: 6, label: "Remote"},
+                        {ico: "☰", n: 7, label: "Interface"},
+                        {ico: "ⓘ", n: 8, label: "About"},
+                    ]: Rectangle {
+                        height: 34px; border-radius: 6px;
+                        background: settings-tab == tab-info.n ? #21253a : transparent;
+                        animate background { duration: 80ms; }
+                        tab-ta := TouchArea { clicked => { settings-tab = tab-info.n; } }
+                        HorizontalLayout { spacing: 10px; padding-left: 14px; alignment: center;
+                            Rectangle { width: 3px; height: 18px; border-radius: 2px; background: settings-tab == tab-info.n ? #4a7cf7 : transparent; animate background { duration: 80ms; } }
+                            Text { text: tab-info.ico; color: settings-tab == tab-info.n ? #4a7cf7 : #4e556e; font-size: 13px; }
+                            Text { text: tab-info.label; color: settings-tab == tab-info.n ? #e4e7f2 : #8f97b8; font-size: 12px; }
+                        }
                     }
-                    Rectangle { horizontal-stretch: 1; }
-                    if selected-language == lang-item.code: Text {
-                        text: "✓";
-                        color: #4a8aba; font-size: 13px;
-                        vertical-alignment: center;
                     }
                 }
-                lang-ta := TouchArea {
-                    clicked => { selected-language = lang-item.code; language-changed(lang-item.code); }
+                Rectangle { width: 1px; background: #343858; }
+                Rectangle { vertical-stretch: 1; background: #1a1d27;
+                    if settings-tab == 0: VerticalLayout { padding: 20px; spacing: 12px; alignment: start;
+                        Text { text: "Language / Язык интерфейса"; color: #dce4f5; font-size: 15px; font-weight: 700; }
+                        Text { text: "⚠ Requires restart"; color: #c08030; font-size: 11px; }
+                        for lang-item in [
+                            {code: "en", label: "English"},
+                            {code: "de", label: "Deutsch"},
+                            {code: "ru", label: "Русский"},
+                            {code: "zh", label: "中文"},
+                            {code: "es", label: "Español"},
+                        ]: Rectangle {
+                            height: 34px; border-radius: 6px; border-width: 1px;
+                            background: selected-language == lang-item.code ? #1e3a5a : (lang-ta.has-hover ? #232d40 : #181f2e);
+                            border-color: selected-language == lang-item.code ? #4a8aba : transparent;
+                            animate background { duration: 120ms; }
+                            HorizontalLayout { padding-left: 12px; spacing: 0px;
+                                Text { text: lang-item.label; color: selected-language == lang-item.code ? #a8d4f8 : #8090b0; font-size: 13px; vertical-alignment: center; animate color { duration: 120ms; } }
+                                Rectangle { horizontal-stretch: 1; }
+                                if selected-language == lang-item.code: Text { text: "✓"; color: #4a8aba; font-size: 13px; vertical-alignment: center; }
+                            }
+                            lang-ta := TouchArea { clicked => { selected-language = lang-item.code; language-changed(lang-item.code); } }
+                        }
+                    }
+                    if settings-tab == 1: VerticalLayout { padding: 20px; spacing: 10px; alignment: start;
+                        Text { text: "SPEED LIMITS"; color: #8f97b8; font-size: 11px; font-weight: 600; }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "Upload limit (KB/s)"; color: #8090b0; font-size: 11px; }
+                            HorizontalLayout { spacing: 8px;
+                                Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-speed-up-enabled ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                    up-ta := TouchArea { clicked => { cfg-speed-up-enabled = !cfg-speed-up-enabled; } }
+                                    Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-speed-up-enabled ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                                }
+                                Rectangle { horizontal-stretch: 1; height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                    HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                        Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; up-min := TouchArea { clicked => { cfg-speed-up-kbs = Math.max(0, cfg-speed-up-kbs - 1); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                        Text { text: cfg-speed-up-kbs * 100 + ""; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                        Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; up-pls := TouchArea { clicked => { cfg-speed-up-kbs = Math.min(9999, cfg-speed-up-kbs + 1); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    }
+                                }
+                            }
+                        }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "Download limit (KB/s)"; color: #8090b0; font-size: 11px; }
+                            HorizontalLayout { spacing: 8px;
+                                Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-speed-down-enabled ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                    dn-ta := TouchArea { clicked => { cfg-speed-down-enabled = !cfg-speed-down-enabled; } }
+                                    Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-speed-down-enabled ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                                }
+                                Rectangle { horizontal-stretch: 1; height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                    HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                        Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; dn-min := TouchArea { clicked => { cfg-speed-down-kbs = Math.max(0, cfg-speed-down-kbs - 1); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                        Text { text: cfg-speed-down-kbs * 100 + ""; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                        Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; dn-pls := TouchArea { clicked => { cfg-speed-down-kbs = Math.min(9999, cfg-speed-down-kbs + 1); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    }
+                                }
+                            }
+                        }
+                        Rectangle { height: 1px; background: #343858; }
+                        Text { text: "ALT SPEEDS"; color: #e8a240; font-size: 11px; font-weight: 600; }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { horizontal-stretch: 1; height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; au-min := TouchArea { clicked => { cfg-alt-speed-up-kbs = Math.max(0, cfg-alt-speed-up-kbs - 1); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    Text { text: cfg-alt-speed-up-kbs * 100 + ""; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; au-pls := TouchArea { clicked => { cfg-alt-speed-up-kbs = Math.min(9999, cfg-alt-speed-up-kbs + 1); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                }
+                            }
+                            Rectangle { horizontal-stretch: 1; height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; ad-min := TouchArea { clicked => { cfg-alt-speed-down-kbs = Math.max(0, cfg-alt-speed-down-kbs - 1); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    Text { text: cfg-alt-speed-down-kbs * 100 + ""; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; ad-pls := TouchArea { clicked => { cfg-alt-speed-down-kbs = Math.min(9999, cfg-alt-speed-down-kbs + 1); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                }
+                            }
+                        }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-alt-speed-schedule ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                sched-ta := TouchArea { clicked => { cfg-alt-speed-schedule = !cfg-alt-speed-schedule; } }
+                                Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-alt-speed-schedule ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                            }
+                            Text { text: "Scheduled"; color: #dce4f5; font-size: 13px; vertical-alignment: center; }
+                        }
+                        if cfg-alt-speed-schedule: VerticalLayout { spacing: 6px;
+                            HorizontalLayout { spacing: 8px;
+                                VerticalLayout { spacing: 2px; horizontal-stretch: 1;
+                                    Text { text: "From (min)"; color: #8090b0; font-size: 10px; horizontal-alignment: center; }
+                                    Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                        HorizontalLayout { padding-left: 6px; padding-right: 6px; spacing: 4px; alignment: center;
+                                            Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; fmin := TouchArea { clicked => { cfg-alt-speed-time-begin = Math.max(0, cfg-alt-speed-time-begin - 30); } } Text { text: "−"; color: #8f97b8; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; } }
+                                            Text { text: (cfg-alt-speed-time-begin / 60) + ":" + (Math.mod(cfg-alt-speed-time-begin, 60) == 0 ? "00" : "30"); color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                            Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; fpls := TouchArea { clicked => { cfg-alt-speed-time-begin = Math.min(1410, cfg-alt-speed-time-begin + 30); } } Text { text: "+"; color: #8f97b8; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; } }
+                                        }
+                                    }
+                                }
+                                VerticalLayout { spacing: 2px; horizontal-stretch: 1;
+                                    Text { text: "To (min)"; color: #8090b0; font-size: 10px; horizontal-alignment: center; }
+                                    Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                        HorizontalLayout { padding-left: 6px; padding-right: 6px; spacing: 4px; alignment: center;
+                                            Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; tmin := TouchArea { clicked => { cfg-alt-speed-time-end = Math.max(0, cfg-alt-speed-time-end - 30); } } Text { text: "−"; color: #8f97b8; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; } }
+                                            Text { text: (cfg-alt-speed-time-end / 60) + ":" + (Math.mod(cfg-alt-speed-time-end, 60) == 0 ? "00" : "30"); color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                            Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; tpls := TouchArea { clicked => { cfg-alt-speed-time-end = Math.min(1410, cfg-alt-speed-time-end + 30); } } Text { text: "+"; color: #8f97b8; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; } }
+                                        }
+                                    }
+                                }
+                            }
+                            HorizontalLayout { spacing: 4px;
+                                Rectangle { width: 36px; height: 28px; border-radius: 14px; border-width: 1px; background: cfg-speed-day-mon ? #4a7cf7 : #13151c; border-color: cfg-speed-day-mon ? #4a7cf7 : #252840; TouchArea { clicked => { cfg-speed-day-mon = !cfg-speed-day-mon; } } Text { text: "Mon"; color: cfg-speed-day-mon ? #e4e7f2 : #8f97b8; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; } }
+                                Rectangle { width: 36px; height: 28px; border-radius: 14px; border-width: 1px; background: cfg-speed-day-tue ? #4a7cf7 : #13151c; border-color: cfg-speed-day-tue ? #4a7cf7 : #252840; TouchArea { clicked => { cfg-speed-day-tue = !cfg-speed-day-tue; } } Text { text: "Tue"; color: cfg-speed-day-tue ? #e4e7f2 : #8f97b8; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; } }
+                                Rectangle { width: 36px; height: 28px; border-radius: 14px; border-width: 1px; background: cfg-speed-day-wed ? #4a7cf7 : #13151c; border-color: cfg-speed-day-wed ? #4a7cf7 : #252840; TouchArea { clicked => { cfg-speed-day-wed = !cfg-speed-day-wed; } } Text { text: "Wed"; color: cfg-speed-day-wed ? #e4e7f2 : #8f97b8; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; } }
+                                Rectangle { width: 36px; height: 28px; border-radius: 14px; border-width: 1px; background: cfg-speed-day-thu ? #4a7cf7 : #13151c; border-color: cfg-speed-day-thu ? #4a7cf7 : #252840; TouchArea { clicked => { cfg-speed-day-thu = !cfg-speed-day-thu; } } Text { text: "Thu"; color: cfg-speed-day-thu ? #e4e7f2 : #8f97b8; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; } }
+                                Rectangle { width: 36px; height: 28px; border-radius: 14px; border-width: 1px; background: cfg-speed-day-fri ? #4a7cf7 : #13151c; border-color: cfg-speed-day-fri ? #4a7cf7 : #252840; TouchArea { clicked => { cfg-speed-day-fri = !cfg-speed-day-fri; } } Text { text: "Fri"; color: cfg-speed-day-fri ? #e4e7f2 : #8f97b8; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; } }
+                                Rectangle { width: 36px; height: 28px; border-radius: 14px; border-width: 1px; background: cfg-speed-day-sat ? #4a7cf7 : #13151c; border-color: cfg-speed-day-sat ? #4a7cf7 : #252840; TouchArea { clicked => { cfg-speed-day-sat = !cfg-speed-day-sat; } } Text { text: "Sat"; color: cfg-speed-day-sat ? #e4e7f2 : #8f97b8; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; } }
+                                Rectangle { width: 36px; height: 28px; border-radius: 14px; border-width: 1px; background: cfg-speed-day-sun ? #4a7cf7 : #13151c; border-color: cfg-speed-day-sun ? #4a7cf7 : #252840; TouchArea { clicked => { cfg-speed-day-sun = !cfg-speed-day-sun; } } Text { text: "Sun"; color: cfg-speed-day-sun ? #e4e7f2 : #8f97b8; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; } }
+                            }
+                        }
+                    }
+                    if settings-tab == 2: VerticalLayout { padding: 20px; spacing: 10px; alignment: start;
+                        Text { text: "DOWNLOADING"; color: #8f97b8; font-size: 11px; font-weight: 600; }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "Download dir"; color: #8090b0; font-size: 11px; }
+                            Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858; dl-edit := LineEdit { text <=> cfg-dl-dir; } }
+                        }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-dl-watch-dir-enabled ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                wd-ta := TouchArea { clicked => { cfg-dl-watch-dir-enabled = !cfg-dl-watch-dir-enabled; } }
+                                Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-dl-watch-dir-enabled ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                            }
+                            Text { text: "Watch dir"; color: #dce4f5; font-size: 13px; vertical-alignment: center; }
+                        }
+                        if cfg-dl-watch-dir-enabled: Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858; wd-edit := LineEdit { text <=> cfg-dl-watch-dir; } }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-dl-incomplete-dir-enabled ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                id-ta := TouchArea { clicked => { cfg-dl-incomplete-dir-enabled = !cfg-dl-incomplete-dir-enabled; } }
+                                Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-dl-incomplete-dir-enabled ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                            }
+                            Text { text: "Incomplete dir"; color: #dce4f5; font-size: 13px; vertical-alignment: center; }
+                        }
+                        if cfg-dl-incomplete-dir-enabled: Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858; id-edit := LineEdit { text <=> cfg-dl-incomplete-dir; } }
+                        Rectangle { height: 1px; background: #343858; }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "Queue size"; color: #8090b0; font-size: 11px; }
+                            Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; qmin := TouchArea { clicked => { cfg-dl-queue-max = Math.max(1, cfg-dl-queue-max - 1); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    Text { text: cfg-dl-queue-max + ""; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; qpls := TouchArea { clicked => { cfg-dl-queue-max = Math.min(100, cfg-dl-queue-max + 1); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                }
+                            }
+                        }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "Stalled (min)"; color: #8090b0; font-size: 11px; }
+                            Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; smin := TouchArea { clicked => { cfg-dl-seed-ratio-limit-min = Math.max(0, cfg-dl-seed-ratio-limit-min - 5); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    Text { text: cfg-dl-seed-ratio-limit-min + ""; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; spls := TouchArea { clicked => { cfg-dl-seed-ratio-limit-min = Math.min(999, cfg-dl-seed-ratio-limit-min + 5); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                }
+                            }
+                        }
+                        Rectangle { height: 1px; background: #343858; }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-dl-start-added ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-dl-start-added ? #4a7cf7 : #252840; sta := TouchArea { clicked => { cfg-dl-start-added = !cfg-dl-start-added; } } if cfg-dl-start-added: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                            Text { text: "Start added"; color: #dce4f5; font-size: 12px; vertical-alignment: center; }
+                        }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-dl-trash-torrent ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-dl-trash-torrent ? #4a7cf7 : #252840; tta := TouchArea { clicked => { cfg-dl-trash-torrent = !cfg-dl-trash-torrent; } } if cfg-dl-trash-torrent: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                            Text { text: "Trash files"; color: #dce4f5; font-size: 12px; vertical-alignment: center; }
+                        }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-dl-part-ext ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-dl-part-ext ? #4a7cf7 : #252840; pta := TouchArea { clicked => { cfg-dl-part-ext = !cfg-dl-part-ext; } } if cfg-dl-part-ext: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                            Text { text: "Append .part"; color: #dce4f5; font-size: 12px; vertical-alignment: center; }
+                        }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-dl-done-script-enabled ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                ds-ta := TouchArea { clicked => { cfg-dl-done-script-enabled = !cfg-dl-done-script-enabled; } }
+                                Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-dl-done-script-enabled ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                            }
+                            Text { text: "Script on done"; color: #dce4f5; font-size: 13px; vertical-alignment: center; }
+                        }
+                        if cfg-dl-done-script-enabled: Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858; dse := LineEdit { text <=> cfg-dl-done-script; } }
+                    }
+                    if settings-tab == 3: VerticalLayout { padding: 20px; spacing: 10px; alignment: start;
+                        Text { text: "SEEDING LIMITS"; color: #8f97b8; font-size: 11px; font-weight: 600; }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-seed-ratio-enabled ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                sr-ta := TouchArea { clicked => { cfg-seed-ratio-enabled = !cfg-seed-ratio-enabled; } }
+                                Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-seed-ratio-enabled ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                            }
+                            Text { text: "Seed ratio limit"; color: #dce4f5; font-size: 13px; vertical-alignment: center; }
+                        }
+                        if cfg-seed-ratio-enabled: Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                            HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; srmin := TouchArea { clicked => { cfg-seed-ratio = Math.max(10, cfg-seed-ratio - 10); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: (cfg-seed-ratio / 100) + "." + Math.mod(cfg-seed-ratio, 100) / 10; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; srpls := TouchArea { clicked => { cfg-seed-ratio = Math.min(5000, cfg-seed-ratio + 10); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                            }
+                        }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-seed-idle-enabled ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                si-ta := TouchArea { clicked => { cfg-seed-idle-enabled = !cfg-seed-idle-enabled; } }
+                                Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-seed-idle-enabled ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                            }
+                            Text { text: "Idle seeding limit"; color: #dce4f5; font-size: 13px; vertical-alignment: center; }
+                        }
+                        if cfg-seed-idle-enabled: Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                            HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; simin := TouchArea { clicked => { cfg-seed-idle-min = Math.max(1, cfg-seed-idle-min - 5); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: cfg-seed-idle-min + " min"; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; sipls := TouchArea { clicked => { cfg-seed-idle-min = Math.min(9999, cfg-seed-idle-min + 5); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                            }
+                        }
+                    }
+                    if settings-tab == 4: VerticalLayout { padding: 20px; spacing: 10px; alignment: start;
+                        Text { text: "NETWORK"; color: #8f97b8; font-size: 11px; font-weight: 600; }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "Peer port"; color: #8090b0; font-size: 11px; }
+                            Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; pmin := TouchArea { clicked => { cfg-net-port = Math.max(1, cfg-net-port - 1); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    Text { text: cfg-net-port + ""; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; ppls := TouchArea { clicked => { cfg-net-port = Math.min(65535, cfg-net-port + 1); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                }
+                            }
+                        }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-net-random-port ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-net-random-port ? #4a7cf7 : #252840; rpa := TouchArea { clicked => { cfg-net-random-port = !cfg-net-random-port; } } if cfg-net-random-port: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                            Text { text: "Random port"; color: #dce4f5; font-size: 12px; vertical-alignment: center; }
+                        }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-net-port-forward ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-net-port-forward ? #4a7cf7 : #252840; pfa := TouchArea { clicked => { cfg-net-port-forward = !cfg-net-port-forward; } } if cfg-net-port-forward: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                            Text { text: "Port forward (UPnP)"; color: #dce4f5; font-size: 12px; vertical-alignment: center; }
+                        }
+                        Rectangle { height: 1px; background: #343858; }
+                        HorizontalLayout { spacing: 10px;
+                            VerticalLayout { spacing: 4px; horizontal-stretch: 1;
+                                Text { text: "Peers/torrent"; color: #8090b0; font-size: 11px; }
+                                Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                    HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                        Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; pptmin := TouchArea { clicked => { cfg-net-max-peers-torrent = Math.max(1, cfg-net-max-peers-torrent - 5); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                        Text { text: cfg-net-max-peers-torrent + ""; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                        Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; pptpls := TouchArea { clicked => { cfg-net-max-peers-torrent = Math.min(999, cfg-net-max-peers-torrent + 5); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    }
+                                }
+                            }
+                            VerticalLayout { spacing: 4px; horizontal-stretch: 1;
+                                Text { text: "Peers total"; color: #8090b0; font-size: 11px; }
+                                Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                    HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                        Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; pgtmin := TouchArea { clicked => { cfg-net-max-peers-total = Math.max(1, cfg-net-max-peers-total - 10); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                        Text { text: cfg-net-max-peers-total + ""; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                        Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; pgtpls := TouchArea { clicked => { cfg-net-max-peers-total = Math.min(9999, cfg-net-max-peers-total + 10); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    }
+                                }
+                            }
+                        }
+                        Rectangle { height: 1px; background: #343858; }
+                        Text { text: "PROTOCOL"; color: #8f97b8; font-size: 11px; font-weight: 600; }
+                        HorizontalLayout { spacing: 12px;
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-net-utp ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-net-utp ? #4a7cf7 : #252840; utpa := TouchArea { clicked => { cfg-net-utp = !cfg-net-utp; } } if cfg-net-utp: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "uTP"; color: #dce4f5; font-size: 12px; vertical-alignment: center; }
+                            }
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-net-pex ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-net-pex ? #4a7cf7 : #252840; pexa := TouchArea { clicked => { cfg-net-pex = !cfg-net-pex; } } if cfg-net-pex: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "PEX"; color: #dce4f5; font-size: 12px; vertical-alignment: center; }
+                            }
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-net-dht ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-net-dht ? #4a7cf7 : #252840; dhta := TouchArea { clicked => { cfg-net-dht = !cfg-net-dht; } } if cfg-net-dht: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "DHT"; color: #dce4f5; font-size: 12px; vertical-alignment: center; }
+                            }
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-net-lpd ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-net-lpd ? #4a7cf7 : #252840; lpda := TouchArea { clicked => { cfg-net-lpd = !cfg-net-lpd; } } if cfg-net-lpd: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "LPD"; color: #dce4f5; font-size: 12px; vertical-alignment: center; }
+                            }
+                        }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "Default trackers"; color: #8090b0; font-size: 11px; }
+                            Rectangle { height: 64px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858; tre := LineEdit { text <=> cfg-net-default-trackers; } }
+                        }
+                    }
+                    if settings-tab == 5: VerticalLayout { padding: 20px; spacing: 10px; alignment: start;
+                        Text { text: "PRIVACY"; color: #8f97b8; font-size: 11px; font-weight: 600; }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "Encryption"; color: #8090b0; font-size: 11px; }
+                            Rectangle { height: 32px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                HorizontalLayout { padding-left: 12px; padding-right: 8px; alignment: center;
+                                    Text { text: cfg-priv-encryption == 0 ? "Preferred" : cfg-priv-encryption == 1 ? "Required" : "Disabled"; color: #dce4f5; font-size: 12px; vertical-alignment: center; horizontal-stretch: 1; }
+                                    Text { text: "▾"; color: #8090b0; font-size: 12px; vertical-alignment: center; }
+                                }
+                                edd := TouchArea { clicked => { priv-encryption-expanded = priv-encryption-expanded == 5 ? -1 : 5; } }
+                            }
+                            if priv-encryption-expanded == 5: VerticalLayout { spacing: 2px;
+                                Rectangle { height: 26px; border-radius: 4px; background: cfg-priv-encryption == 2 ? #4a7cf7 : #232d40; e0 := TouchArea { clicked => { cfg-priv-encryption = 2; priv-encryption-expanded = -1; } } Text { text: "Disabled"; color: cfg-priv-encryption == 2 ? #dce4f5 : #8090b0; font-size: 11px; x: 10px; vertical-alignment: center; } }
+                                Rectangle { height: 26px; border-radius: 4px; background: cfg-priv-encryption == 0 ? #4a7cf7 : #232d40; e1 := TouchArea { clicked => { cfg-priv-encryption = 0; priv-encryption-expanded = -1; } } Text { text: "Preferred"; color: cfg-priv-encryption == 0 ? #dce4f5 : #8090b0; font-size: 11px; x: 10px; vertical-alignment: center; } }
+                                Rectangle { height: 26px; border-radius: 4px; background: cfg-priv-encryption == 1 ? #4a7cf7 : #232d40; e2 := TouchArea { clicked => { cfg-priv-encryption = 1; priv-encryption-expanded = -1; } } Text { text: "Required"; color: cfg-priv-encryption == 1 ? #dce4f5 : #8090b0; font-size: 11px; x: 10px; vertical-alignment: center; } }
+                            }
+                        }
+                        Rectangle { height: 1px; background: #343858; }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-priv-blocklist-enabled ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                blta := TouchArea { clicked => { cfg-priv-blocklist-enabled = !cfg-priv-blocklist-enabled; } }
+                                Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-priv-blocklist-enabled ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                            }
+                            Text { text: "Blocklist"; color: #dce4f5; font-size: 13px; vertical-alignment: center; }
+                        }
+                        if cfg-priv-blocklist-enabled: Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858; ble := LineEdit { text <=> cfg-priv-blocklist-url; } }
+                    }
+                    if settings-tab == 6: VerticalLayout { padding: 20px; spacing: 10px; alignment: start;
+                        Text { text: "REMOTE (RPC)"; color: #8f97b8; font-size: 11px; font-weight: 600; }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-remote-enabled ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                ren := TouchArea { clicked => { cfg-remote-enabled = !cfg-remote-enabled; } }
+                                Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-remote-enabled ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                            }
+                            Text { text: "Enable RPC"; color: #dce4f5; font-size: 13px; vertical-alignment: center; }
+                        }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "RPC port"; color: #8090b0; font-size: 11px; }
+                            Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; rpmin := TouchArea { clicked => { cfg-remote-port = Math.max(1, cfg-remote-port - 1); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    Text { text: cfg-remote-port + ""; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; rppls := TouchArea { clicked => { cfg-remote-port = Math.min(65535, cfg-remote-port + 1); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                }
+                            }
+                        }
+                        Rectangle { height: 1px; background: #343858; }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-remote-auth ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                auta := TouchArea { clicked => { cfg-remote-auth = !cfg-remote-auth; } }
+                                Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-remote-auth ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                            }
+                            Text { text: "Authentication"; color: #dce4f5; font-size: 13px; vertical-alignment: center; }
+                        }
+                        if cfg-remote-auth: VerticalLayout { spacing: 6px;
+                            VerticalLayout { spacing: 4px;
+                                Text { text: "Username"; color: #8090b0; font-size: 11px; }
+                                Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858; rue := LineEdit { text <=> cfg-remote-username; } }
+                            }
+                            VerticalLayout { spacing: 4px;
+                                Text { text: "Password"; color: #8090b0; font-size: 11px; }
+                                Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858; rpe := LineEdit { text <=> cfg-remote-password; input-type: password; } }
+                            }
+                        }
+                        Rectangle { height: 1px; background: #343858; }
+                        HorizontalLayout { spacing: 8px;
+                            Rectangle { width: 36px; height: 20px; border-radius: 10px; background: cfg-remote-whitelist-enabled ? #4a7cf7 : #2a3448; animate background { duration: 150ms; }
+                                wlta := TouchArea { clicked => { cfg-remote-whitelist-enabled = !cfg-remote-whitelist-enabled; } }
+                                Rectangle { width: 16px; height: 16px; border-radius: 8px; background: #dce4f5; x: cfg-remote-whitelist-enabled ? parent.width - self.width - 2px : 2px; y: (parent.height - self.height) / 2; animate x { duration: 150ms; } }
+                            }
+                            Text { text: "Whitelist"; color: #dce4f5; font-size: 13px; vertical-alignment: center; }
+                        }
+                        if cfg-remote-whitelist-enabled: Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858; wle := LineEdit { text <=> cfg-remote-whitelist; } }
+                    }
+                    if settings-tab == 7: VerticalLayout { padding: 20px; spacing: 10px; alignment: start;
+                        Text { text: "INTERFACE & LOCAL"; color: #8f97b8; font-size: 11px; font-weight: 600; }
+                        HorizontalLayout { spacing: 12px;
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-autostart ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-autostart ? #4a7cf7 : #252840; asta := TouchArea { clicked => { cfg-autostart = !cfg-autostart; } } if cfg-autostart: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "Autostart"; color: #dce4f5; font-size: 11px; vertical-alignment: center; }
+                            }
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-suspend ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-suspend ? #4a7cf7 : #252840; ssta := TouchArea { clicked => { cfg-suspend = !cfg-suspend; } } if cfg-suspend: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "Suspend hide"; color: #dce4f5; font-size: 11px; vertical-alignment: center; }
+                            }
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-start-minimized ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-start-minimized ? #4a7cf7 : #252840; smta := TouchArea { clicked => { cfg-start-minimized = !cfg-start-minimized; } } if cfg-start-minimized: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "Start min"; color: #dce4f5; font-size: 11px; vertical-alignment: center; }
+                            }
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-delete-torrent ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-delete-torrent ? #4a7cf7 : #252840; dtta := TouchArea { clicked => { cfg-delete-torrent = !cfg-delete-torrent; } } if cfg-delete-torrent: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "Del file"; color: #dce4f5; font-size: 11px; vertical-alignment: center; }
+                            }
+                        }
+                        Rectangle { height: 1px; background: #343858; }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "Refresh (sec)"; color: #8090b0; font-size: 11px; }
+                            Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; rimin := TouchArea { clicked => { cfg-refresh-interval = Math.max(1, cfg-refresh-interval - 1); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    Text { text: cfg-refresh-interval + "s"; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; ripls := TouchArea { clicked => { cfg-refresh-interval = Math.min(60, cfg-refresh-interval + 1); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                }
+                            }
+                        }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "On close (0=ask,1=min,2=quit)"; color: #8090b0; font-size: 11px; }
+                            Rectangle { height: 28px; border-radius: 5px; background: #181f2e; border-width: 1px; border-color: #343858;
+                                HorizontalLayout { padding-left: 8px; padding-right: 8px; spacing: 4px; alignment: center;
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; ocmin := TouchArea { clicked => { cfg-on-close = Math.max(0, cfg-on-close - 1); } } Text { text: "−"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                    Text { text: cfg-on-close == 0 ? "Ask" : cfg-on-close == 1 ? "Minimize" : "Quit"; color: #dce4f5; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; horizontal-stretch: 1; }
+                                    Rectangle { width: 20px; height: 20px; border-radius: 4px; background: #21253a; ocpls := TouchArea { clicked => { cfg-on-close = Math.min(2, cfg-on-close + 1); } } Text { text: "+"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; } }
+                                }
+                            }
+                        }
+                        Rectangle { height: 1px; background: #343858; }
+                        Text { text: "NOTIFICATIONS"; color: #8f97b8; font-size: 11px; font-weight: 600; }
+                        HorizontalLayout { spacing: 12px;
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-notify-add ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-notify-add ? #4a7cf7 : #252840; nata := TouchArea { clicked => { cfg-notify-add = !cfg-notify-add; } } if cfg-notify-add: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "Add"; color: #dce4f5; font-size: 11px; vertical-alignment: center; }
+                            }
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-notify-complete ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-notify-complete ? #4a7cf7 : #252840; ncta := TouchArea { clicked => { cfg-notify-complete = !cfg-notify-complete; } } if cfg-notify-complete: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "Done"; color: #dce4f5; font-size: 11px; vertical-alignment: center; }
+                            }
+                            HorizontalLayout { spacing: 6px;
+                                Rectangle { width: 20px; height: 20px; border-radius: 4px; background: cfg-notify-sound ? #4a7cf7 : #13151c; border-width: 1px; border-color: cfg-notify-sound ? #4a7cf7 : #252840; nsta := TouchArea { clicked => { cfg-notify-sound = !cfg-notify-sound; } } if cfg-notify-sound: Text { text: "✓"; color: #dce4f5; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                                Text { text: "Sound"; color: #dce4f5; font-size: 11px; vertical-alignment: center; }
+                            }
+                        }
+                        Rectangle { height: 1px; background: #343858; }
+                        VerticalLayout { spacing: 4px;
+                            Text { text: "Theme"; color: #8090b0; font-size: 11px; }
+                            HorizontalLayout { spacing: 6px;
+                                for th in [{v:0,l:"System"},{v:1,l:"Light"},{v:2,l:"Dark"}]: Rectangle { height: 28px; border-radius: 5px; border-width: 1px; horizontal-stretch: 1; background: cfg-theme == th.v ? #4a7cf7 : #13151c; border-color: cfg-theme == th.v ? #4a7cf7 : #252840; thta := TouchArea { clicked => { cfg-theme = th.v; } } Text { text: th.l; color: cfg-theme == th.v ? #e4e7f2 : #8f97b8; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } }
+                            }
+                        }
+                    }
+
+                    if settings-tab == 8: VerticalLayout { padding: 20px; spacing: 10px; alignment: start;
+                        Text { text: "ABOUT"; color: #8f97b8; font-size: 11px; font-weight: 600; }
+                        Text { text: "Transmission Remote Slint v0.6.3"; color: #e4e7f2; font-size: 13px; }
+                        Text { text: "Developed with Slint UI framework"; color: #8f97b8; font-size: 12px; }
+                        Text { text: "© 2026 Jinseoyeon"; color: #8f97b8; font-size: 12px; }
+                        Text { text: "License: MIT"; color: #8f97b8; font-size: 12px; }
+                    }
                 }
             }
-
-            // ── Close button ─────────────────────────────────────────────────
-            Rectangle {
-                height: 34px;
-                border-radius: 7px;
-                border-width: 1px;
-                background: close-ta.has-hover ? #2a3a50 : #1e2a3a;
-                border-color: #3a4a60;
-                animate background { duration: 120ms; }
-                Text {
-                    text: "Закрыть";
-                    color: #8090b0;
-                    font-size: 13px;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
+            Rectangle { height: 1px; background: #252840; }
+            Rectangle { height: 52px; background: #0d0f13;
+                HorizontalLayout { padding-left: 20px; padding-right: 20px; spacing: 12px; alignment: end;
+                    Rectangle { width: 90px; height: 32px; border-radius: 6px; background: close-ta.has-hover ? #1a1d27 : #13151c; border-width: 1px; border-color: #343858; animate background { duration: 120ms; }
+                        close-ta := TouchArea { clicked => { cancelled(); } }
+                        Text { text: "Cancel"; color: #8f97b8; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; }
+                    }
+                    Rectangle { width: 90px; height: 32px; border-radius: 6px; background: save-ta.has-hover ? #5a8cff : #4a7cf7; border-width: 1px; border-color: #4a7cf7; animate background { duration: 120ms; }
+                        save-ta := TouchArea { clicked => { saved(); } }
+                        Text { text: "Save"; color: #e4e7f2; font-size: 13px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                    }
                 }
-                close-ta := TouchArea { clicked => { cancelled(); } }
             }
         }
     }
@@ -742,6 +1218,91 @@ export component MainWindow inherits Window {
     // Settings dialog
     in-out property <bool>   settings-dialog-visible: false;
     in-out property <string> selected-language: "en";
+    // Speed
+    in-out property <int>     settings-tab: 0;
+    in-out property <bool>   cfg-speed-up-enabled: false;
+    in-out property <int>     cfg-speed-up-kbs: 0;
+    in-out property <bool>   cfg-speed-down-enabled: false;
+    in-out property <int>     cfg-speed-down-kbs: 0;
+    in-out property <bool>   cfg-alt-speed-enabled: false;
+    in-out property <int>     cfg-alt-speed-up-kbs: 0;
+    in-out property <int>     cfg-alt-speed-down-kbs: 0;
+    in-out property <bool>   cfg-alt-speed-schedule: false;
+    in-out property <int>     cfg-alt-speed-time-begin: 540;
+    in-out property <int>     cfg-alt-speed-time-end: 1020;
+    in-out property <bool>   cfg-speed-day-mon: true;
+    in-out property <bool>   cfg-speed-day-tue: true;
+    in-out property <bool>   cfg-speed-day-wed: true;
+    in-out property <bool>   cfg-speed-day-thu: true;
+    in-out property <bool>   cfg-speed-day-fri: true;
+    in-out property <bool>   cfg-speed-day-sat: false;
+    in-out property <bool>   cfg-speed-day-sun: false;
+    // Downloading
+    in-out property <bool>   cfg-dl-watch-dir-enabled: false;
+    in-out property <string> cfg-dl-watch-dir: "";
+    in-out property <bool>   cfg-dl-start-added: true;
+    in-out property <bool>   cfg-dl-trash-torrent: false;
+    in-out property <string> cfg-dl-dir: "";
+    in-out property <int>     cfg-dl-queue-max: 5;
+    in-out property <int>     cfg-dl-seed-ratio-limit-min: 30;
+    in-out property <bool>   cfg-dl-part-ext: true;
+    in-out property <bool>   cfg-dl-incomplete-dir-enabled: false;
+    in-out property <string> cfg-dl-incomplete-dir: "";
+    in-out property <bool>   cfg-dl-done-script-enabled: false;
+    in-out property <string> cfg-dl-done-script: "";
+    // Seeding
+    in-out property <bool>   cfg-seed-ratio-enabled: false;
+    in-out property <int>     cfg-seed-ratio: 200;
+    in-out property <bool>   cfg-seed-idle-enabled: false;
+    in-out property <int>     cfg-seed-idle-min: 30;
+    // Network
+    in-out property <int>     cfg-net-port: 51413;
+    in-out property <bool>   cfg-net-random-port: true;
+    in-out property <bool>   cfg-net-port-forward: true;
+    in-out property <int>     cfg-net-max-peers-torrent: 50;
+    in-out property <int>     cfg-net-max-peers-total: 200;
+    in-out property <bool>   cfg-net-utp: true;
+    in-out property <bool>   cfg-net-pex: true;
+    in-out property <bool>   cfg-net-dht: true;
+    in-out property <bool>   cfg-net-lpd: true;
+    in-out property <string> cfg-net-default-trackers: "";
+    // Privacy
+    in-out property <int>     cfg-priv-encryption: 1;
+    in-out property <bool>   cfg-priv-blocklist-enabled: false;
+    in-out property <string> cfg-priv-blocklist-url: "";
+    // Remote
+    in-out property <bool>   cfg-remote-enabled: true;
+    in-out property <int>     cfg-remote-port: 9091;
+    in-out property <bool>   cfg-remote-auth: false;
+    in-out property <string> cfg-remote-username: "";
+    in-out property <string> cfg-remote-password: "";
+    in-out property <bool>   cfg-remote-whitelist-enabled: true;
+    in-out property <string> cfg-remote-whitelist: "";
+    // Interface
+    in-out property <bool>   cfg-autostart: false;
+    in-out property <bool>   cfg-suspend: false;
+    in-out property <bool>   cfg-start-minimized: false;
+    in-out property <bool>   cfg-delete-torrent: false;
+    in-out property <int>     cfg-refresh-interval: 5;
+    in-out property <int>     cfg-on-close: 0;
+    in-out property <bool>   cfg-notify-add: true;
+    in-out property <bool>   cfg-notify-complete: true;
+    in-out property <bool>   cfg-notify-sound: true;
+    in-out property <int>     cfg-theme: 0;
+    in-out property <bool>   cfg-tb-add: true;
+    in-out property <bool>   cfg-tb-magnet: true;
+    in-out property <bool>   cfg-tb-create: true;
+    in-out property <bool>   cfg-tb-rehash: true;
+    in-out property <bool>   cfg-tb-start-sel: true;
+    in-out property <bool>   cfg-tb-pause-sel: true;
+    in-out property <bool>   cfg-tb-start-all: true;
+    in-out property <bool>   cfg-tb-pause-all: true;
+    in-out property <bool>   cfg-lp-status: true;
+    in-out property <bool>   cfg-lp-disks: true;
+    in-out property <bool>   cfg-lp-trackers: false;
+    in-out property <bool>   cfg-lp-webtorrents: false;
+    in-out property <bool>   cfg-lp-tags: false;
+    in-out property <bool>   cfg-lp-created: false;
 
     // Context menu
     in-out property <bool>   context-menu-visible: false;
@@ -801,6 +1362,8 @@ export component MainWindow inherits Window {
     callback filter-clicked(string);
     callback magnet-submitted(string);
     callback language-changed(string);
+    callback saved();
+    callback settings-open();
 
     // Callbacks
     callback start-torrent(int);
@@ -989,7 +1552,7 @@ export component MainWindow inherits Window {
                     border-color: btn-settings.has-hover ? #343858 : transparent;
                     animate background { duration: 80ms; }
                     animate border-color { duration: 80ms; }
-                    btn-settings := TouchArea { clicked => { settings-dialog-visible = true; } }
+                    btn-settings := TouchArea { clicked => { settings-open(); settings-dialog-visible = true; } }
                     Text {
                         text: selected-language == "en" ? "EN" : selected-language == "de" ? "DE" : selected-language == "ru" ? "RU" : selected-language == "zh" ? "ZH" : selected-language == "es" ? "ES" : "EN";
                         color: #90c8f0;
@@ -1781,10 +2344,86 @@ export component MainWindow inherits Window {
         width: 100%; height: 100%;
         visible-dialog: settings-dialog-visible;
         selected-language <=> selected-language;
-        language-changed(lang) => {
-            settings-dialog-visible = false;
-            language-changed(lang);
-        }
+        settings-tab <=> settings-tab;
+        cfg-speed-up-enabled <=> cfg-speed-up-enabled;
+        cfg-speed-up-kbs <=> cfg-speed-up-kbs;
+        cfg-speed-down-enabled <=> cfg-speed-down-enabled;
+        cfg-speed-down-kbs <=> cfg-speed-down-kbs;
+        cfg-alt-speed-enabled <=> cfg-alt-speed-enabled;
+        cfg-alt-speed-up-kbs <=> cfg-alt-speed-up-kbs;
+        cfg-alt-speed-down-kbs <=> cfg-alt-speed-down-kbs;
+        cfg-alt-speed-schedule <=> cfg-alt-speed-schedule;
+        cfg-alt-speed-time-begin <=> cfg-alt-speed-time-begin;
+        cfg-alt-speed-time-end <=> cfg-alt-speed-time-end;
+        cfg-speed-day-mon <=> cfg-speed-day-mon;
+        cfg-speed-day-tue <=> cfg-speed-day-tue;
+        cfg-speed-day-wed <=> cfg-speed-day-wed;
+        cfg-speed-day-thu <=> cfg-speed-day-thu;
+        cfg-speed-day-fri <=> cfg-speed-day-fri;
+        cfg-speed-day-sat <=> cfg-speed-day-sat;
+        cfg-speed-day-sun <=> cfg-speed-day-sun;
+        cfg-dl-watch-dir-enabled <=> cfg-dl-watch-dir-enabled;
+        cfg-dl-watch-dir <=> cfg-dl-watch-dir;
+        cfg-dl-start-added <=> cfg-dl-start-added;
+        cfg-dl-trash-torrent <=> cfg-dl-trash-torrent;
+        cfg-dl-dir <=> cfg-dl-dir;
+        cfg-dl-queue-max <=> cfg-dl-queue-max;
+        cfg-dl-seed-ratio-limit-min <=> cfg-dl-seed-ratio-limit-min;
+        cfg-dl-part-ext <=> cfg-dl-part-ext;
+        cfg-dl-incomplete-dir-enabled <=> cfg-dl-incomplete-dir-enabled;
+        cfg-dl-incomplete-dir <=> cfg-dl-incomplete-dir;
+        cfg-dl-done-script-enabled <=> cfg-dl-done-script-enabled;
+        cfg-dl-done-script <=> cfg-dl-done-script;
+        cfg-seed-ratio-enabled <=> cfg-seed-ratio-enabled;
+        cfg-seed-ratio <=> cfg-seed-ratio;
+        cfg-seed-idle-enabled <=> cfg-seed-idle-enabled;
+        cfg-seed-idle-min <=> cfg-seed-idle-min;
+        cfg-net-port <=> cfg-net-port;
+        cfg-net-random-port <=> cfg-net-random-port;
+        cfg-net-port-forward <=> cfg-net-port-forward;
+        cfg-net-max-peers-torrent <=> cfg-net-max-peers-torrent;
+        cfg-net-max-peers-total <=> cfg-net-max-peers-total;
+        cfg-net-utp <=> cfg-net-utp;
+        cfg-net-pex <=> cfg-net-pex;
+        cfg-net-dht <=> cfg-net-dht;
+        cfg-net-lpd <=> cfg-net-lpd;
+        cfg-net-default-trackers <=> cfg-net-default-trackers;
+        cfg-priv-encryption <=> cfg-priv-encryption;
+        cfg-priv-blocklist-enabled <=> cfg-priv-blocklist-enabled;
+        cfg-priv-blocklist-url <=> cfg-priv-blocklist-url;
+        cfg-remote-enabled <=> cfg-remote-enabled;
+        cfg-remote-port <=> cfg-remote-port;
+        cfg-remote-auth <=> cfg-remote-auth;
+        cfg-remote-username <=> cfg-remote-username;
+        cfg-remote-password <=> cfg-remote-password;
+        cfg-remote-whitelist-enabled <=> cfg-remote-whitelist-enabled;
+        cfg-remote-whitelist <=> cfg-remote-whitelist;
+        cfg-autostart <=> cfg-autostart;
+        cfg-suspend <=> cfg-suspend;
+        cfg-start-minimized <=> cfg-start-minimized;
+        cfg-delete-torrent <=> cfg-delete-torrent;
+        cfg-refresh-interval <=> cfg-refresh-interval;
+        cfg-on-close <=> cfg-on-close;
+        cfg-notify-add <=> cfg-notify-add;
+        cfg-notify-complete <=> cfg-notify-complete;
+        cfg-notify-sound <=> cfg-notify-sound;
+        cfg-theme <=> cfg-theme;
+        cfg-tb-add <=> cfg-tb-add;
+        cfg-tb-magnet <=> cfg-tb-magnet;
+        cfg-tb-create <=> cfg-tb-create;
+        cfg-tb-rehash <=> cfg-tb-rehash;
+        cfg-tb-start-sel <=> cfg-tb-start-sel;
+        cfg-tb-pause-sel <=> cfg-tb-pause-sel;
+        cfg-tb-start-all <=> cfg-tb-start-all;
+        cfg-tb-pause-all <=> cfg-tb-pause-all;
+        cfg-lp-status <=> cfg-lp-status;
+        cfg-lp-disks <=> cfg-lp-disks;
+        cfg-lp-trackers <=> cfg-lp-trackers;
+        cfg-lp-webtorrents <=> cfg-lp-webtorrents;
+        cfg-lp-tags <=> cfg-lp-tags;
+        cfg-lp-created <=> cfg-lp-created;
+        language-changed(lang) => { language-changed(lang); }
+        saved => { saved(); settings-dialog-visible = false; }
         cancelled => { settings-dialog-visible = false; }
     }
 }
