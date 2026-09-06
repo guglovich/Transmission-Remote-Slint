@@ -401,6 +401,105 @@ component NumFieldF inherits Rectangle {
 
 // Поле времени HH:MM (внутри хранятся минуты): ввод 3-4 цифр как ЧЧММ
 component TimeField inherits Rectangle {
+    in-out property <int> minutes;   // 0..1439
+    callback touched-cb();
+    in property <bool> editable: true;
+    property <int> hh: 0;
+    property <int> mm: 0;
+    property <string> hh-txt;
+    property <string> mm-txt;
+    function sync-from-minutes() {
+        hh = Math.min(23, Math.floor(minutes / 60));
+        mm = Math.min(59, Math.mod(minutes, 60));
+        hh-txt = (hh < 10 ? "0" : "") + hh;
+        mm-txt = (mm < 10 ? "0" : "") + mm;
+    }
+    function apply() {
+        minutes = Math.clamp(hh, 0, 23) * 60 + Math.clamp(mm, 0, 59);
+        touched-cb();
+    }
+    init => { sync-from-minutes(); }
+    changed minutes => {
+        if (!hhi.has-focus && !mmi.has-focus) { sync-from-minutes(); }
+        touched-cb();
+    }
+    width: 74px; height: 28px;
+    border-radius: 4px; background: transparent; border-width: 1px; border-color: hhi.has-focus || mmi.has-focus ? #3f72f6 : #343858;
+    opacity: editable ? 1.0 : 0.5;
+    hhi := TextInput {
+        x: 0; width: 28px; height: parent.height;
+        font-size: 13px; color: #dce4f5;
+        horizontal-alignment: center; vertical-alignment: center;
+        enabled: editable; input-type: number;
+        text <=> hh-txt;
+        edited => {
+            if (self.text.is-empty) { return; }
+            hh = Math.clamp(Math.round(self.text.to-float()), 0, 23);
+            apply();
+        }
+        accepted => { sync-from-minutes(); }
+    }
+    Text { text: ":"; color: #7a8296; font-size: 13px; x: 28px; width: 18px; height: parent.height; horizontal-alignment: center; vertical-alignment: center; }
+    mmi := TextInput {
+        x: 46px; width: 28px; height: parent.height;
+        font-size: 13px; color: #dce4f5;
+        horizontal-alignment: center; vertical-alignment: center;
+        enabled: editable; input-type: number;
+        text <=> mm-txt;
+        edited => {
+            if (self.text.is-empty) { return; }
+            mm = Math.clamp(Math.round(self.text.to-float()), 0, 59);
+            apply();
+        }
+        accepted => { sync-from-minutes(); }
+    }
+    TouchArea {
+        clicked => { if (editable) { hhi.focus(); hhi.select-all(); } }
+    }
+}
+
+component NumFieldF inherits Rectangle {
+    in property <int> value;        // сотые доли: 244 = 2.44
+    callback value-changed(int);
+    in property <int> min-val: 0;
+    in property <int> max-val: 10000;
+    in property <bool> editable: true;
+    in property <length> field-width: 56px;
+    in property <length> field-height: 26px;
+    property <string> txt;
+    init => { txt = Math.floor(value / 100) + "." + Math.mod(Math.floor(value / 10), 10) + Math.mod(value, 10); }
+    changed value => {
+        if (!ti.has-focus) {
+            txt = Math.floor(value / 100) + "." + Math.mod(Math.floor(value / 10), 10) + Math.mod(value, 10);
+        }
+    }
+    width: field-width; height: field-height;
+    border-radius: 4px;
+    background: #171825;
+    border-width: 1px;
+    border-color: ti.has-focus ? #3f72f6 : #2c2d42;
+    opacity: editable ? 1.0 : 0.45;
+    ti := TextInput {
+        x: 8px; width: parent.width - 12px; height: parent.height;
+        font-size: 12px; color: editable ? #e2e8f0 : #4e556e;
+        vertical-alignment: center; single-line: true;
+        enabled: editable; input-type: decimal;
+        text <=> txt;
+        edited => {
+            if (self.text.is-empty) { return; }
+            root.value-changed(Math.clamp(Math.round(self.text.to-float() * 100), min-val, max-val));
+        }
+        accepted => {
+            txt = Math.floor(value / 100) + "." + Math.mod(Math.floor(value / 10), 10) + Math.mod(value, 10);
+        }
+    }
+    TouchArea {
+        clicked => { if (editable) { ti.focus(); ti.select-all(); } }
+    }
+}
+
+// Поле времени HH:MM (внутри хранятся минуты): ввод 3-4 цифр как ЧЧММ
+component TimeField inherits Rectangle {
     in-out property <int> minutes;
     callback touched-cb();
     in property <bool> editable: true;
