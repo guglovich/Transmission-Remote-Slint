@@ -352,6 +352,36 @@ component NumField inherits Rectangle {
     }
 }
 
+// Поле времени HH:MM (внутри хранятся минуты): ввод 3-4 цифр как ЧЧММ
+component TimeField inherits Rectangle {
+    in-out property <int> minutes;
+    in property <bool> editable: true;
+    property <string> txt: Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
+    changed minutes => {
+        if (!ti.has-focus) {
+            txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
+        }
+    }
+    width: 60px; height: 28px;
+    border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
+    opacity: editable ? 1.0 : 0.5;
+    ti := TextInput {
+        x: 0; width: parent.width; height: parent.height;
+        font-size: 13px; color: #dce4f5;
+        horizontal-alignment: center; vertical-alignment: center;
+        enabled: editable; input-type: number;
+        text <=> txt;
+        edited => {
+            minutes = Math.clamp(
+                Math.floor(self.text.to-float() / 100) * 60 + Math.min(Math.mod(Math.round(self.text.to-float()), 100), 59),
+                0, 1439);
+        }
+        accepted => {
+            txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
+        }
+    }
+}
+
 component ConfirmDialog inherits Rectangle {
     in property <string> message;
     in property <string> torrent-name;
@@ -1055,7 +1085,7 @@ component SettingsDialog inherits Rectangle {
                                 width: 420px; spacing: 10px; alignment: start;
                                 
                                 // ── SPEED LIMITS ──────────────────────────────────────────────────────────
-                                Text { text: "SPEED LIMITS"; color: #626a80; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+                                Text { text: Tr.sec_speed_limits; color: #626a80; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
 
                                 // Upload row
                                 HorizontalLayout { padding-left: 32px; spacing: 16px; alignment: start; height: 28px;
@@ -1066,7 +1096,7 @@ component SettingsDialog inherits Rectangle {
                                         up-cb := TouchArea { clicked => { cfg-speed-up-enabled = !cfg-speed-up-enabled; } }
                                         if cfg-speed-up-enabled: Text { text: "✓"; color: #fff; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
                                     }
-                                    Text { text: "Upload Limit (MB/s):";  color: #939cb0; font-size: 13px; vertical-alignment: center; width: 140px; }
+                                    Text { text: Tr.ulimit_lbl;  color: #939cb0; font-size: 13px; vertical-alignment: center; width: 140px; }
                                     
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
@@ -1095,7 +1125,7 @@ component SettingsDialog inherits Rectangle {
                                         dn-cb := TouchArea { clicked => { cfg-speed-down-enabled = !cfg-speed-down-enabled; } }
                                         if cfg-speed-down-enabled: Text { text: "✓"; color: #fff; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
                                     }
-                                    Text { text: "Download Limit (MB/s):";  color: #939cb0; font-size: 13px; vertical-alignment: center; width: 140px; }
+                                    Text { text: Tr.dlimit_lbl;  color: #939cb0; font-size: 13px; vertical-alignment: center; width: 140px; }
                                     
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
@@ -1118,7 +1148,7 @@ component SettingsDialog inherits Rectangle {
                                 Rectangle { height: 12px; background: transparent; } // padding
 
                                 // ── SPECIAL ALTERNATIVE LIMITS ────────────────────────────────────────────
-                                Text { text: "SPECIAL ALTERNATIVE LIMITS"; color: #626a80; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+                                Text { text: Tr.sec_alt_limits; color: #626a80; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
 
                                 // Override checkbox row
                                 HorizontalLayout { spacing: 14px; height: 28px; alignment: start;
@@ -1128,12 +1158,12 @@ component SettingsDialog inherits Rectangle {
                                         alt-cb := TouchArea { clicked => { cfg-alt-speed-enabled = !cfg-alt-speed-enabled; } }
                                         if cfg-alt-speed-enabled: Text { text: "✓"; color: #fff; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
                                     }
-                                    Text { text: "Override normal limits by schedule or manually"; color: #e4e7f2; font-size: 13px; font-weight: 700; vertical-alignment: center; }
+                                    Text { text: Tr.alt_override; color: #e4e7f2; font-size: 13px; font-weight: 700; vertical-alignment: center; }
                                 }
 
                                 // Alt Upload row
                                 HorizontalLayout { padding-left: 34px; spacing: 14px; alignment: start; height: 28px;
-                                    Text { text: "Upload (MB/s):"; color: cfg-alt-speed-enabled ? #7a8296 : #4e556e; font-size: 13px; vertical-alignment: center; width: 120px; }
+                                    Text { text: Tr.alt_up_lbl; color: cfg-alt-speed-enabled ? #7a8296 : #4e556e; font-size: 13px; vertical-alignment: center; width: 120px; }
                                     
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
@@ -1153,7 +1183,7 @@ component SettingsDialog inherits Rectangle {
 
                                 // Alt Download row
                                 HorizontalLayout { padding-left: 34px; spacing: 14px; alignment: start; height: 28px;
-                                    Text { text: "Download (MB/s):"; color: cfg-alt-speed-enabled ? #7a8296 : #4e556e; font-size: 13px; vertical-alignment: center; width: 120px; }
+                                    Text { text: Tr.alt_dl_lbl; color: cfg-alt-speed-enabled ? #7a8296 : #4e556e; font-size: 13px; vertical-alignment: center; width: 120px; }
                                     
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
@@ -1179,7 +1209,7 @@ component SettingsDialog inherits Rectangle {
                                         sched-cb := TouchArea { clicked => { if cfg-alt-speed-enabled { cfg-alt-speed-schedule = !cfg-alt-speed-schedule; } } }
                                         if cfg-alt-speed-schedule: Text { text: "✓"; color: #fff; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
                                     }
-                                    Text { text: "By schedule:"; color: cfg-alt-speed-enabled ? #7a8296 : #4e556e; font-size: 13px; vertical-alignment: center; width: 100px; }
+                                    Text { text: Tr.by_schedule; color: cfg-alt-speed-enabled ? #7a8296 : #4e556e; font-size: 13px; vertical-alignment: center; width: 100px; }
                                     
                                     HorizontalLayout {
                                         horizontal-stretch: 1; alignment: end; spacing: 12px;
@@ -1191,7 +1221,7 @@ component SettingsDialog inherits Rectangle {
                                                 horizontal-alignment: center; vertical-alignment: center;
                                             }
                                         }
-                                        Text { text: "to"; color: #7a8296; font-size: 13px; vertical-alignment: center; }
+                                        Text { text: Tr.sched_to; color: #7a8296; font-size: 13px; vertical-alignment: center; }
                                         // Time end
                                         Rectangle { width: 60px; height: 28px; border-radius: 4px; background: transparent; border-width: 1px; border-color: #343858;
                                             Text {
@@ -1398,15 +1428,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
-                                    Rectangle {
-                                        width: 70px; height: 32px; border-radius: 4px;
-                                        background: #171825; border-width: 1px; border-color: #2c2d42;
-                                        Text {
-                                            text: cfg-dl-queue-max;
-                                            color: #e2e8f0; font-size: 13px;
-                                            vertical-alignment: center; x: 12px;
-                                        }
-                                    }
+                                    NumField { value <=> cfg-dl-queue-max; min-val: 0; max-val: 999; }
                                     Rectangle {
                                         width: 32px; height: 32px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #343858;
                                         Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
@@ -1448,15 +1470,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
-                                    Rectangle {
-                                        width: 70px; height: 32px; border-radius: 4px;
-                                        background: #171825; border-width: 1px; border-color: #2c2d42;
-                                        Text {
-                                            text: cfg-dl-seed-ratio-limit-min;
-                                            color: #e2e8f0; font-size: 13px;
-                                            vertical-alignment: center; x: 12px;
-                                        }
-                                    }
+                                    NumField { value <=> cfg-dl-seed-ratio-limit-min; min-val: 0; max-val: 9999; }
                                     Rectangle {
                                         width: 32px; height: 32px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #343858;
                                         Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
@@ -1574,12 +1588,9 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 if !cfg-dl-done-script-enabled: HorizontalLayout {
                                     alignment: start;
-                                    Rectangle {
-                                        width: 150px; height: 32px; border-radius: 4px;
-                                        background: #171825; border-width: 1px; border-color: #2c2d42;
-                                        Text {
-                                            x: 8px; vertical-alignment: center; text: Tr.path_to_script; color: #3e445e; font-size: 13px;
-                                        }
+                                    LineEdit {
+                                        width: 220px; height: 32px;
+                                        text <=> cfg-dl-done-script;
                                     }
                                 }
                             }
@@ -1615,7 +1626,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                     Text {
                                         text: Tr.seed_ratio_lbl;
-                                        color: #939cb0; font-size: 12px; vertical-alignment: center;
+                                        color: #939cb0; font-size: 12px; vertical-alignment: center; width: 240px;
                                     }
                                 }
                                 
@@ -1660,7 +1671,7 @@ component SettingsDialog inherits Rectangle {
                                     }
                                     Text {
                                         text: Tr.seed_idle_lbl;
-                                        color: #939cb0; font-size: 12px; vertical-alignment: center;
+                                        color: #939cb0; font-size: 12px; vertical-alignment: center; width: 240px;
                                     }
                                 }
                                 
@@ -1702,14 +1713,13 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 Text {
                                     text: Tr.done_script_seed;
-                                    color: #bfcade; font-size: 13px; vertical-alignment: center;
-                                    width: 260px;
+                                    color: #bfcade; font-size: 13px; vertical-alignment: center; width: 260px;
                                 }
                                 
                                 if cfg-seed-done-script-enabled: HorizontalLayout {
-                                    spacing: 8px; horizontal-stretch: 1;
+                                    spacing: 8px;
                                     Rectangle {
-                                        horizontal-stretch: 1; height: 32px; border-radius: 4px;
+                                        width: 220px; height: 32px; border-radius: 4px;
                                         background: #171825; border-width: 1px; border-color: #2c2d42;
                                         LineEdit {
                                             width: 100%; height: 100%;
@@ -1800,7 +1810,14 @@ component SettingsDialog inherits Rectangle {
                                         HorizontalLayout {
                                             spacing: 4px;
                                             Text { text: Tr.status_lbl; color: #7a7e8e; font-size: 10px; }
-                                            Text { text: Tr.port_unknown; color: #b89c44; font-size: 10px; font-weight: 600; }
+                                            Text {
+                                                text: port-test-state == 1 ? Tr.port_checking_cap
+                                                    : port-test-state == 2 ? Tr.port_open
+                                                    : port-test-state == 3 ? Tr.port_closed
+                                                    : Tr.port_unknown;
+                                                color: port-test-state == 2 ? #2a9a50 : port-test-state == 3 ? #e06050 : port-test-state == 1 ? #90b8d8 : #b89c44;
+                                                font-size: 10px; font-weight: 600;
+                                            }
                                         }
                                     }
                                 }
@@ -1879,12 +1896,12 @@ component SettingsDialog inherits Rectangle {
                                         Rectangle {
                                             width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
                                             Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
-                                            TouchArea { clicked => { if (cfg-net-max-peers-torrent > 5) { cfg-net-max-peers-torrent = cfg-net-max-peers-torrent - 5; } } }
+                                            TouchArea { clicked => { if (cfg-net-max-peers-torrent > 5) { cfg-net-max-peers-torrent = cfg-net-max-peers-torrent - 1; } } }
                                         }
                                         Rectangle {
                                             width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
                                             Text { text: "+"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
-                                            TouchArea { clicked => { cfg-net-max-peers-torrent = cfg-net-max-peers-torrent + 5; } }
+                                            TouchArea { clicked => { cfg-net-max-peers-torrent = cfg-net-max-peers-torrent + 1; } }
                                         }
                                     }
                                 }
@@ -1910,12 +1927,12 @@ component SettingsDialog inherits Rectangle {
                                         Rectangle {
                                             width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
                                             Text { text: "—"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
-                                            TouchArea { clicked => { if (cfg-net-max-peers-total > 10) { cfg-net-max-peers-total = cfg-net-max-peers-total - 10; } } }
+                                            TouchArea { clicked => { if (cfg-net-max-peers-total > 10) { cfg-net-max-peers-total = cfg-net-max-peers-total - 5; } } }
                                         }
                                         Rectangle {
                                             width: 26px; height: 26px; border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
                                             Text { text: "+"; color: #8e96aa; font-weight: 800; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; }
-                                            TouchArea { clicked => { cfg-net-max-peers-total = cfg-net-max-peers-total + 10; } }
+                                            TouchArea { clicked => { cfg-net-max-peers-total = cfg-net-max-peers-total + 5; } }
                                         }
                                     }
                                 }
@@ -3231,7 +3248,7 @@ export component MainWindow inherits Window {
                 Rectangle {
                     width: 50px; height: 28px; y: 7px; background: btn-settings.has-hover ? #21253a : transparent; border-radius: 5px;
                     btn-settings := TouchArea { clicked => { settings-open(); settings-dialog-visible = true; } }
-                    Text { text: selected-language == "en" ? "EN" : selected-language == "de" ? "DE" : selected-language == "ru" ? "RU" : selected-language == "zh" ? "ZH" : selected-language == "es" ? "ES" : "EN"; color: #90c8f0; font-size: 12px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                    Text { text: "⚙"; color: #90c8f0; font-size: 16px; horizontal-alignment: center; vertical-alignment: center; }
                 }
             }
         }
