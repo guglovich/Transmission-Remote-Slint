@@ -352,6 +352,9 @@ component NumField inherits Rectangle {
             accepted => { txt = value + ""; }
         }
     }
+    TouchArea {
+        clicked => { if (editable) { ti.focus(); } }
+    }
 }
 
 
@@ -389,6 +392,9 @@ component NumFieldF inherits Rectangle {
             txt = Math.floor(value / 100) + "." + Math.mod(Math.floor(value / 10), 10) + Math.mod(value, 10);
         }
     }
+    TouchArea {
+        clicked => { if (editable) { ti.focus(); } }
+    }
 }
 
 // Поле времени HH:MM (внутри хранятся минуты): ввод 3-4 цифр как ЧЧММ
@@ -423,6 +429,9 @@ component TimeField inherits Rectangle {
             txt = Math.floor(minutes / 60) + ":" + (Math.mod(minutes, 60) < 10 ? "0" : "") + Math.mod(minutes, 60);
         }
     }
+    TouchArea {
+        clicked => { if (editable) { ti.focus(); } }
+    }
 }
 
 
@@ -441,6 +450,9 @@ component PathField inherits HorizontalLayout {
             vertical-alignment: center; single-line: true;
             text: root.text;
             edited => { root.text-changed(self.text); }
+        }
+        TouchArea {
+            clicked => { ti.focus(); }
         }
     }
     Rectangle {
@@ -831,7 +843,7 @@ component SettingsDialog inherits Rectangle {
     Rectangle {
         width: 640px;
         height: settings-tab == 1 ? 490px :
-                settings-tab == 2 ? 545px :
+                settings-tab == 2 ? 558px :
                 settings-tab == 3 ? 480px :
                 settings-tab == 4 ? 640px :
                 settings-tab == 5 ? 460px :
@@ -1585,7 +1597,7 @@ component SettingsDialog inherits Rectangle {
                                 Text {
                                     text: Tr.incomplete_dir_lbl;
                                     color: #bfcade; font-size: 13px; vertical-alignment: center;
-                                    width: 200px; wrap: word-wrap;
+                                    width: 192px; wrap: word-wrap;
                                 }
                                 
                                 if cfg-dl-incomplete-dir-enabled: PathField {
@@ -1606,7 +1618,7 @@ component SettingsDialog inherits Rectangle {
                             
                             // Checkbox: Done Script
                             HorizontalLayout {
-                                spacing: 12px; height: 32px; alignment: start;
+                                spacing: 8px; height: 32px; alignment: start;
                                 TouchArea {
                                     clicked => { cfg-dl-done-script-enabled = !cfg-dl-done-script-enabled; touched(); }
                                     width: 14px; height: 14px; y: (parent.height - self.height) / 2;
