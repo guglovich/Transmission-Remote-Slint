@@ -1764,15 +1764,23 @@ fn main() -> anyhow::Result<()> {
         let tx = cmd_tx.clone();
         ui.on_switch_rpc(move |display: slint::SharedString| {
             let display_str = display.to_string();
-            // Находим полный URL по display-имени
+            // Клик по текущему хосту — no-op (раньше запускал reconnect с битым URL и валил клиент)
+            let active = ACTIVE_RPC_URL.lock().unwrap().clone().unwrap_or_default();
+            if url_endpoint(&active) == url_endpoint(&display_str) {
+                eprintln!("[switch-rpc] {display_str} is already active — no-op");
+                return;
+            }
+            // Находим полный URL по display-имени (host:port)
             let full_url = candidates_full.iter().find(|c| {
-                let d = if c.url.contains("127.") || c.url.contains("localhost") {
-                    "localhost".to_string()
-                } else {
-                    c.url.trim_start_matches("http://").split('/').next().unwrap_or("").to_string()
-                };
+                let d = c.url.trim_start_matches("https://").trim_start_matches("http://")
+                    .split('/').next().unwrap_or("").to_string();
                 d == display_str
             }).map(|c| c.url.clone()).unwrap_or(display_str.clone());
+            // Повторная no-op проверка уже по полному URL
+            if url_endpoint(&full_url) == url_endpoint(&active) {
+                eprintln!("[switch-rpc] {full_url} is already active — no-op");
+                return;
+            }
 
             eprintln!("[switch-rpc] {} → {}", display_str, full_url);
             *ACTIVE_RPC_URL.lock().unwrap() = Some(full_url.clone());
@@ -1798,6 +1806,13 @@ fn main() -> anyhow::Result<()> {
         let ui_weak = ui.as_weak();
         ui.on_switch_host(move |url: slint::SharedString| {
             let full = url.to_string();
+            // Клик по текущему хосту — no-op
+            let active = ACTIVE_RPC_URL.lock().unwrap().clone().unwrap_or_default();
+            if url_endpoint(&full) == url_endpoint(&active) {
+                eprintln!("[switch-host] {full} is already active — no-op");
+                if let Some(ui) = ui_weak.upgrade() { ui.set_is_switching_host(false); }
+                return;
+            }
             eprintln!("[switch-host] → {full}");
             *ACTIVE_RPC_URL.lock().unwrap() = Some(full.clone());
             let _ = tx.send(Command::SwitchRpc(full.clone()));
