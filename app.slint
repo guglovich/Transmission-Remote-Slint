@@ -425,9 +425,10 @@ component TimeField inherits Rectangle {
 component PathField inherits HorizontalLayout {
     in-out property <string> text;
     callback pick();
+    in property <length> field-w: 224px;
     spacing: 6px; height: 32px;
     Rectangle {
-        width: 224px; height: 32px;
+        width: root.field-w; height: 32px;
         border-radius: 4px; background: #171825; border-width: 1px; border-color: #2c2d42;
         ti := TextInput {
             x: 10px; width: parent.width - 20px; height: parent.height;
@@ -1362,6 +1363,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 
                                 if cfg-dl-watch-dir-enabled: PathField {
+                                    field-w: 180px;
                                     text <=> cfg-dl-watch-dir;
                                     pick => { pick-watch-dir(); }
                                 }
@@ -1432,9 +1434,10 @@ component SettingsDialog inherits Rectangle {
                                     Text {
                                         text: Tr.default_dir_lbl;
                                         color: #bfcade; font-size: 13px; vertical-alignment: center;
-                                        width: 180px;
+                                        width: 160px;
                                     }
                                     PathField {
+                                        field-w: 170px;
                                         text <=> cfg-dl-dir;
                                         pick => { pick-dl-dir(); }
                                     }
@@ -1506,7 +1509,8 @@ component SettingsDialog inherits Rectangle {
                                 spacing: 12px; height: 32px;
                                 Text {
                                     text: Tr.seed_ratio_min_lbl;
-                                    color: #bfcade; font-size: 13px; vertical-alignment: center; width: 230px;
+                                    color: #bfcade; font-size: 13px; vertical-alignment: center;
+                                    width: 262px; wrap: word-wrap;
                                 }
                                 HorizontalLayout {
                                     spacing: 8px; alignment: start;
@@ -1574,6 +1578,7 @@ component SettingsDialog inherits Rectangle {
                                 }
                                 
                                 if cfg-dl-incomplete-dir-enabled: PathField {
+                                    field-w: 180px;
                                     text <=> cfg-dl-incomplete-dir;
                                     pick => { pick-incomplete-dir(); }
                                 }
@@ -2976,6 +2981,7 @@ export component MainWindow inherits Window {
     in-out property <string> magnet-uri: "";
 
     in-out property <bool>   settings-dialog-visible: false;
+    callback settings-close();
     in-out property <string> selected-language: "en";
     in-out property <int>     settings-tab: 0;
     in-out property <bool>   cfg-speed-up-enabled: false;
@@ -3644,7 +3650,7 @@ export component MainWindow inherits Window {
         cfg-lp-status <=> cfg-lp-status; cfg-lp-disks <=> cfg-lp-disks; cfg-lp-trackers <=> cfg-lp-trackers; cfg-lp-webtorrents <=> cfg-lp-webtorrents; cfg-lp-tags <=> cfg-lp-tags; cfg-lp-created <=> cfg-lp-created;
         language-changed(lang) => { language-changed(lang); }
         saved => { saved(); settings-dialog-visible = false; }
-        cancelled => { settings-dialog-visible = false; }
+        cancelled => { settings-close(); settings-dialog-visible = false; }
         profiles <=> root.profiles;
         port-test-state <=> root.port-test-state;
         is-local-config-detected <=> root.is-local-config-detected;

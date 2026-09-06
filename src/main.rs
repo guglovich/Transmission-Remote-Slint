@@ -1462,6 +1462,29 @@ fn main() -> anyhow::Result<()> {
         std::sync::Arc::new(std::sync::Mutex::new(None));
     let last_app_auto = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
 
+    // Немедленный flush настроек при закрытии диалога (автосейв 800мс мог не успеть)
+    {
+        let ui_c = ui.as_weak();
+        let tx_c = cmd_tx.clone();
+        let ls_c = last_settings.clone();
+        ui.on_settings_close(move || {
+            if let Some(ui) = ui_c.upgrade() {
+                let s = build_daemon_settings(&ui);
+                let changed = match ls_c.lock().unwrap().as_ref() {
+                    Some(prev) => *prev != s,
+                    None => false,
+                };
+                if changed {
+                    *ls_c.lock().unwrap() = Some(s.clone());
+                    let _ = tx_c.send(Command::SaveDaemonSettings(s));
+                    eprintln!("[settings] close flush: change detected → session-set");
+                    let _ = apply_app_config_from_ui(&ui);
+                    app_config::sync_autostart(config_lock().lock().unwrap().autostart);
+                }
+            }
+        });
+    }
+
     // ── Насос: статус и трей 20Hz, данные торрентов 2Hz ─────────────────────
     let ui_h        = ui.as_weak();
     let mdl         = torrent_model.clone();
