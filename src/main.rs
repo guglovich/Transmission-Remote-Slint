@@ -716,6 +716,9 @@ fn apply_torrent_update(model: &Rc<VecModel<TorrentItem>>, torrents: &[&rpc::Raw
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
+    // TLS: reqwest собран с rustls-no-provider — явно ставим ring (чистая сборка без cmake)
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     // Игнорируем SIGHUP — закрытие терминала не убивает приложение
     unsafe { libc::signal(libc::SIGHUP, libc::SIG_IGN) };
 
